@@ -106,8 +106,13 @@ public sealed class TurnManager
     /// incomplete the agent keeps skipping; once complete, the chosen
     /// (verb, targetId) is re-validated against the current world —
     /// executed if still available, discarded if stale — and the slot
-    /// clears so a fresh selection starts next turn. Agents still busy
-    /// with a long-running action (per the affordance's duration) skip.
+    /// clears so a fresh selection starts next turn. Busy agents (a
+    /// long-running action in progress) don't START new selections — but
+    /// a selection already in flight always runs to completion and
+    /// executes: idle backoff is interruptible, and a woken agent's
+    /// pending signal queue is drained into the planning context, so
+    /// gating execution on busy would stall the chosen action until the
+    /// backoff expired.
     /// </summary>
     public void RunNpcTurns()
     {
@@ -121,35 +126,39 @@ public sealed class TurnManager
                     continue;
                 }
                 var agent = _engine.World.GetObject(agentId);
-                if (IsBusy(agentId) && !CanWake(agentId))
-                    continue; // still performing a long-running action
                 var policyId = _engine.ModuleRegistry.ResolveString(agent, "agent", "policy")!;
                 if (!_engine.PolicyRegistry.Has(policyId))
                     continue;
                 var policy = _engine.PolicyRegistry.Get(policyId);
 
-                if (!_inFlightSelections.TryGetValue(agentId, out var selection))
+                if (_inFlightSelections.TryGetValue(agentId, out var selection))
                 {
-                    var actions = _engine.ActionResolver.Resolve(agent);
-                    _inFlightSelections[agentId] =
-                        policy.ChooseActionAsync(_engine, agent, actions, CancellationToken.None);
-                    continue; // deciding counts as this agent's turn
+                    if (!selection.IsCompleted)
+                        continue; // still deciding (a slow policy may take many turns)
+
+                    _inFlightSelections.Remove(agentId);
+                    var chosen = selection.IsCompletedSuccessfully ? selection.Result : null;
+                    if (chosen is null)
+                        continue; // policy passed (or failed) — fresh selection next turn
+
+                    // Validate: the world may have changed since the choice was made.
+                    var available = _engine.ActionResolver.Resolve(agent);
+                    var action = available.FirstOrDefault(a =>
+                        a.Verb == chosen.Verb && a.TargetId == chosen.TargetId);
+                    if (action is null)
+                        continue; // stale choice — discard, fresh selection next turn
+                    PerformAction(agent, action, chosen.Text);
+                    continue;
                 }
-                if (!selection.IsCompleted)
-                    continue; // still deciding (a slow policy may take many turns)
 
-                _inFlightSelections.Remove(agentId);
-                var chosen = selection.IsCompletedSuccessfully ? selection.Result : null;
-                if (chosen is null)
-                    continue; // policy passed (or failed) — fresh selection next turn
-
-                // Validate: the world may have changed since the choice was made.
-                var available = _engine.ActionResolver.Resolve(agent);
-                var action = available.FirstOrDefault(a =>
-                    a.Verb == chosen.Verb && a.TargetId == chosen.TargetId);
-                if (action is null)
-                    continue; // stale choice — discard, fresh selection next turn
-                PerformAction(agent, action, chosen.Text);
+                // no selection in flight: busy agents skip (idle backoff is
+                // interruptible — new signals wake the agent to start deciding)
+                if (IsBusy(agentId) && !CanWake(agentId))
+                    continue;
+                var availableActions = _engine.ActionResolver.Resolve(agent);
+                _inFlightSelections[agentId] =
+                    policy.ChooseActionAsync(_engine, agent, availableActions, CancellationToken.None);
+                // deciding counts as this agent's turn
             }
         }
     }

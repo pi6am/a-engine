@@ -216,5 +216,34 @@ public class RealTimeTests
         engine.TurnManager.RunNpcTurns();
         Assert.Equal(turn, engine.TurnManager.Turn); // Bob stayed busy
     }
+
+    [Fact]
+    public void WokenIdleAgent_ExecutesCompletedSelection_WithoutWaitingForBackoff()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.Random = new Random(0);
+        var bob = engine.World.GetObject("bob");
+        var alice = engine.World.GetObject("alice");
+
+        // Bob idles: three consecutive looks back off to 4 turns busy
+        var look = TestWorlds.Find(engine, "bob", "look");
+        engine.TurnManager.PerformAction(bob, look);
+        engine.TurnManager.PerformAction(bob, look);
+        engine.TurnManager.PerformAction(bob, look); // busy until turn 6 (turn now 3)
+
+        // Alice speaks; Bob observes it and wakes: his selection starts
+        var say = TestWorlds.Find(engine, "alice", "say");
+        Assert.True(engine.TurnManager.PerformAction(alice, say, "fire!").Success);
+        engine.TurnManager.RunNpcTurns();
+
+        // the planning context build drains the pending signal queue (as
+        // AgentContextBuilder does), so CanWake is false again — but the
+        // completed selection must still execute, or the chosen action
+        // would stall until the backoff expired
+        engine.SignalBus.Drain("bob");
+        var turnBefore = engine.TurnManager.Turn;
+        engine.TurnManager.RunNpcTurns();
+        Assert.True(engine.TurnManager.Turn > turnBefore);
+    }
 }
 
