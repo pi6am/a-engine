@@ -14,10 +14,12 @@ using AEngine.Llm;
 // slash commands (see SlashCommandRegistry) are meta actions that never
 // consume a turn. The debug API is off by default; it is an
 // unauthenticated loopback-only REST endpoint for inspecting and mutating
-// the world while the game runs. With an LLM endpoint configured (or
-// AENGINE_LLM_ENDPOINT/MODEL/API_KEY set), non-numeric free text is sent
-// to the LLM as a planning request: the extracted plan is printed and
-// executed stepwise. Action numbers keep working either way.
+// the world while the game runs. Input that exactly matches an action
+// label ("wait", "go north", ...) runs directly without an LLM call.
+// With an LLM endpoint configured (or AENGINE_LLM_ENDPOINT/MODEL/API_KEY
+// set), other non-numeric free text is sent to the LLM as a planning
+// request: the extracted plan is printed and executed stepwise. Action
+// numbers keep working either way.
 
 const int defaultDebugPort = 5050;
 
@@ -188,6 +190,17 @@ while (true)
 
     if (!int.TryParse(input, out var choice))
     {
+        // an exact action label ("wait", "go north", ...) runs directly —
+        // no LLM round-trip needed
+        var direct = engine.ActionResolver.Resolve(player)
+            .FirstOrDefault(a => string.Equals(a.Label, input, StringComparison.OrdinalIgnoreCase));
+        if (direct is not null)
+        {
+            var directResult = engine.TurnManager.PerformAction(player, direct);
+            Console.WriteLine(directResult.Message);
+            engine.TurnManager.RunNpcTurns();
+            continue;
+        }
         if (planner is null)
         {
             Console.WriteLine("I didn't understand that. Try /actions to see what you can do.");

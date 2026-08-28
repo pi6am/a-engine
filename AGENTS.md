@@ -205,7 +205,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   see "LLM harness" above. CLI options `--llm-endpoint/--llm-model/
   --llm-api-key` (env fallbacks `AENGINE_LLM_ENDPOINT/MODEL/API_KEY`); with an
   endpoint configured, non-numeric input is planned and executed stepwise
-  (menu numbers still work). Live verification against a real server (e.g.
+  (menu numbers still work; input exactly matching an action label, e.g.
+  "wait", runs directly without an LLM call). Live verification against a real server (e.g.
   KoboldCPP) is manual. Still planned: narration (LLM translating outcomes
   into prose), guided world expansion for *open* scenarios, speech variants
   (Shout/Whisper — need per-spec propagation overrides; say already carries
