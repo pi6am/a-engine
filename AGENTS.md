@@ -207,6 +207,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `lock (engine.SyncRoot)`; `TurnManager` already does.
 - Tests are required for engine changes; the MVP playthrough
   (`tests/AEngine.Tests/MvpPlaythroughTests.cs`) must stay green.
+- Never commit without asking first. The user prefers to playtest changes
+  before they are committed — present the change, wait for an explicit
+  "commit" instruction. (Automated tests passing is not a substitute.)
 - Commit logical changes separately: one commit per feature/fix, staged
   explicitly by path — never batch unrelated changes into a single commit
   (`git add -A` after a long multi-feature session is how that happens).
