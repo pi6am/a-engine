@@ -43,8 +43,8 @@ public static class BuiltinHandlers
                 var parts = exits.Select(p =>
                 {
                     var dir = ctx.Modules.ResolveString(p, "portal", "direction") ?? "somewhere";
-                    var state = HandlerState.IsLocked(ctx, p) ? "locked"
-                        : HandlerState.IsOpen(ctx, p) ? "open" : "closed";
+                    var state = HandlerState.IsOpen(ctx, p) ? "open"
+                        : HandlerState.IsLocked(ctx, p) ? "locked" : "closed";
                     return $"{dir} ({p.Name}, {state})";
                 });
                 sb.AppendLine("Exits: " + string.Join(", ", parts));
@@ -62,10 +62,13 @@ public static class BuiltinHandlers
             var portal = ctx.Target ?? throw new InvalidOperationException("go requires a target portal.");
             if (!portal.HasModule("portal"))
                 return ActionResult.Fail("You can't go that way.");
-            if (HandlerState.IsLocked(ctx, portal))
-                return ActionResult.Fail($"The {portal.Name} is locked.");
             if (!HandlerState.IsOpen(ctx, portal))
-                return ActionResult.Fail($"The {portal.Name} is closed.");
+            {
+                // Only a closed door blocks; an open door is passable even if locked.
+                return ActionResult.Fail(HandlerState.IsLocked(ctx, portal)
+                    ? $"The {portal.Name} is locked."
+                    : $"The {portal.Name} is closed.");
+            }
 
             var to = ctx.Modules.ResolveString(portal, "portal", "to");
             if (to is null || !ctx.World.HasObject(to))

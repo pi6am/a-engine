@@ -126,4 +126,25 @@ public class MvpPlaythroughTests
         Assert.False(result.Success);
         Assert.Contains("key", result.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void GoThroughDoor_OpenButLocked_Succeeds()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+
+        Assert.True(Do(engine, "open", "desk").Success);
+        Assert.True(Do(engine, "take", "key").Success);
+        Assert.True(Do(engine, "unlock", "door_a_side").Success);
+        Assert.True(Do(engine, "open", "door_a_side").Success);
+        Assert.True(Do(engine, "lock", "door_a_side").Success);
+
+        // an open door is passable even when locked
+        var look = engine.TurnManager.Execute(world.GetObject("player"), "look", "player");
+        Assert.Contains("wooden door, open", look.Message);
+
+        var go = Do(engine, "go", "door_a_side");
+        Assert.True(go.Success, go.Message);
+        Assert.Equal("room_b", world.GetObject("player").Parent);
+    }
 }
