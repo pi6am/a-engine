@@ -61,7 +61,7 @@ public sealed class TurnManager
     {
         lock (_engine.SyncRoot)
         {
-            var departureRoomId = agent.Parent;
+            var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
             var result = Execute(agent, action.HandlerId, action.TargetId, text);
             // remember your own action and its outcome (a look result is too
             // verbose to store verbatim)

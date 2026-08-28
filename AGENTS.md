@@ -94,7 +94,10 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   agents' contexts and signals read correctly.
 - **Signals** — ephemeral sensory observations (`SignalSense.Visual | Audible`)
   delivered by `SignalBus` on `GameEngine` into per-agent in-memory queues
-  (`Emit`/`Drain`/`Peek`). After a successful action, `TurnManager.PerformAction`
+  (`Emit`/`Drain`/`Peek`). Location is room-granular: `World.RoomOf` walks the
+  parent chain to the nearest `room` module, so a carried agent (or one inside
+  a container) acts from and observes in the carrier's room — a carried NPC's
+  speech reaches the player holding it. After a successful action, `TurnManager.PerformAction`
   looks up the affordance's signal specs and each observing agent (any object
   with the `agent` module except the actor) receives the single highest-priority
   receivable signal (ties: first listed); texts format `{agent}`/`{target}`/

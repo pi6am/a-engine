@@ -48,8 +48,9 @@ internal static class HandlerState
     }
 
     /// <summary>The agent's current room (its parent object).</summary>
+    /// <summary>The room the agent is in (the carrier's room when carried/contained).</summary>
     public static WorldObject RoomOf(ActionContext ctx) =>
-        ctx.World.GetObject(ctx.Agent.Parent);
+        ctx.World.RoomOf(ctx.Agent.Id);
 
     /// <summary>True if the agent holds the object in its inventory.</summary>
     public static bool IsHeld(ActionContext ctx, WorldObject obj) =>

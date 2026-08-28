@@ -25,7 +25,7 @@ public sealed class AgentContextBuilder
         lock (_engine.SyncRoot)
         {
             var sb = new StringBuilder();
-            var room = _engine.World.GetObject(agent.Parent);
+            var room = _engine.World.RoomOf(agent.Id);
             sb.AppendLine($"Location: {room.Name}");
             if (room.Description.Length > 0)
                 sb.AppendLine(room.Description);

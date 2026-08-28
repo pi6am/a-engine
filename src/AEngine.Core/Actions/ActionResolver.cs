@@ -38,7 +38,8 @@ public sealed class ActionResolver
 
     private IReadOnlyList<AvailableAction> Resolve(WorldObject agent, bool stateFiltered)
     {
-        var room = _world.GetObject(agent.Parent);
+        // room-granular location: a carried agent acts from the carrier's room
+        var room = _world.RoomOf(agent.Id);
         var actions = new List<AvailableAction>();
 
         // other agents in the room, for directed-speech entries

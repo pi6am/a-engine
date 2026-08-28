@@ -35,6 +35,28 @@ public sealed class World
     public IEnumerable<WorldObject> ChildrenOf(string id) =>
         GetObject(id).Children.Select(GetObject);
 
+    /// <summary>
+    /// The room an object is in: the nearest ancestor (including itself)
+    /// with the "room" module. An object inside a container or in an
+    /// agent's inventory shares that container's/agent's room — location
+    /// is room-granular for perception, actions, and signal propagation.
+    /// Objects not under any room (top-level state objects) fall back to
+    /// the object directly below the root.
+    /// </summary>
+    public WorldObject RoomOf(string id)
+    {
+        var current = GetObject(id);
+        var belowRoot = current;
+        while (current.Id != RootId)
+        {
+            if (current.HasModule("room"))
+                return current;
+            belowRoot = current;
+            current = GetObject(current.Parent);
+        }
+        return belowRoot;
+    }
+
     /// <summary>Create an object under <paramref name="parentId"/>.</summary>
     public WorldObject CreateObject(string id, string parentId, string name = "", string description = "")
     {

@@ -7,9 +7,9 @@ namespace AEngine.Core.Signals;
 /// Delivers sensory signals to agents. Each successful action may emit
 /// signal specs (declared on the affordance); every other agent that can
 /// perceive the action receives the single highest-priority receivable
-/// signal (ties: first listed) in an ephemeral per-agent queue; delivered
-    /// signals are also recorded into the observer's
-    /// <see cref="Runtime.AgentMemory"/>.
+/// signal (ties: first listed) in an ephemeral per-agent queue. Delivered
+/// signals are also recorded into the observer's
+/// <see cref="Runtime.AgentMemory"/>.
 ///
 /// Propagation: an observer in the origin room receives all senses; an
 /// observer one portal away receives a sense only if the portal side in
@@ -28,6 +28,10 @@ namespace AEngine.Core.Signals;
 /// ("{agent} exits through the {exitPortal} to the {exitDirection}."),
 /// Arrival specs to observers in the room entered ("{agent} enters from
 /// the {entryPortal} to the {entryDirection}.").
+///
+/// Location is room-granular (see World.RoomOf): a carried agent or an
+/// agent inside a container acts from and observes in the room containing
+/// their carrier — a parrot in your pocket can be heard.
 /// </summary>
 public sealed class SignalBus
 {
@@ -55,7 +59,7 @@ public sealed class SignalBus
             EmitTraversal(actor, specs, traversal);
             return;
         }
-        var originRoomId = actor.Parent;
+        var originRoomId = _world.RoomOf(actor.Id).Id;
         // A portal action (e.g. closing a door) manifests on both sides of
         // the door: observers in the other side's room perceive it as if it
         // happened in their room, transmission rules notwithstanding.
@@ -109,8 +113,9 @@ public sealed class SignalBus
         {
             if (observer.Id == actor.Id || !observer.HasModule("agent"))
                 continue;
-            var scope = observer.Parent == traversal.DepartureRoomId ? SignalScope.Departure
-                : observer.Parent == traversal.ArrivalRoomId ? SignalScope.Arrival
+            var observerRoomId = _world.RoomOf(observer.Id).Id;
+            var scope = observerRoomId == traversal.DepartureRoomId ? SignalScope.Departure
+                : observerRoomId == traversal.ArrivalRoomId ? SignalScope.Arrival
                 : SignalScope.None;
             if (scope == SignalScope.None)
                 continue;
@@ -154,9 +159,10 @@ public sealed class SignalBus
         WorldObject actor, WorldObject? target,
         IReadOnlyList<SignalSpec> specs, string? arg)
     {
+        var observerRoomId = _world.RoomOf(observer.Id).Id;
         WorldObject? portalSide = null;
         WorldObject? observerSide = null;
-        if (observer.Parent != originRoomId && observer.Parent != otherSideRoomId)
+        if (observerRoomId != originRoomId && observerRoomId != otherSideRoomId)
         {
             // adjacent-room observer: find the portal side in the origin
             // room leading toward the observer — that side's transmission
@@ -165,11 +171,11 @@ public sealed class SignalBus
                 return null;
             portalSide = _world.ChildrenOf(originRoomId).FirstOrDefault(c =>
                 c.HasModule("portal") &&
-                _modules.ResolveString(c, "portal", "to") == observer.Parent);
+                _modules.ResolveString(c, "portal", "to") == observerRoomId);
             if (portalSide is null)
                 return null; // not adjacent
             // the side in the observer's own room, for the directional suffix
-            observerSide = _world.ChildrenOf(observer.Parent).FirstOrDefault(c =>
+            observerSide = _world.ChildrenOf(observerRoomId).FirstOrDefault(c =>
                 c.HasModule("portal") &&
                 _modules.ResolveString(c, "portal", "to") == originRoomId);
         }
