@@ -49,3 +49,7 @@ artifacts/
 Thumbs.db
 *.tmp
 *.log
+
+## Node / web client
+node_modules/
+client/dist/

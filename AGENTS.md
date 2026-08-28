@@ -11,6 +11,7 @@ dotnet build          # build the solution (a-engine.slnx, .NET 10 XML format)
 dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (menu-driven)
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
+cd client && npm install && npm run dev   # debug web client (needs the CLI with --debug-api)
 ```
 
 Targets **net10.0**. The SDK is .NET 10; only the 10.0 runtime is installed, so do
@@ -22,6 +23,7 @@ not retarget to net8.0 without installing its runtime.
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Runtime/, Scenarios/
 src/AEngine.Cli/          # menu-driven console REPL
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
+client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: modules.json + world.json
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 ```
@@ -66,10 +68,24 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `PUT|DELETE /api/objects/{id}/attributes/{name}`;
   `PUT|DELETE /api/objects/{id}/modules/{moduleId}`;
   `PUT /api/objects/{id}/modules/{moduleId}/fields/{field}`;
-  `GET /api/modules`; `GET /api/actions?agentId=`. Errors: unknown id → 404,
+  `GET /api/modules`; `GET /api/actions?agentId=`;
+  `POST /api/actions/execute` `{agentId, verb, targetId}` → runs the resolved
+  menu action through `TurnManager.PerformAction` (advances the turn),
+  200 → `{success, message, turn}`, unknown agent or unavailable action → 404.
+  Errors: unknown id → 404,
   cycle/duplicate/root-guard → 409, bad JSON → 400, wrong method → 405.
-  Permissive CORS (any origin, OPTIONS preflight) for a future browser client.
+  Permissive CORS (any origin, OPTIONS preflight) for the browser client.
   All world access (HTTP and REPL alike) is serialized on `GameEngine.SyncRoot`.
+- **Debug web client** (`client/`) — Vue 3 + Vite + TypeScript, manually
+  scaffolded (runtime dep: `vue` only; dev: vite, @vitejs/plugin-vue,
+  typescript, vue-tsc). Scripts: `npm run dev` (proxies `/api` →
+  `http://127.0.0.1:5050`), `npm run build` (`vue-tsc --noEmit && vite build`),
+  `npm run preview`. It expects the CLI running with `--debug-api`; the API
+  base URL is editable in the header (default `http://127.0.0.1:5050`,
+  persisted to localStorage). Views: world tree, object editor (attributes,
+  modules + field overrides, move/delete/create child), engine panel, actions
+  panel (execute via `POST /api/actions/execute`). Manual refresh + optional
+  ~2s auto-poll; no server push.
 
 ## Conventions
 

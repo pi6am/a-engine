@@ -259,6 +259,33 @@ public sealed class DebugServer : IDisposable
                 handlerId = a.HandlerId,
             }));
         })));
+
+        _routes.Add(new("POST", S("api", "actions", "execute"), async (req, _) =>
+        {
+            var body = await ReadJson<ExecuteActionRequest>(req);
+            if (body is null || string.IsNullOrWhiteSpace(body.AgentId) || string.IsNullOrWhiteSpace(body.Verb))
+                throw new ArgumentException("Request body must be a JSON object with 'agentId' and 'verb'.");
+            return await Locked(() =>
+            {
+                var agent = _engine.World.GetObject(body.AgentId); // unknown agent -> 404
+                var action = _engine.ActionResolver.Resolve(agent).FirstOrDefault(a =>
+                    a.Verb == body.Verb && a.TargetId == body.TargetId);
+                if (action is null)
+                    return new ApiResponse(404, new
+                    {
+                        error = $"Agent '{body.AgentId}' has no available action " +
+                                $"'{body.Verb}' on target '{body.TargetId}'.",
+                    });
+                // PerformAction locks SyncRoot itself (re-entrant here) and advances the turn.
+                var result = _engine.TurnManager.PerformAction(agent, action);
+                return Ok(new
+                {
+                    success = result.Success,
+                    message = result.Message,
+                    turn = _engine.TurnManager.Turn,
+                });
+            });
+        }));
     }
 
     private static string[] S(params string[] segments) => segments;
@@ -433,4 +460,6 @@ public sealed class DebugServer : IDisposable
     private sealed record MoveObjectRequest(string ParentId);
 
     private sealed record OverridesRequest(Dictionary<string, JsonElement>? Overrides = null);
+
+    private sealed record ExecuteActionRequest(string? AgentId, string? Verb, string? TargetId = null);
 }

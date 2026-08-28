@@ -266,4 +266,82 @@ public class DebugServerTests : IDisposable
         Assert.Equal(HttpStatusCode.BadRequest,
             (await _http.GetAsync("/api/actions")).StatusCode);
     }
+
+    private async Task<JsonElement> ExecuteAction(object body)
+    {
+        var response = await _http.PostAsJsonAsync("/api/actions/execute", body);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var doc = await response.Content.ReadFromJsonAsync<JsonDocument>();
+        return doc!.RootElement.Clone();
+    }
+
+    [Fact]
+    public async Task ExecuteAction_RoundTrip_MovesPlayerAndAdvancesTurn()
+    {
+        // open the desk drawer, take the key
+        var openDesk = await ExecuteAction(new { agentId = "player", verb = "open", targetId = "desk" });
+        Assert.True(openDesk.GetProperty("success").GetBoolean());
+        Assert.Equal(1, openDesk.GetProperty("turn").GetInt32());
+
+        var take = await ExecuteAction(new { agentId = "player", verb = "take", targetId = "key" });
+        Assert.True(take.GetProperty("success").GetBoolean());
+
+        // unlock and open the door, go north
+        var unlock = await ExecuteAction(new { agentId = "player", verb = "unlock", targetId = "door_a_side" });
+        Assert.True(unlock.GetProperty("success").GetBoolean());
+        Assert.False(string.IsNullOrWhiteSpace(unlock.GetProperty("message").GetString()));
+
+        var openDoor = await ExecuteAction(new { agentId = "player", verb = "open", targetId = "door_a_side" });
+        Assert.True(openDoor.GetProperty("success").GetBoolean());
+
+        var go = await ExecuteAction(new { agentId = "player", verb = "go", targetId = "door_a_side" });
+        Assert.True(go.GetProperty("success").GetBoolean());
+        Assert.Equal(5, go.GetProperty("turn").GetInt32());
+
+        // the engine itself (and the object endpoint) reflects the move
+        var player = await GetJson("/api/objects/player");
+        Assert.Equal("room_b", player.GetProperty("parent").GetString());
+
+        var engine = await GetJson("/api/engine");
+        Assert.Equal(5, engine.GetProperty("currentTurn").GetInt32());
+    }
+
+    [Fact]
+    public async Task ExecuteAction_FailedAction_StillReturns200AndAdvancesTurn()
+    {
+        // going through the locked door fails, but the turn still advances
+        var go = await ExecuteAction(new { agentId = "player", verb = "go", targetId = "door_a_side" });
+        Assert.False(go.GetProperty("success").GetBoolean());
+        Assert.Contains("locked", go.GetProperty("message").GetString());
+        Assert.Equal(1, go.GetProperty("turn").GetInt32());
+    }
+
+    [Fact]
+    public async Task ExecuteAction_Unknowns_Return404()
+    {
+        // unknown agent
+        Assert.Equal(HttpStatusCode.NotFound, (await _http.PostAsJsonAsync(
+            "/api/actions/execute", new { agentId = "nope", verb = "look", targetId = "nope" })).StatusCode);
+
+        // known agent, action not currently available (key is inside the closed drawer)
+        var unavailable = await _http.PostAsJsonAsync(
+            "/api/actions/execute", new { agentId = "player", verb = "take", targetId = "key" });
+        Assert.Equal(HttpStatusCode.NotFound, unavailable.StatusCode);
+        Assert.Contains("error", await unavailable.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task ExecuteAction_BadBody_Returns400()
+    {
+        // missing verb
+        Assert.Equal(HttpStatusCode.BadRequest, (await _http.PostAsJsonAsync(
+            "/api/actions/execute", new { agentId = "player" })).StatusCode);
+        // empty body
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _http.PostAsync("/api/actions/execute", null)).StatusCode);
+        // malformed JSON
+        using var content = new StringContent("{ not json", System.Text.Encoding.UTF8, "application/json");
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _http.PostAsync("/api/actions/execute", content)).StatusCode);
+    }
 }
