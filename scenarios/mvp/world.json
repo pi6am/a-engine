@@ -1,0 +1,76 @@
+{
+  "name": "mvp",
+  "world": [
+    {
+      "id": "room_a",
+      "name": "Dusty Study",
+      "description": "A dusty study. A wooden desk stands against the wall, and a door leads north.",
+      "modules": ["room"],
+      "children": [
+        {
+          "id": "player",
+          "name": "you",
+          "description": "Just yourself, as always.",
+          "modules": ["agent"]
+        },
+        {
+          "id": "desk",
+          "name": "desk drawer",
+          "description": "The drawer of an old wooden desk.",
+          "modules": [
+            "container",
+            { "module": "openable", "overrides": { "open": false } }
+          ],
+          "children": [
+            {
+              "id": "key",
+              "name": "brass key",
+              "description": "A small brass key.",
+              "modules": ["portable"]
+            }
+          ]
+        },
+        {
+          "id": "door_a_side",
+          "name": "wooden door",
+          "description": "A sturdy wooden door leading north.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": { "stateRef": "door_1_state", "direction": "north", "to": "room_b" }
+            },
+            { "module": "lockable", "overrides": { "keyRef": "key" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "room_b",
+      "name": "Cold Hallway",
+      "description": "A cold, narrow hallway. A door leads south.",
+      "modules": ["room"],
+      "children": [
+        {
+          "id": "door_b_side",
+          "name": "wooden door",
+          "description": "A sturdy wooden door leading south.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": { "stateRef": "door_1_state", "direction": "south", "to": "room_a" }
+            },
+            { "module": "lockable", "overrides": { "keyRef": "key" } }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "door_1_state",
+      "name": "shared door state",
+      "description": "The shared state of the door between the study and the hallway.",
+      "modules": [
+        { "module": "doorstate", "overrides": { "open": false, "locked": true } }
+      ]
+    }
+  ]
+}

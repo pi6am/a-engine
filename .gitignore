@@ -1,0 +1,51 @@
+## .NET / C# build artifacts
+bin/
+obj/
+out/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+*.dll
+*.pdb
+*.exe
+*.deps.json
+*.runtimeconfig.json
+*.so
+*.dylib
+
+## Test results / coverage
+[Tt]est[Rr]esult*/
+*.trx
+coverage*.json
+coverage*.xml
+*.coverage
+*.coveragexml
+
+## NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Rider / Visual Studio / VS Code
+.idea/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vscode/*
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/extensions.json
+
+## OS / misc
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
