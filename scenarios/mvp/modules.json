@@ -11,7 +11,8 @@
       "id": "agent",
       "name": "Agent",
       "fields": [
-        { "name": "memoryLength", "type": "int", "default": 25 }
+        { "name": "memoryLength", "type": "int", "default": 25 },
+        { "name": "posture", "type": "string", "default": "standing" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },
@@ -45,7 +46,7 @@
         { "name": "lockedBy", "type": "ref", "default": null }
       ],
       "affordances": [
-        { "verb": "go", "handler": "go" },
+        { "verb": "go", "handler": "go", "postures": ["standing"] },
         { "verb": "open", "handler": "open" },
         { "verb": "close", "handler": "close" }
       ]

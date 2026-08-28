@@ -14,7 +14,8 @@
         { "name": "policy", "type": "string", "default": "player" },
         { "name": "character", "type": "string", "default": "" },
         { "name": "goals", "type": "string", "default": "" },
-        { "name": "memoryLength", "type": "int", "default": 25 }
+        { "name": "memoryLength", "type": "int", "default": 25 },
+        { "name": "posture", "type": "string", "default": "standing" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },
@@ -54,6 +55,7 @@
           "verb": "go",
           "handler": "go",
           "duration": 3,
+          "postures": ["standing"],
           "signals": [
             { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
             { "sense": "audible", "priority": 5, "scope": "departure", "text": "{agent} leaving through the {exitPortal}." },
@@ -145,6 +147,60 @@
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
             { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sittable",
+      "name": "Sittable",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 1 }
+      ],
+      "affordances": [
+        {
+          "verb": "sit",
+          "handler": "sit",
+          "duration": 2,
+          "postures": ["standing"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} sits down on the {target}." }
+          ]
+        },
+        {
+          "verb": "stand",
+          "handler": "stand",
+          "duration": 2,
+          "postures": ["sitting"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} gets up from the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lyable",
+      "name": "Lyable",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 1 }
+      ],
+      "affordances": [
+        {
+          "verb": "lie",
+          "handler": "lie",
+          "duration": 2,
+          "postures": ["standing"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} lies down on the {target}." }
+          ]
+        },
+        {
+          "verb": "stand",
+          "handler": "stand",
+          "duration": 2,
+          "postures": ["lying"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} gets up from the {target}." }
           ]
         }
       ]
