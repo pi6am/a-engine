@@ -40,7 +40,7 @@
             {
               "module": "agent",
               "overrides": {
-                "policy": "random",
+                "policy": "auto",
                 "character": "A grizzled old cook who takes pride in his kitchen and mutters to himself while he works.",
                 "goals": "Keep the dining hall stocked: fetch the loaf of bread and the carving knife, and tidy up."
               }
