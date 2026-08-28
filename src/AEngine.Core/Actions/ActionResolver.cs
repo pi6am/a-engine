@@ -63,7 +63,9 @@ public sealed class ActionResolver
                 if (!Applies(affordance.Verb, agent, target))
                     continue;
                 var label = LabelFor(affordance.Verb, target);
-                actions.Add(new AvailableAction(affordance.Verb, target.Id, label, affordance.Handler));
+                actions.Add(new AvailableAction(
+                    affordance.Verb, target.Id, label, affordance.Handler,
+                    attachment.ModuleId, affordance.Prompt));
             }
         }
     }
@@ -111,6 +113,7 @@ public sealed class ActionResolver
     {
         "look" => "Look around",
         "inventory" => "Check inventory",
+        "say" => "Say something",
         "go" => $"Go {_modules.ResolveString(target, "portal", "direction") ?? target.Name}",
         _ => $"{Capitalize(verb)} the {target.Name}",
     };

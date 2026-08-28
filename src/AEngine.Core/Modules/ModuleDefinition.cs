@@ -19,12 +19,18 @@ public sealed class FieldDefinition
     public JsonElement Default { get; init; }
 }
 
-/// <summary>An action affordance exposed by a module: verb + handler id.</summary>
+/// <summary>
+/// An action affordance exposed by a module: verb + handler id, an
+/// optional prompt (the verb takes a free-text argument), and optional
+/// signal specs emitted to observers on success.
+/// </summary>
 public sealed class AffordanceDefinition
 {
     public required string Verb { get; init; }
     public required string Handler { get; init; }
     public string? Requires { get; init; }
+    public string? Prompt { get; init; }
+    public List<Signals.SignalSpec> Signals { get; init; } = [];
 }
 
 /// <summary>

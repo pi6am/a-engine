@@ -29,4 +29,14 @@ public interface IActionHandler
 }
 
 /// <summary>A menu entry produced by the ActionResolver.</summary>
-public sealed record AvailableAction(string Verb, string? TargetId, string Label, string HandlerId);
+public sealed record AvailableAction(
+    string Verb, string? TargetId, string Label, string HandlerId,
+    string ModuleId, string? Prompt = null)
+{
+    /// <summary>
+    /// Optional free-text argument for prompted verbs (e.g. the words for
+    /// 'say'), supplied by a UI or a policy; surfaced to the handler as
+    /// ActionContext.Args["text"].
+    /// </summary>
+    public string? Text { get; init; }
+}

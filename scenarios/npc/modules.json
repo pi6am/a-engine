@@ -1,0 +1,158 @@
+{
+  "name": "npc-modules",
+  "modules": [
+    {
+      "id": "room",
+      "name": "Room",
+      "fields": [],
+      "affordances": []
+    },
+    {
+      "id": "agent",
+      "name": "Agent",
+      "fields": [
+        { "name": "policy", "type": "string", "default": "player" }
+      ],
+      "affordances": [
+        { "verb": "look", "handler": "look" },
+        { "verb": "inventory", "handler": "inventory" },
+        {
+          "verb": "say",
+          "handler": "say",
+          "prompt": "Say what?",
+          "signals": [
+            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
+            { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portal",
+      "name": "Portal (door side)",
+      "fields": [
+        { "name": "stateRef", "type": "ref", "default": null },
+        { "name": "direction", "type": "string", "default": "" },
+        { "name": "to", "type": "ref", "default": null },
+        { "name": "lockedBy", "type": "ref", "default": null },
+        { "name": "transmitVisual", "type": "string", "default": "whenOpen" },
+        { "name": "transmitAudio", "type": "string", "default": "always" }
+      ],
+      "affordances": [
+        {
+          "verb": "go",
+          "handler": "go",
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} goes through the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear footsteps fading." }
+          ]
+        },
+        {
+          "verb": "open",
+          "handler": "open",
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear the sound of wood sliding on wood." }
+          ]
+        },
+        {
+          "verb": "close",
+          "handler": "close",
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear a door thud shut." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doorstate",
+      "name": "Shared door state",
+      "fields": [
+        { "name": "open", "type": "bool", "default": false },
+        { "name": "locked", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "openable",
+      "name": "Openable",
+      "fields": [
+        { "name": "open", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "open",
+          "handler": "open",
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear something creak open." }
+          ]
+        },
+        {
+          "verb": "close",
+          "handler": "close",
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear something thud shut." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "container",
+      "name": "Container",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 10 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "portable",
+      "name": "Portable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "take",
+          "handler": "take",
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}." }
+          ]
+        },
+        {
+          "verb": "drop",
+          "handler": "drop",
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
+            { "sense": "audible", "priority": 3, "text": "You hear something hit the floor." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lockable",
+      "name": "Lockable",
+      "fields": [
+        { "name": "keyRef", "type": "ref", "default": null }
+      ],
+      "affordances": [
+        {
+          "verb": "unlock",
+          "handler": "unlock",
+          "signals": [
+            { "sense": "visual", "priority": 3, "text": "{agent} unlocks the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear a click." }
+          ]
+        },
+        {
+          "verb": "lock",
+          "handler": "lock",
+          "signals": [
+            { "sense": "visual", "priority": 3, "text": "{agent} locks the {target}." },
+            { "sense": "audible", "priority": 5, "text": "You hear a click." }
+          ]
+        }
+      ]
+    }
+  ]
+}

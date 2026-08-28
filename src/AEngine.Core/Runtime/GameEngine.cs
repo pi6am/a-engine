@@ -1,23 +1,31 @@
 using AEngine.Core.Actions;
 using AEngine.Core.Modules;
+using AEngine.Core.Policies;
+using AEngine.Core.Signals;
 
 namespace AEngine.Core.Runtime;
 
 /// <summary>
-/// Top-level runtime: world, module registry, handler registry,
-/// scheduler, plus the turn manager and action resolver.
+/// Top-level runtime: world, module registry, handler registry, policy
+/// registry, signal bus, scheduler, plus the turn manager and action
+/// resolver.
 /// </summary>
 public sealed class GameEngine
 {
     public World.World World { get; }
     public ModuleRegistry ModuleRegistry { get; }
     public HandlerRegistry HandlerRegistry { get; }
+    public PolicyRegistry PolicyRegistry { get; }
+    public SignalBus SignalBus { get; }
     public Scheduler Scheduler { get; }
     public TurnManager TurnManager { get; }
     public ActionResolver ActionResolver { get; }
 
     /// <summary>Config surface for future real-time support; stage 1 is turn-based only.</summary>
     public TimeMode TimeMode { get; set; } = TimeMode.TurnBased;
+
+    /// <summary>Randomness source for built-in policies; settable (seed it in tests).</summary>
+    public Random Random { get; set; } = new();
 
     /// <summary>
     /// Lock guarding world access. The REPL (via <see cref="TurnManager"/>) and
@@ -31,17 +39,20 @@ public sealed class GameEngine
         World = new World.World();
         ModuleRegistry = new ModuleRegistry();
         HandlerRegistry = new HandlerRegistry();
+        PolicyRegistry = new PolicyRegistry();
+        SignalBus = new SignalBus(World, ModuleRegistry);
         Scheduler = new Scheduler();
         ActionResolver = new ActionResolver(World, ModuleRegistry);
         TurnManager = new TurnManager(this);
     }
 
-    /// <summary>Create an engine with the built-in handlers registered.</summary>
+    /// <summary>Create an engine with the built-in handlers and policies registered.</summary>
     public static GameEngine CreateWithBuiltinHandlers()
     {
         var engine = new GameEngine();
         foreach (var handler in BuiltinHandlers.All())
             engine.HandlerRegistry.Register(handler);
+        engine.PolicyRegistry.Register(new RandomPolicy());
         return engine;
     }
 }

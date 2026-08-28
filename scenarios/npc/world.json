@@ -1,0 +1,88 @@
+{
+  "name": "npc",
+  "world": [
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "description": "A warm kitchen smelling of fresh bread. A wooden door leads north to the dining hall.",
+      "modules": ["room"],
+      "children": [
+        {
+          "id": "player",
+          "name": "you",
+          "description": "Just yourself, as always.",
+          "modules": ["agent"]
+        },
+        {
+          "id": "door_kitchen_side",
+          "name": "wooden door",
+          "description": "A plain wooden door leading north.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": { "stateRef": "door_state", "direction": "north", "to": "dining_hall" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dining_hall",
+      "name": "Dining Hall",
+      "description": "A long dining hall with a heavy oak table. A wooden door leads south to the kitchen.",
+      "modules": ["room"],
+      "children": [
+        {
+          "id": "cook",
+          "name": "the old cook",
+          "description": "A grizzled old cook, forever bustling about.",
+          "modules": [
+            { "module": "agent", "overrides": { "policy": "random" } }
+          ]
+        },
+        {
+          "id": "door_hall_side",
+          "name": "wooden door",
+          "description": "A plain wooden door leading south.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": { "stateRef": "door_state", "direction": "south", "to": "kitchen" }
+            }
+          ]
+        },
+        {
+          "id": "cupboard",
+          "name": "cupboard",
+          "description": "A tall pantry cupboard.",
+          "modules": [
+            "container",
+            { "module": "openable", "overrides": { "open": false } }
+          ],
+          "children": [
+            {
+              "id": "knife",
+              "name": "carving knife",
+              "description": "A well-honed carving knife.",
+              "modules": ["portable"]
+            }
+          ]
+        },
+        {
+          "id": "bread",
+          "name": "loaf of bread",
+          "description": "A crusty loaf of bread.",
+          "modules": ["portable"]
+        }
+      ]
+    },
+    {
+      "id": "door_state",
+      "name": "shared door state",
+      "description": "The shared state of the door between the kitchen and the dining hall.",
+      "modules": [
+        { "module": "doorstate", "overrides": { "open": false, "locked": false } }
+      ]
+    }
+  ]
+}

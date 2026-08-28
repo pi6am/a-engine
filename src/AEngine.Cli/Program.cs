@@ -1,9 +1,10 @@
 using AEngine.Core.Runtime;
 using AEngine.Core.Scenarios;
+using AEngine.Core.Signals;
 using AEngine.DebugServer;
 
-// CLI entry point: loads the MVP scenario and runs a menu-driven,
-// turn-based REPL.
+// CLI entry point: loads a scenario (scenarios/mvp by default, or e.g.
+// scenarios/npc for the NPC demo) and runs a menu-driven, turn-based REPL.
 // Usage: AEngine.Cli [scenarioDir] [--debug-api[=PORT]] [--debug-port N]
 // The debug API is off by default; it is an unauthenticated loopback-only
 // REST endpoint for inspecting and mutating the world while the game runs.
@@ -81,6 +82,14 @@ while (true)
     Console.WriteLine(look.Message);
     Console.WriteLine();
 
+    // sensory signals from other agents' actions (e.g. NPCs)
+    foreach (var signal in engine.SignalBus.Drain(player.Id))
+    {
+        Console.WriteLine(signal.Sense == SignalSense.Visual
+            ? $"You see: {signal.Text}"
+            : $"You hear: {signal.Text}");
+    }
+
     var actions = engine.ActionResolver.Resolve(player);
     for (var i = 0; i < actions.Count; i++)
         Console.WriteLine($"  {i + 1}. {actions[i].Label}");
@@ -108,8 +117,24 @@ while (true)
         continue;
     }
 
-    var result = engine.TurnManager.PerformAction(player, actions[choice - 1]);
+    var action = actions[choice - 1];
+    string? text = null;
+    if (action.Prompt is not null)
+    {
+        // prompted verbs (e.g. say) take a free-text argument
+        Console.Write(action.Prompt + " ");
+        text = Console.ReadLine();
+        if (text is null) // EOF
+        {
+            Console.WriteLine();
+            Console.WriteLine("Goodbye.");
+            return 0;
+        }
+    }
+
+    var result = engine.TurnManager.PerformAction(player, action, text);
     Console.WriteLine(result.Message);
+    engine.TurnManager.RunNpcTurns();
 }
 
 static string? FindScenarioDir(string relative)

@@ -10,6 +10,7 @@ handlers. Built in stages; stage 1 (core + MVP scenario) is complete.
 dotnet build          # build the solution (a-engine.slnx, .NET 10 XML format)
 dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (menu-driven)
+dotnet run --project src/AEngine.Cli -- scenarios/npc   # play the NPC demo scenario
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
 cd client && npm install && npm run dev   # debug web client (needs the CLI with --debug-api)
 ```
@@ -20,11 +21,12 @@ not retarget to net8.0 without installing its runtime.
 ## Layout
 
 ```
-src/AEngine.Core/         # engine: World/, Modules/, Actions/, Runtime/, Scenarios/
+src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
 src/AEngine.Cli/          # menu-driven console REPL
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: modules.json + world.json
+scenarios/npc/            # NPC demo: kitchen/dining hall, random-policy cook, signals
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 ```
 
@@ -41,14 +43,42 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   (recursive), `MoveObject` (cycle-checked), `AddModule`, `RemoveModule`,
   `SetAttribute`, `SetFieldOverride`. All are safe to call mid-game.
 - **Modules** — composable, data-driven types (`scenarios/mvp/modules.json`):
-  `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler}] }`.
-  Field types: `string | int | bool | ref`. Field resolution: per-object override →
-  module default. `ModuleRegistry` supports register/update/unregister at runtime.
+  `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler,
+  prompt?, signals?}] }`. Field types: `string | int | bool | ref`. Field
+  resolution: per-object override → module default. `ModuleRegistry` supports
+  register/update/unregister at runtime. An affordance's optional `prompt`
+  marks the verb as taking a free-text argument (surfaced to the handler as
+  `ActionContext.Args["text"]`); its optional `signals` list declares the
+  sensory signals emitted on success.
 - **Actions** — module affordances name a `handler` **string id**, resolved through
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
-  seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory.
-  `ActionResolver` enumerates the actions currently available to an agent as
-  structured `(verb, target, label, handlerId)` entries, filtered by world state.
+  seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,
+  say. `ActionResolver` enumerates the actions currently available to an agent as
+  structured `(verb, target, label, handlerId, moduleId, prompt?)` entries,
+  filtered by world state.
+- **Signals** — ephemeral sensory observations (`SignalSense.Visual | Audible`)
+  delivered by `SignalBus` on `GameEngine` into per-agent in-memory queues
+  (`Emit`/`Drain`/`Peek`). After a successful action, `TurnManager.PerformAction`
+  looks up the affordance's signal specs and each observing agent (any object
+  with the `agent` module except the actor) receives the single highest-priority
+  receivable signal (ties: first listed); texts format `{agent}`/`{target}`/
+  `{arg}` placeholders. Propagation: same room → all senses; one portal away →
+  a sense passes only if the portal **side in the origin room** transmits it
+  (`portal` fields `transmitVisual`/`transmitAudio`: `always | whenOpen | never`,
+  defaults `whenOpen`/`always`; `whenOpen` reads the shared doorstate via that
+  side's own `stateRef`); farther rooms get nothing. One-way propagation (e.g.
+  a one-way mirror) is pure data on the two sides.
+- **Policies & NPC turns** — agents with `agent.policy != "player"` are
+  autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
+  actions; policies resolve by string id through `PolicyRegistry` (replaceable
+  at runtime — the LLM-policy seam, mirroring `HandlerRegistry`). The built-in
+  `random` policy picks uniformly via `GameEngine.Random` (settable; seed it in
+  tests) and supplies canned phrases for `say`. `TurnManager.RunNpcTurns()`
+  runs an async-ready pipeline per NPC: start the selection and skip the turn →
+  skip while the task is in flight → when complete, re-resolve and execute only
+  if the chosen `(verb, targetId)` is still available (stale choices are
+  discarded). The CLI calls `RunNpcTurns()` after each player action and prints
+  the player's drained signals as `You see: …`/`You hear: …` lines.
 - **Runtime** — `GameEngine` ties everything together; `TurnManager` is turn-based;
   `Scheduler` is a wake-up queue for long-running actions; `TimeMode`
   (`TurnBased`/`RealTime`) is settable but real-time is not yet implemented.
@@ -105,10 +135,12 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   outcomes into narration, and guided world expansion for *open* scenarios.
   Seams: `HandlerRegistry` id indirection; `ActionResolver` already returns
   structured data suitable for an LLM prompt. No LLM code exists yet.
-- **Autonomous agents** — the `agent` module exists, but agents are only
-  player-controlled today. Planned: AI-driven agents (monsters, agenda-driven
-  NPCs) acting through the same affordances; inherently multi-player capable
-  (multiple players controlling different agents).
+- **Autonomous agents** — partially implemented: NPCs with
+  `agent.policy != "player"` act through the same affordances via
+  `IAgentPolicy` (built-in: `random`); see "Policies & NPC turns" above.
+  Planned: LLM-driven and perception-driven policies (the random policy
+  ignores signals), agenda-driven NPCs, multi-player (multiple players
+  controlling different agents).
 - **Real-time mode** — `TimeMode.RealTime` is a config stub. Planned: short turns
   with auto-pass, suitable for simultaneous multi-player action.
 - **Custom conflict/skill handlers** — e.g. lockpicking resolved by an RPG
@@ -116,3 +148,5 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `HandlerRegistry` and wired from data.
 - **Long-running actions** — `Scheduler` exists but nothing schedules multi-turn
   actions yet.
+- **Signals in the debug web client** — a `GET /api/signals?agentId=` peek
+  endpoint + panel would slot in (`SignalBus.Peek` already exists).

@@ -3,7 +3,7 @@ using AEngine.Core.World;
 
 namespace AEngine.Core.Actions;
 
-/// <summary>Built-in MVP handlers: look, go, open, close, take, drop, unlock, lock, inventory.</summary>
+/// <summary>Built-in handlers: look, go, open, close, take, drop, unlock, lock, inventory, say.</summary>
 public static class BuiltinHandlers
 {
     public static IEnumerable<IActionHandler> All() =>
@@ -17,6 +17,7 @@ public static class BuiltinHandlers
         new UnlockHandler(),
         new LockHandler(),
         new InventoryHandler(),
+        new SayHandler(),
     ];
 
     private sealed class LookHandler : IActionHandler
@@ -207,6 +208,17 @@ public static class BuiltinHandlers
             return ActionResult.Ok(items.Count == 0
                 ? "You are carrying nothing."
                 : "You are carrying: " + string.Join(", ", items.Select(i => i.Name)));
+        }
+    }
+
+    private sealed class SayHandler : IActionHandler
+    {
+        public string Id => "say";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var text = ctx.Args.TryGetValue("text", out var t) ? t : "";
+            return ActionResult.Ok($"You say: \"{text}\"");
         }
     }
 }
