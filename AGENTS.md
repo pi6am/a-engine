@@ -10,7 +10,7 @@ stage (player free-text planning + LLM-driven NPC policy) are complete.
 ```bash
 dotnet build          # build the solution (a-engine.slnx, .NET 10 XML format)
 dotnet test           # run all xUnit tests
-dotnet run --project src/AEngine.Cli   # play the MVP scenario (menu-driven)
+dotnet run --project src/AEngine.Cli   # play the MVP scenario (text-first REPL)
 dotnet run --project src/AEngine.Cli -- scenarios/npc   # play the NPC demo scenario
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
 dotnet run --project src/AEngine.Cli -- --llm-endpoint http://127.0.0.1:5001 --llm-model NAME   # LLM planning
@@ -24,7 +24,7 @@ not retarget to net8.0 without installing its runtime.
 
 ```
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
-src/AEngine.Cli/          # menu-driven console REPL (optional LLM free-text planning)
+src/AEngine.Cli/          # text-first console REPL (slash commands, optional LLM free-text planning)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
 src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)

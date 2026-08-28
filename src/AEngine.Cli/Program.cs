@@ -1,3 +1,4 @@
+using AEngine.Cli;
 using AEngine.Core.Actions;
 using AEngine.Core.Runtime;
 using AEngine.Core.Scenarios;
@@ -6,15 +7,17 @@ using AEngine.DebugServer;
 using AEngine.Llm;
 
 // CLI entry point: loads a scenario (scenarios/mvp by default, or e.g.
-// scenarios/npc for the NPC demo) and runs a menu-driven, turn-based REPL.
+// scenarios/npc for the NPC demo) and runs a text-first, turn-based REPL.
 // Usage: AEngine.Cli [scenarioDir] [--debug-api[=PORT]] [--debug-port N]
 //        [--llm-endpoint URL] [--llm-model NAME] [--llm-api-key KEY]
-// The debug API is off by default; it is an unauthenticated loopback-only
-// REST endpoint for inspecting and mutating the world while the game runs.
-// With an LLM endpoint configured (or AENGINE_LLM_ENDPOINT/MODEL/API_KEY
-// set), non-numeric free text is sent to the LLM as a planning request:
-// the extracted plan is printed and executed stepwise. Menu numbers keep
-// working either way.
+// The action list is shown on demand via the /actions slash command;
+// slash commands (see SlashCommandRegistry) are meta actions that never
+// consume a turn. The debug API is off by default; it is an
+// unauthenticated loopback-only REST endpoint for inspecting and mutating
+// the world while the game runs. With an LLM endpoint configured (or
+// AENGINE_LLM_ENDPOINT/MODEL/API_KEY set), non-numeric free text is sent
+// to the LLM as a planning request: the extracted plan is printed and
+// executed stepwise. Action numbers keep working either way.
 
 const int defaultDebugPort = 5050;
 
@@ -114,12 +117,29 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
     planner = new LlmPlanner(llmClient, engine);
     engine.PolicyRegistry.Register(new LlmPolicy(planner));
     Console.WriteLine($"LLM planning enabled ({llmOptions.BaseUrl}, model '{llmOptions.Model}').");
-    Console.WriteLine("Type a menu number, free text, or 'quit'.");
 }
-else
+
+// Slash commands are meta actions: they never consume a turn.
+var slash = new SlashCommandRegistry();
+slash.Register("actions", [], "List the actions currently available to you", _ =>
 {
-    Console.WriteLine("Type a menu number (or 'quit') and press Enter.");
-}
+    var list = engine.ActionResolver.Resolve(player);
+    for (var i = 0; i < list.Count; i++)
+        Console.WriteLine($"  {i + 1}. {list[i].Label}");
+    return false;
+});
+slash.Register("help", [], "List the slash commands", _ =>
+{
+    slash.PrintHelp();
+    Console.WriteLine("Anything else you type is an in-world action" +
+        (planner is null ? " number (see /actions)." : " (free text or a number from /actions)."));
+    return false;
+});
+slash.Register("quit", ["exit"], "Leave the game", _ => true);
+
+Console.WriteLine(planner is null
+    ? "Type /actions to see what you can do, /help for commands."
+    : "Describe what you want to do; /actions lists commands, /help for meta commands.");
 
 using var debugServer = debugApi ? new DebugServer(engine, debugPort) : null;
 if (debugServer is not null)
@@ -143,10 +163,6 @@ while (true)
             : $"You hear: {signal.Text}");
     }
 
-    var actions = engine.ActionResolver.Resolve(player);
-    for (var i = 0; i < actions.Count; i++)
-        Console.WriteLine($"  {i + 1}. {actions[i].Label}");
-    Console.WriteLine("  0. Quit");
     Console.Write("> ");
 
     var input = Console.ReadLine();
@@ -157,18 +173,24 @@ while (true)
         return 0;
     }
     input = input.Trim();
-    if (input.Equals("quit", StringComparison.OrdinalIgnoreCase) ||
-        input.Equals("q", StringComparison.OrdinalIgnoreCase) ||
-        input == "0")
+    if (input.Length == 0)
+        continue;
+
+    if (SlashCommandRegistry.IsSlashCommand(input))
     {
-        Console.WriteLine("Goodbye.");
-        return 0;
+        if (slash.Dispatch(input))
+        {
+            Console.WriteLine("Goodbye.");
+            return 0;
+        }
+        continue; // meta command: no turn consumed
     }
+
     if (!int.TryParse(input, out var choice))
     {
         if (planner is null)
         {
-            Console.WriteLine("Invalid choice.");
+            Console.WriteLine("I didn't understand that. Try /actions to see what you can do.");
             continue;
         }
         // free text -> LLM plan -> stepwise execution (NPC turns after each step)
@@ -204,6 +226,8 @@ while (true)
             Console.WriteLine("Plan stopped.");
         continue;
     }
+    // numeric selection from the current action list (see /actions)
+    var actions = engine.ActionResolver.Resolve(player);
     if (choice < 1 || choice > actions.Count)
     {
         Console.WriteLine("Invalid choice.");
