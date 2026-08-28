@@ -55,7 +55,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   handler as `ActionContext.Args["text"]`); its optional `signals` list
   declares the sensory signals emitted on success; its optional `duration`
   (seconds/turns, default 1) is how long the action takes — the actor is
-  busy for that many turns.
+  busy for that many turns. Handlers may override the duration dynamically
+  via `ActionResult.Duration` — `say` scales with the length of the speech
+  (1s + 0.05s/char, so a 60-char sentence takes ~4s).
 - **Actions** — module affordances name a `handler` **string id**, resolved through
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
   seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,

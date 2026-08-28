@@ -219,12 +219,17 @@ public static class BuiltinHandlers
 
     private sealed class SayHandler : IActionHandler
     {
+        // speaking takes time proportional to the words: base 1s plus a
+        // per-character factor (a 60-char sentence takes about 4s)
+        public const double SecondsPerChar = 0.05;
+
         public string Id => "say";
 
         public ActionResult Execute(ActionContext ctx)
         {
             var text = ctx.Args.TryGetValue("text", out var t) ? t : "";
-            return ActionResult.Ok($"You say: \"{text}\"");
+            var duration = 1 + (int)(text.Length * SecondsPerChar);
+            return ActionResult.Ok($"You say: \"{text}\"", duration);
         }
     }
 

@@ -45,8 +45,9 @@ public sealed class TurnManager
     /// Execute an action for an agent. Noop results (the intended end
     /// state already held) consume no turn and emit no signals; failures
     /// still take time (the attempt happened). Turn-consuming actions mark
-    /// the agent busy for the affordance's duration. In turn-based mode
-    /// the turn then advances; in real-time mode time advances via
+    /// the agent busy for the affordance's duration (or the handler's
+    /// dynamic override, e.g. say scales with text length). In turn-based
+    /// mode the turn then advances; in real-time mode time advances via
     /// <see cref="Tick"/>.
     /// </summary>
     public ActionResult PerformAction(WorldObject agent, AvailableAction action, string? text = null)
@@ -63,7 +64,7 @@ public sealed class TurnManager
                 return result;
             if (result.Success)
                 EmitSignals(agent, action, text, departureRoomId);
-            _busyUntil[agent.Id] = Turn + DurationOf(action);
+            _busyUntil[agent.Id] = Turn + (result.Duration ?? DurationOf(action));
             if (_engine.TimeMode == TimeMode.TurnBased)
                 AdvanceTurn();
             return result;
@@ -202,6 +203,10 @@ public sealed class TurnManager
                 : _engine.ModuleRegistry.ResolveString(c, "portal", "to") == departureRoomId));
         return new Signals.TraversalContext(departureRoomId, arrivalRoomId, target, entrySide);
     }
+
+    /// <summary>The turn until which the agent is busy with its current action (0 = free). For tooling/tests.</summary>
+    public int BusyUntilTurn(string agentId) =>
+        _busyUntil.TryGetValue(agentId, out var until) ? until : 0;
 
     private bool IsBusy(string agentId) =>
         _busyUntil.TryGetValue(agentId, out var until) && Turn < until;

@@ -34,7 +34,14 @@ public sealed record ActionResult(ActionOutcome Outcome, string Message)
     /// <summary>True only when the action actually changed the world.</summary>
     public bool Success => Outcome == ActionOutcome.Success;
 
-    public static ActionResult Ok(string message) => new(ActionOutcome.Success, message);
+    /// <summary>
+    /// Dynamic duration override (seconds/turns), e.g. say scales with the
+    /// length of the speech. Null = the affordance's declared duration.
+    /// </summary>
+    public int? Duration { get; init; }
+
+    public static ActionResult Ok(string message, int? duration = null) =>
+        new(ActionOutcome.Success, message) { Duration = duration };
     public static ActionResult Noop(string message) => new(ActionOutcome.Noop, message);
     public static ActionResult Fail(string message) => new(ActionOutcome.Failure, message);
 }

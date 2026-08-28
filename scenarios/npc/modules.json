@@ -53,6 +53,7 @@
         {
           "verb": "go",
           "handler": "go",
+          "duration": 3,
           "signals": [
             { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
             { "sense": "audible", "priority": 5, "scope": "departure", "text": "{agent} leaving through the {exitPortal}." },
@@ -63,6 +64,7 @@
         {
           "verb": "open",
           "handler": "open",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
             { "sense": "audible", "priority": 5, "text": "the sound of wood sliding on wood." }
@@ -71,6 +73,7 @@
         {
           "verb": "close",
           "handler": "close",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
             { "sense": "audible", "priority": 5, "text": "a door thudding shut." }
@@ -97,6 +100,7 @@
         {
           "verb": "open",
           "handler": "open",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
             { "sense": "audible", "priority": 5, "text": "something creaking open." }
@@ -105,6 +109,7 @@
         {
           "verb": "close",
           "handler": "close",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
             { "sense": "audible", "priority": 5, "text": "something thudding shut." }
@@ -128,6 +133,7 @@
         {
           "verb": "take",
           "handler": "take",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}." }
           ]
@@ -135,6 +141,7 @@
         {
           "verb": "drop",
           "handler": "drop",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
             { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
@@ -152,6 +159,7 @@
         {
           "verb": "unlock",
           "handler": "unlock",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 3, "text": "{agent} unlocks the {target}." },
             { "sense": "audible", "priority": 5, "text": "a click." }
@@ -160,6 +168,7 @@
         {
           "verb": "lock",
           "handler": "lock",
+          "duration": 2,
           "signals": [
             { "sense": "visual", "priority": 3, "text": "{agent} locks the {target}." },
             { "sense": "audible", "priority": 5, "text": "a click." }

@@ -46,6 +46,17 @@ public class LlmPolicyTests
             engine.TurnManager.RunNpcTurns();
     }
 
+    // the scenario's action durations leave the cook busy for a turn or two
+    // after acting; in turn-based mode only performed actions advance the
+    // turn, so the player waits to let time pass
+    private static void PassTurns(GameEngine engine, int count)
+    {
+        var player = engine.World.GetObject("player");
+        var wait = engine.ActionResolver.Resolve(player).First(a => a.Verb == "wait");
+        for (var i = 0; i < count; i++)
+            engine.TurnManager.PerformAction(player, wait);
+    }
+
     [Fact]
     public void Cook_ExecutesCannedPlan_AcrossTurns()
     {
@@ -61,11 +72,13 @@ public class LlmPolicyTests
         RunTurns(engine, 2);
         Assert.Equal("cook", engine.World.GetObject("bread").Parent);
 
+        PassTurns(engine, 2); // ride out the take's busy turns
         RunTurns(engine, 2);
         Assert.True(engine.ModuleRegistry.ResolveBool(
             engine.World.GetObject("cupboard"), "openable", "open"));
 
         // "Take the carving knife" only became available after the cupboard opened
+        PassTurns(engine, 2);
         RunTurns(engine, 2);
         Assert.Equal("cook", engine.World.GetObject("knife").Parent);
 
@@ -93,11 +106,12 @@ public class LlmPolicyTests
         var cook = engine.World.GetObject("cook");
         Assert.True(engine.TurnManager.Execute(cook, "close", "cupboard").Success);
 
+        PassTurns(engine, 2); // ride out the open's busy turns
         RunTurns(engine, 2); // stale step discarded (cook passes)
         Assert.Equal("cupboard", engine.World.GetObject("knife").Parent);
 
         // a fresh plan was requested (second canned response) and executed
-        RunTurns(engine, 3);
+        RunTurns(engine, 2);
         Assert.Equal("cook", engine.World.GetObject("bread").Parent);
         Assert.Equal(0, llm.Remaining);
     }

@@ -84,4 +84,21 @@ public class RealTimeTests
         engine.TurnManager.RunNpcTurns(); // executes it
         Assert.True(engine.TurnManager.Turn > turnAfterAction + 1);
     }
+
+    [Fact]
+    public void Say_DurationScalesWithTextLength()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var bob = engine.World.GetObject("bob");
+        var say = TestWorlds.Find(engine, "bob", "say");
+
+        Assert.True(engine.TurnManager.PerformAction(bob, say, "hi").Success);
+        Assert.Equal(1, engine.TurnManager.BusyUntilTurn("bob")); // base: 1 turn
+
+        // 100 chars: 1 + (int)(100 * 0.05) = 6 turns busy
+        var turn = engine.TurnManager.Turn;
+        Assert.True(engine.TurnManager.PerformAction(bob, say, new string('x', 100)).Success);
+        Assert.Equal(turn + 6, engine.TurnManager.BusyUntilTurn("bob"));
+    }
 }
+
