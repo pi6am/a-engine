@@ -67,6 +67,11 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   already holds are **noops** (no turn consumed, no signals, not a failure —
   plan executors skip over them), wrong-state/missing-key attempts are failures
   (turn consumed). `look` exits show `open`/`closed` only (never "locked").
+  `Perception` (Core/Actions) is the shared observable-rendering helper used by
+  `look`, `open`, and the LLM context builder: openables get ` (closed)` /
+  ` (open)` annotations and an open container's contents list as separate
+  entries ("You see: desk drawer (open), brass key (in desk drawer)"); `open`
+  reports contents ("… There is a brass key inside.").
 - **Signals** — ephemeral sensory observations (`SignalSense.Visual | Audible`)
   delivered by `SignalBus` on `GameEngine` into per-agent in-memory queues
   (`Emit`/`Drain`/`Peek`). After a successful action, `TurnManager.PerformAction`

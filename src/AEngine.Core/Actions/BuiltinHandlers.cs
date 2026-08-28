@@ -32,11 +32,11 @@ public static class BuiltinHandlers
             if (room.Description.Length > 0)
                 sb.AppendLine(room.Description);
 
-            var here = ctx.World.ChildrenOf(room.Id)
-                .Where(c => c.Id != ctx.Agent.Id && !c.HasModule("portal"))
-                .ToList();
-            if (here.Count > 0)
-                sb.AppendLine("You see: " + string.Join(", ", here.Select(c => c.Name)));
+            // openables report their state; open containers' contents list
+            // as separate entries ("brass key (in desk drawer)")
+            var items = Perception.DescribeRoomContents(ctx.World, ctx.Modules, room, ctx.Agent.Id);
+            if (items.Count > 0)
+                sb.AppendLine("You see: " + string.Join(", ", items));
 
             var exits = ctx.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
             if (exits.Count > 0)
@@ -94,7 +94,11 @@ public static class BuiltinHandlers
             if (HandlerState.IsOpen(ctx, target))
                 return ActionResult.Noop($"The {target.Name} is already open.");
             HandlerState.SetOpen(ctx, target, true);
-            return ActionResult.Ok($"You open the {target.Name}.");
+            var message = $"You open the {target.Name}.";
+            // report what's inside a freshly opened container
+            if (target.HasModule("container"))
+                message += " " + Perception.ContentsSentence(ctx.World, target);
+            return ActionResult.Ok(message);
         }
     }
 

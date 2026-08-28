@@ -1,4 +1,5 @@
 using System.Text;
+using AEngine.Core.Actions;
 using AEngine.Core.Runtime;
 using AEngine.Core.World;
 
@@ -28,23 +29,12 @@ public sealed class AgentContextBuilder
             if (room.Description.Length > 0)
                 sb.AppendLine(room.Description);
 
-            var here = _engine.World.ChildrenOf(room.Id)
-                .Where(c => c.Id != agent.Id && !c.HasModule("portal"))
-                .ToList();
-            if (here.Count > 0)
-                sb.AppendLine("You see: " + string.Join(", ", here.Select(c => c.Name)));
-
-            // contents of open containers are visible; closed ones hide theirs
-            foreach (var container in here.Where(c => c.HasModule("container")))
-            {
-                if (!IsOpen(container))
-                    continue;
-                var contents = _engine.World.ChildrenOf(container.Id).ToList();
-                sb.AppendLine(contents.Count == 0
-                    ? $"The {container.Name} (open) is empty."
-                    : $"The {container.Name} (open) contains: " +
-                      string.Join(", ", contents.Select(c => c.Name)));
-            }
+            // same rendering as look: state annotations, open containers'
+            // contents listed as separate entries
+            var visible = Perception.DescribeRoomContents(
+                _engine.World, _engine.ModuleRegistry, room, agent.Id);
+            if (visible.Count > 0)
+                sb.AppendLine("You see: " + string.Join(", ", visible));
 
             var exits = _engine.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
             if (exits.Count > 0)
@@ -52,7 +42,7 @@ public sealed class AgentContextBuilder
                 var parts = exits.Select(p =>
                 {
                     var dir = _engine.ModuleRegistry.ResolveString(p, "portal", "direction") ?? "somewhere";
-                    var state = IsOpen(p) ? "open" : "closed";
+                    var state = Perception.IsOpen(_engine.World, _engine.ModuleRegistry, p) ? "open" : "closed";
                     return $"{dir} ({p.Name}, {state})";
                 });
                 sb.AppendLine("Exits: " + string.Join(", ", parts));
@@ -88,18 +78,5 @@ public sealed class AgentContextBuilder
 
             return sb.ToString().TrimEnd();
         }
-    }
-
-    private bool IsOpen(WorldObject target)
-    {
-        if (target.HasModule("portal"))
-        {
-            var stateRef = _engine.ModuleRegistry.ResolveString(target, "portal", "stateRef");
-            return stateRef is not null && _engine.World.HasObject(stateRef) &&
-                _engine.ModuleRegistry.ResolveBool(
-                    _engine.World.GetObject(stateRef), "doorstate", "open");
-        }
-        return target.HasModule("openable") &&
-            _engine.ModuleRegistry.ResolveBool(target, "openable", "open");
     }
 }

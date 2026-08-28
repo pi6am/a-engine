@@ -16,19 +16,8 @@ internal static class HandlerState
     /// openables. Returns null when the target has no openable state.
     /// </summary>
     public static (WorldObject StateObject, string ModuleId)? GetOpenState(
-        ActionContext ctx, WorldObject target)
-    {
-        if (target.HasModule("portal"))
-        {
-            var stateRef = ctx.Modules.ResolveString(target, "portal", "stateRef");
-            if (stateRef is null || !ctx.World.HasObject(stateRef))
-                return null;
-            return (ctx.World.GetObject(stateRef), "doorstate");
-        }
-        if (target.HasModule("openable"))
-            return (target, "openable");
-        return null;
-    }
+        ActionContext ctx, WorldObject target) =>
+        Perception.GetOpenState(ctx.World, ctx.Modules, target);
 
     public static bool IsOpen(ActionContext ctx, WorldObject target)
     {
