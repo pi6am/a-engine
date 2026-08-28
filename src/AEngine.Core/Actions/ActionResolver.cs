@@ -47,7 +47,7 @@ public sealed class ActionResolver
             .Select(_world.GetObject)
             .ToList();
 
-        // agent's own affordances (look, inventory, say)
+        // agent's own affordances (look, inventory, say, wait)
         AddFromModules(actions, agent, agent, stateFiltered, others);
 
         // things in the room (items, furniture, portals)
@@ -127,6 +127,7 @@ public sealed class ActionResolver
         {
             "look" => target.Id == agent.Id,
             "inventory" => target.Id == agent.Id,
+            "wait" => target.Id == agent.Id,
             "say" => target.Id == agent.Id, // speech comes from your own can_speak
             "take" => !held,
             "drop" => held,
@@ -162,6 +163,7 @@ public sealed class ActionResolver
     {
         "look" => "Look around",
         "inventory" => "Check inventory",
+        "wait" => "Wait",
         "go" => $"Go {_modules.ResolveString(target, "portal", "direction") ?? target.Name}",
         _ => $"{Capitalize(verb)} the {target.Name}",
     };

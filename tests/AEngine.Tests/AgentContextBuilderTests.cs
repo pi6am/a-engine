@@ -8,7 +8,7 @@ namespace AEngine.Tests;
 /// <summary>
 /// AgentContextBuilder shows only public information: closed-container
 /// contents are hidden, exits never reveal lock state, and NPC contexts
-/// carry character/goals plus drained signals.
+/// carry character/goals plus the agent's memory of recent events.
 /// </summary>
 public class AgentContextBuilderTests
 {
@@ -96,12 +96,14 @@ public class AgentContextBuilderTests
         Assert.True(engine.TurnManager.PerformAction(player, say, "Hello, cook!").Success);
 
         var withSignal = builder.BuildContext(cook, npc: true);
-        Assert.Contains("Recent observations:", withSignal);
+        Assert.Contains("Recent observations and actions", withSignal);
         Assert.Contains("Hello, cook!", withSignal);
 
-        // drained: a second context has no observations left
-        var drained = builder.BuildContext(cook, npc: true);
-        Assert.DoesNotContain("Recent observations:", drained);
+        // the pending queue is drained, but the memory persists — later
+        // contexts keep the observation for continuity
+        Assert.Empty(engine.SignalBus.Peek(cook.Id));
+        var recalled = builder.BuildContext(cook, npc: true);
+        Assert.Contains("Hello, cook!", recalled);
     }
 
     [Fact]

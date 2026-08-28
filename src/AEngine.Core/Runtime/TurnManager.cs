@@ -33,6 +33,10 @@ public sealed class TurnManager
         {
             var departureRoomId = agent.Parent;
             var result = Execute(agent, action.HandlerId, action.TargetId, text);
+            // remember your own action and its outcome (a look result is too
+            // verbose to store verbatim)
+            _engine.Memory.Record(agent,
+                action.Verb == "look" ? "You look around." : result.Message);
             if (result.Outcome == ActionOutcome.Noop)
                 return result;
             if (result.Success)

@@ -7,7 +7,9 @@ namespace AEngine.Core.Signals;
 /// Delivers sensory signals to agents. Each successful action may emit
 /// signal specs (declared on the affordance); every other agent that can
 /// perceive the action receives the single highest-priority receivable
-/// signal (ties: first listed) in an ephemeral per-agent queue.
+/// signal (ties: first listed) in an ephemeral per-agent queue; delivered
+    /// signals are also recorded into the observer's
+    /// <see cref="Runtime.AgentMemory"/>.
 ///
 /// Propagation: an observer in the origin room receives all senses; an
 /// observer one portal away receives a sense only if the portal side in
@@ -31,12 +33,14 @@ public sealed class SignalBus
 {
     private readonly World.World _world;
     private readonly ModuleRegistry _modules;
+    private readonly Runtime.AgentMemory _memory;
     private readonly Dictionary<string, Queue<Signal>> _queues = new(StringComparer.Ordinal);
 
-    public SignalBus(World.World world, ModuleRegistry modules)
+    public SignalBus(World.World world, ModuleRegistry modules, Runtime.AgentMemory memory)
     {
         _world = world;
         _modules = modules;
+        _memory = memory;
     }
 
     /// <summary>Format and deliver the given specs for an action performed by <paramref name="actor"/>.</summary>
@@ -65,7 +69,7 @@ public sealed class SignalBus
                 observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg);
             if (best is null)
                 continue;
-            Enqueue(observer.Id, best);
+            Enqueue(observer, best);
         }
     }
 
@@ -127,7 +131,7 @@ public sealed class SignalBus
                 }
             }
             if (best is not null)
-                Enqueue(observer.Id, best);
+                Enqueue(observer, best);
         }
     }
 
@@ -235,11 +239,14 @@ public sealed class SignalBus
             _modules.ResolveBool(_world.GetObject(stateRef), "doorstate", "open");
     }
 
-    private void Enqueue(string observerId, Signal signal)
+    private void Enqueue(WorldObject observer, Signal signal)
     {
-        if (!_queues.TryGetValue(observerId, out var queue))
-            _queues[observerId] = queue = new Queue<Signal>();
+        if (!_queues.TryGetValue(observer.Id, out var queue))
+            _queues[observer.Id] = queue = new Queue<Signal>();
         queue.Enqueue(signal);
+        // observed signals are also remembered, so later plans/conversations
+        // keep continuity even after the pending queue is drained
+        _memory.Record(observer, signal.Text);
     }
 
     private static string Format(

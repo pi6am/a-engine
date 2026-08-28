@@ -11,7 +11,11 @@ namespace AEngine.Llm;
 /// caches the remaining steps, and each subsequent selection pops the next
 /// step matched against the current available actions. A step that no
 /// longer matches (stale world) discards the remainder of the plan; a
-/// fresh plan is requested on the next selection.
+/// fresh plan is requested on the next selection. New observed signals
+/// (anything pending in the agent's signal queue — the queue is drained
+/// into the context each time a plan is made) interrupt the cached plan
+/// and trigger an immediate re-plan, so agents stay responsive to being
+/// spoken to or otherwise interrupted.
 /// </summary>
 public sealed class LlmPolicy : IAgentPolicy
 {
@@ -26,18 +30,24 @@ public sealed class LlmPolicy : IAgentPolicy
         GameEngine engine, WorldObject agent,
         IReadOnlyList<AvailableAction> actions, CancellationToken ct)
     {
+        var interrupted = engine.SignalBus.Peek(agent.Id).Count > 0;
         if (_cachedPlans.TryGetValue(agent.Id, out var steps))
         {
-            if (steps.Count > 0)
+            if (!interrupted)
             {
-                var line = steps.Dequeue();
-                var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);
-                if (match is not null)
-                    return match;
+                if (steps.Count > 0)
+                {
+                    var line = steps.Dequeue();
+                    var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);
+                    if (match is not null)
+                        return match;
+                }
+                // stale plan (or exhausted) — discard the remainder, re-plan next time
+                _cachedPlans.Remove(agent.Id);
+                return null;
             }
-            // stale plan (or exhausted) — discard the remainder, re-plan next time
+            // interrupted: drop the rest of the plan and re-plan now
             _cachedPlans.Remove(agent.Id);
-            return null;
         }
 
         var plan = await _planner.CreatePlanAsync(

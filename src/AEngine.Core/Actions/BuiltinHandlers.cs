@@ -3,7 +3,7 @@ using AEngine.Core.World;
 
 namespace AEngine.Core.Actions;
 
-/// <summary>Built-in handlers: look, go, open, close, take, drop, unlock, lock, inventory, say.</summary>
+/// <summary>Built-in handlers: look, go, open, close, take, drop, unlock, lock, inventory, say, wait.</summary>
 public static class BuiltinHandlers
 {
     public static IEnumerable<IActionHandler> All() =>
@@ -18,6 +18,7 @@ public static class BuiltinHandlers
         new LockHandler(),
         new InventoryHandler(),
         new SayHandler(),
+        new WaitHandler(),
     ];
 
     private sealed class LookHandler : IActionHandler
@@ -225,5 +226,13 @@ public static class BuiltinHandlers
             var text = ctx.Args.TryGetValue("text", out var t) ? t : "";
             return ActionResult.Ok($"You say: \"{text}\"");
         }
+    }
+
+    // waiting just passes the turn; quiet by default (no signal specs)
+    private sealed class WaitHandler : IActionHandler
+    {
+        public string Id => "wait";
+
+        public ActionResult Execute(ActionContext ctx) => ActionResult.Ok("You wait.");
     }
 }

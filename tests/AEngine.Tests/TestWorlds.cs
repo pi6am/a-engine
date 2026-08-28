@@ -15,10 +15,14 @@ internal static class TestWorlds
       { "id": "room", "name": "Room", "fields": [], "affordances": [] },
       {
         "id": "agent", "name": "Agent",
-        "fields": [ { "name": "policy", "type": "string", "default": "player" } ],
+        "fields": [
+          { "name": "policy", "type": "string", "default": "player" },
+          { "name": "memoryLength", "type": "int", "default": 25 }
+        ],
         "affordances": [
           { "verb": "look", "handler": "look" },
-          { "verb": "inventory", "handler": "inventory" }
+          { "verb": "inventory", "handler": "inventory" },
+          { "verb": "wait", "handler": "wait" }
         ]
       },
       {

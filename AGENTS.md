@@ -56,7 +56,7 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
 - **Actions** — module affordances name a `handler` **string id**, resolved through
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
   seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,
-  say. `ActionResolver` enumerates the actions currently available to an agent as
+  say, wait (`wait` just passes the turn; it is quiet — no signals). `ActionResolver` enumerates the actions currently available to an agent as
   structured `(verb, target, label, handlerId, moduleId, prompt?)` entries.
   Listings are filtered by **observable** state: `open`/`close` follow the
   visible open state, take/drop follow held — while `unlock`/`lock` are always
@@ -116,6 +116,14 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   if the chosen `(verb, targetId)` is still available (stale choices are
   discarded). The CLI calls `RunNpcTurns()` after each player action and prints
   the player's drained signals as `You see: …`/`You hear: …` lines.
+- **Agent memory** — `AgentMemory` (Core/Runtime) keeps a bounded per-agent
+  log of recent events: signals the agent observed (recorded by `SignalBus`
+  at delivery) and the results of its own actions (recorded by
+  `TurnManager.PerformAction`; `look` is stored compactly as "You look
+  around."). Capacity is data-driven via the `agent` module's
+  `memoryLength` field (default 25). NPC LLM contexts render it as "Recent
+  observations and actions (oldest first)" for continuity across plans and
+  conversations.
 - **LLM harness** (`src/AEngine.Llm`, no third-party deps) — one machinery
   serves both player free text and NPC decisions. `OpenAiCompatibleClient`
   POSTs `{BaseUrl}/v1/chat/completions` (OpenAI chat schema, optional Bearer
@@ -123,8 +131,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `FakeLlmClient` queues canned responses for tests. `AgentContextBuilder`
   renders the **public** world view only (room, visible items with
   closed-container contents hidden, exits open/closed, inventory, action menu
-  labels; NPC extras: `agent` module `character`/`goals` fields + drained
-  signals). `LlmPlanner` builds the system/user prompts (output contract: one
+  labels; NPC extras: `agent` module `character`/`goals` fields + the
+  agent's memory of recent observations and actions). `LlmPlanner` builds the system/user prompts (output contract: one
   action per line, exactly as listed); `PlanParser` tolerantly strips
   numbering/bullets/prose (keeps lines starting with a known verb);
   `PlanExecutor` matches each line against **currently** available actions
@@ -132,7 +140,11 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   no-match or failure — conditional availability (unlock → open → go) resolves
   at execution time. `LlmPolicy` (id `llm`) asks for a full plan on first
   selection, caches steps, pops them matched against current availability; a
-  stale step discards the plan remainder and re-plans next selection.
+  stale step discards the plan remainder and re-plans next selection. New
+  observed signals (anything pending in the agent's signal queue — it is
+  drained into the context whenever a plan is made) interrupt the cached
+  plan and trigger an immediate re-plan, so agents respond to being spoken
+  to instead of carrying out a stale plan.
 - **Runtime** — `GameEngine` ties everything together; `TurnManager` is turn-based;
   `Scheduler` is a wake-up queue for long-running actions; `TimeMode`
   (`TurnBased`/`RealTime`) is settable but real-time is not yet implemented.

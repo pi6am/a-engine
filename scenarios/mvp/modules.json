@@ -10,10 +10,13 @@
     {
       "id": "agent",
       "name": "Agent",
-      "fields": [],
+      "fields": [
+        { "name": "memoryLength", "type": "int", "default": 25 }
+      ],
       "affordances": [
         { "verb": "look", "handler": "look" },
-        { "verb": "inventory", "handler": "inventory" }
+        { "verb": "inventory", "handler": "inventory" },
+        { "verb": "wait", "handler": "wait" }
       ]
     },
     {

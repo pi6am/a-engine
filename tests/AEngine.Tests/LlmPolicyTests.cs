@@ -117,4 +117,34 @@ public class LlmPolicyTests
         Assert.Contains("Goals:", messages[1].Content);
         Assert.Contains("Available actions", messages[1].Content);
     }
+
+    [Fact]
+    public void NewObservation_InterruptsCachedPlan_AndTriggersReplan()
+    {
+        var llm = new FakeLlmClient();
+        llm.Enqueue("""
+            Take the loaf of bread
+            Open the cupboard
+            """);
+        llm.Enqueue("Say: \"What was that?\"");
+        var engine = NewEngine(llm);
+
+        RunTurns(engine, 2); // cook plans (LLM call 1) and takes the bread
+        Assert.Equal("cook", engine.World.GetObject("bread").Parent);
+
+        RunTurns(engine, 2); // the cached second step pops without an LLM call
+        Assert.Equal(1, llm.Remaining);
+
+        // the guest speaks; the audio crosses the closed kitchen door
+        var player = engine.World.GetObject("player");
+        var say = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
+        Assert.True(engine.TurnManager.PerformAction(player, say, "Hey cook!").Success);
+
+        // the pending observation interrupts the cached plan: the cook
+        // re-plans immediately and the interruption is in the prompt
+        RunTurns(engine, 2);
+        Assert.Equal(0, llm.Remaining);
+        Assert.Contains("Recent observations and actions", llm.LastMessages![1].Content);
+        Assert.Contains("Hey cook!", llm.LastMessages[1].Content);
+    }
 }

@@ -11,7 +11,7 @@ namespace AEngine.Llm;
 /// closed containers hide their contents), exits (open/closed only; lock
 /// state is not observable), the agent's inventory, and the current action
 /// menu labels. For NPCs additionally the agent module's character/goals
-/// fields and the agent's drained signals.
+/// fields and the agent's memory of recent observations and own actions.
 /// </summary>
 public sealed class AgentContextBuilder
 {
@@ -62,12 +62,16 @@ public sealed class AgentContextBuilder
                 if (!string.IsNullOrWhiteSpace(goals))
                     sb.AppendLine($"Goals: {goals}");
 
-                var signals = _engine.SignalBus.Drain(agent.Id);
-                if (signals.Count > 0)
+                // signal delivery already recorded observations into
+                // memory; draining here just marks the pending queue as
+                // seen (it is also LlmPolicy's re-plan interrupt signal)
+                _engine.SignalBus.Drain(agent.Id);
+                var memory = _engine.Memory.Recall(agent.Id);
+                if (memory.Count > 0)
                 {
-                    sb.AppendLine("Recent observations:");
-                    foreach (var signal in signals)
-                        sb.AppendLine($"- {signal.Text}");
+                    sb.AppendLine("Recent observations and actions (oldest first):");
+                    foreach (var entry in memory)
+                        sb.AppendLine($"- {entry}");
                 }
             }
 
