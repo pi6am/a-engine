@@ -9,9 +9,9 @@
       "children": [
         {
           "id": "player",
-          "name": "you",
-          "description": "Just yourself, as always.",
-          "modules": ["agent"]
+          "name": "the guest",
+          "description": "A visitor looking for a meal.",
+          "modules": ["agent", "can_speak"]
         },
         {
           "id": "door_kitchen_side",
@@ -44,7 +44,8 @@
                 "character": "A grizzled old cook who takes pride in his kitchen and mutters to himself while he works.",
                 "goals": "Keep the dining hall stocked: fetch the loaf of bread and the carving knife, and tidy up."
               }
-            }
+            },
+            "can_speak"
           ]
         },
         {

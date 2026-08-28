@@ -17,7 +17,14 @@
       ],
       "affordances": [
         { "verb": "look", "handler": "look" },
-        { "verb": "inventory", "handler": "inventory" },
+        { "verb": "inventory", "handler": "inventory" }
+      ]
+    },
+    {
+      "id": "can_speak",
+      "name": "Can speak",
+      "fields": [],
+      "affordances": [
         {
           "verb": "say",
           "handler": "say",

@@ -41,8 +41,14 @@ public sealed class ActionResolver
         var room = _world.GetObject(agent.Parent);
         var actions = new List<AvailableAction>();
 
-        // agent's own affordances (look, inventory)
-        AddFromModules(actions, agent, agent, stateFiltered);
+        // other agents in the room, for directed-speech entries
+        var others = room.Children
+            .Where(id => id != agent.Id && _world.GetObject(id).HasModule("agent"))
+            .Select(_world.GetObject)
+            .ToList();
+
+        // agent's own affordances (look, inventory, say)
+        AddFromModules(actions, agent, agent, stateFiltered, others);
 
         // things in the room (items, furniture, portals)
         foreach (var childId in room.Children)
@@ -50,25 +56,26 @@ public sealed class ActionResolver
             if (childId == agent.Id)
                 continue;
             var child = _world.GetObject(childId);
-            AddFromModules(actions, agent, child, stateFiltered);
+            AddFromModules(actions, agent, child, stateFiltered, others);
 
             // contents of open containers are reachable too
             if (child.HasModule("container") && IsOpenState(child))
             {
                 foreach (var innerId in child.Children)
-                    AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered);
+                    AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered, others);
             }
         }
 
         // inventory
         foreach (var itemId in agent.Children)
-            AddFromModules(actions, agent, _world.GetObject(itemId), stateFiltered);
+            AddFromModules(actions, agent, _world.GetObject(itemId), stateFiltered, others);
 
         return actions;
     }
 
     private void AddFromModules(
-        List<AvailableAction> actions, WorldObject agent, WorldObject target, bool stateFiltered)
+        List<AvailableAction> actions, WorldObject agent, WorldObject target, bool stateFiltered,
+        IReadOnlyList<WorldObject> others)
     {
         foreach (var attachment in target.Modules)
         {
@@ -78,6 +85,26 @@ public sealed class ActionResolver
             {
                 if (!Applies(affordance.Verb, agent, target, stateFiltered))
                     continue;
+                // speech is parameterized: the label carries a {speech}
+                // placeholder, plus an addressee when several agents are
+                // present ("Say [to the old cook]: {speech}")
+                if (affordance.Verb == "say" && target.Id == agent.Id)
+                {
+                    if (others.Count > 1)
+                    {
+                        foreach (var other in others)
+                            actions.Add(new AvailableAction(
+                                "say", other.Id, $"Say [to {other.Name}]: {{speech}}",
+                                affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                    }
+                    else
+                    {
+                        actions.Add(new AvailableAction(
+                            "say", agent.Id, "Say: {speech}",
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                    }
+                    continue;
+                }
                 var label = LabelFor(affordance.Verb, target);
                 actions.Add(new AvailableAction(
                     affordance.Verb, target.Id, label, affordance.Handler,
@@ -100,6 +127,7 @@ public sealed class ActionResolver
         {
             "look" => target.Id == agent.Id,
             "inventory" => target.Id == agent.Id,
+            "say" => target.Id == agent.Id, // speech comes from your own can_speak
             "take" => !held,
             "drop" => held,
             "open" => HasOpenState(target) && (!stateFiltered || !IsOpenState(target)),
@@ -134,7 +162,6 @@ public sealed class ActionResolver
     {
         "look" => "Look around",
         "inventory" => "Check inventory",
-        "say" => "Say something",
         "go" => $"Go {_modules.ResolveString(target, "portal", "direction") ?? target.Name}",
         _ => $"{Capitalize(verb)} the {target.Name}",
     };

@@ -18,7 +18,13 @@ internal static class TestWorlds
         "fields": [ { "name": "policy", "type": "string", "default": "player" } ],
         "affordances": [
           { "verb": "look", "handler": "look" },
-          { "verb": "inventory", "handler": "inventory" },
+          { "verb": "inventory", "handler": "inventory" }
+        ]
+      },
+      {
+        "id": "can_speak", "name": "Can speak",
+        "fields": [],
+        "affordances": [
           {
             "verb": "say", "handler": "say", "prompt": "Say what?",
             "signals": [
@@ -119,8 +125,10 @@ internal static class TestWorlds
 
         world.CreateObject("alice", "room_a", "Alice");
         world.AddModule("alice", "agent");
+        world.AddModule("alice", "can_speak");
         world.CreateObject("bob", "room_b", "Bob");
         world.AddModule("bob", "agent");
+        world.AddModule("bob", "can_speak");
         world.SetFieldOverride("bob", "agent", "policy", Core.World.World.ToJson("random"));
 
         world.CreateObject("chest", "room_a", "chest");

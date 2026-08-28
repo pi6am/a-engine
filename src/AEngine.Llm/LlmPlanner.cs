@@ -19,7 +19,10 @@ public sealed class LlmPlanner
         no explanations, nothing else. If an action you want is not listed
         (for example because a door is locked), plan the prerequisite steps
         first (take a key, unlock, open) — some actions only appear once
-        earlier steps succeed.
+        earlier steps succeed. Exception: the Say action is parameterized —
+        replace {speech} with the exact words you want to say, in quotes or
+        not, e.g. Say: "Hello there." — and when it appears with [to name],
+        you may keep or drop that part to choose who you address.
         """;
 
     private readonly ILlmClient _client;

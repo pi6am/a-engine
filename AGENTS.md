@@ -72,6 +72,16 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   ` (open)` annotations and an open container's contents list as separate
   entries ("You see: desk drawer (open), brass key (in desk drawer)"); `open`
   reports contents ("… There is a brass key inside.").
+- **Speech** — `say` is an affordance of the `can_speak` module (agents without
+  it can't speak), only ever offered from the agent's own modules. Its label is
+  parameterized: `Say: {speech}`, or `Say [to <name>]: {speech}` per addressee
+  when several other agents are in the room. Plan parsing is generous
+  ("Say [to X]: \"...\"", quotes optional, colon optional); the parsed speech
+  rides `AvailableAction.Text` into `Args["text"]`. Naming is
+  **observer-relative**: every agent is the protagonist of their own perception
+  (`Perception.NameFor` renders self as "you"); scenario data gives agents
+  descriptive names (the player object is "the guest", not "you") so other
+  agents' contexts and signals read correctly.
 - **Signals** — ephemeral sensory observations (`SignalSense.Visual | Audible`)
   delivered by `SignalBus` on `GameEngine` into per-agent in-memory queues
   (`Emit`/`Drain`/`Peek`). After a successful action, `TurnManager.PerformAction`
@@ -185,9 +195,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   endpoint configured, non-numeric input is planned and executed stepwise
   (menu numbers still work). Live verification against a real server (e.g.
   KoboldCPP) is manual. Still planned: narration (LLM translating outcomes
-  into prose), guided world expansion for *open* scenarios, `say` with
-  LLM-chosen phrases inside plans (plans can't yet carry free-text args),
-  provider config files, streaming, retries/backoff.
+  into prose), guided world expansion for *open* scenarios, speech variants
+  (Shout/Whisper — need per-spec propagation overrides; say already carries
+  free-text speech), provider config files, streaming, retries/backoff.
 - **Autonomous agents** — partially implemented: NPCs with
   `agent.policy != "player"` act through the same affordances via
   `IAgentPolicy` (built-ins: `random` in Core, `llm` in AEngine.Llm); see

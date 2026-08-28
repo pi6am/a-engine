@@ -62,12 +62,13 @@ public static class Perception
     public static List<string> DescribeRoomContents(
         World.World world, ModuleRegistry modules, WorldObject room, string agentId)
     {
+        var observer = world.GetObject(agentId);
         var items = new List<string>();
         foreach (var child in world.ChildrenOf(room.Id))
         {
             if (child.Id == agentId || child.HasModule("portal"))
                 continue;
-            items.Add(child.Name + Annotate(world, modules, child));
+            items.Add(NameFor(observer, child) + Annotate(world, modules, child));
             if (child.HasModule("container") && IsOpen(world, modules, child))
             {
                 foreach (var inner in world.ChildrenOf(child.Id))
@@ -97,4 +98,15 @@ public static class Perception
         name.StartsWith("an ", StringComparison.OrdinalIgnoreCase)
             ? name
             : "a " + name;
+
+    /// <summary>
+    /// Observer-relative naming: every agent is the protagonist of their
+    /// own perception, so an agent's own name renders as "you"; everyone
+    /// else renders by their descriptive name. (Today the self case is
+    /// mostly latent — agents are excluded from their own room listings
+    /// and receive no self-signals — but any observer-relative rendering
+    /// should go through this.)
+    /// </summary>
+    public static string NameFor(WorldObject observer, WorldObject obj) =>
+        obj.Id == observer.Id ? "you" : obj.Name;
 }

@@ -71,4 +71,17 @@ public class PerceptionTests
         var result = engine.TurnManager.Execute(engine.World.GetObject("player"), "open", "desk");
         Assert.Equal("You open the desk drawer. It's empty.", result.Message);
     }
+
+    [Fact]
+    public void Names_AreObserverRelative()
+    {
+        var engine = NewEngine();
+        var player = engine.World.GetObject("player");
+        var desk = engine.World.GetObject("desk");
+
+        // every agent is the protagonist of their own perception: self is
+        // "you", others keep their descriptive name
+        Assert.Equal("you", Core.Actions.Perception.NameFor(player, player));
+        Assert.Equal("desk drawer", Core.Actions.Perception.NameFor(player, desk));
+    }
 }

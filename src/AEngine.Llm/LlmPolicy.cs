@@ -41,7 +41,9 @@ public sealed class LlmPolicy : IAgentPolicy
         }
 
         var plan = await _planner.CreatePlanAsync(
-            agent, "Choose your next actions.", npc: true, ct).ConfigureAwait(false);
+            agent,
+            "Choose your next actions. If someone spoke to you recently, consider responding with Say.",
+            npc: true, ct).ConfigureAwait(false);
         if (plan.Count == 0)
             return null;
         if (plan.Count > 1)

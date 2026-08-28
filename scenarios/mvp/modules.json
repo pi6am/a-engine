@@ -17,6 +17,22 @@
       ]
     },
     {
+      "id": "can_speak",
+      "name": "Can speak",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "say",
+          "handler": "say",
+          "prompt": "Say what?",
+          "signals": [
+            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
+            { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
+          ]
+        }
+      ]
+    },
+    {
       "id": "portal",
       "name": "Portal (door side)",
       "fields": [

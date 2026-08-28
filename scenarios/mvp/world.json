@@ -9,9 +9,9 @@
       "children": [
         {
           "id": "player",
-          "name": "you",
-          "description": "Just yourself, as always.",
-          "modules": ["agent"]
+          "name": "the guest",
+          "description": "A visitor passing through.",
+          "modules": ["agent", "can_speak"]
         },
         {
           "id": "desk",
