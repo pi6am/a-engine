@@ -82,3 +82,24 @@ public sealed class RandomPolicy : IAgentPolicy
         return Task.FromResult<AvailableAction?>(pick);
     }
 }
+
+/// <summary>
+/// Built-in "auto" policy: delegates to the "llm" policy when one is
+/// registered (the CLI registers it when --llm-endpoint is set), else to
+/// "random". Resolved per call, so registering/replacing the llm policy
+/// at runtime takes effect immediately.
+/// </summary>
+public sealed class AutoPolicy : IAgentPolicy
+{
+    public string Id => "auto";
+
+    public Task<AvailableAction?> ChooseActionAsync(
+        GameEngine engine, WorldObject agent,
+        IReadOnlyList<AvailableAction> actions, CancellationToken ct)
+    {
+        var inner = engine.PolicyRegistry.Get(
+            engine.PolicyRegistry.Has("llm") ? "llm" : "random");
+        return inner.ChooseActionAsync(engine, agent, actions, ct);
+    }
+}
+

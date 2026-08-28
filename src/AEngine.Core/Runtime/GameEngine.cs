@@ -55,6 +55,7 @@ public sealed class GameEngine
         foreach (var handler in BuiltinHandlers.All())
             engine.HandlerRegistry.Register(handler);
         engine.PolicyRegistry.Register(new RandomPolicy());
+        engine.PolicyRegistry.Register(new AutoPolicy());
         return engine;
     }
 }

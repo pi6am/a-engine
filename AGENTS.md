@@ -120,7 +120,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   actions; policies resolve by string id through `PolicyRegistry` (replaceable
   at runtime — the LLM-policy seam, mirroring `HandlerRegistry`). The built-in
   `random` policy picks uniformly via `GameEngine.Random` (settable; seed it in
-  tests) and supplies canned phrases for `say`. `TurnManager.RunNpcTurns()`
+  tests) and supplies canned phrases for `say`. The built-in `auto` policy
+  delegates to `llm` when that policy is registered (the CLI registers it when
+  `--llm-endpoint` is set) and to `random` otherwise. `TurnManager.RunNpcTurns()`
   runs an async-ready pipeline per NPC: start the selection and skip the turn →
   skip while the task is in flight → when complete, re-resolve and execute only
   if the chosen `(verb, targetId)` is still available (stale choices are
@@ -230,8 +232,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   free-text speech), provider config files, streaming, retries/backoff.
 - **Autonomous agents** — partially implemented: NPCs with
   `agent.policy != "player"` act through the same affordances via
-  `IAgentPolicy` (built-ins: `random` in Core, `llm` in AEngine.Llm); see
-  "Policies & NPC turns" above. Planned: perception-driven policies (the
+  `IAgentPolicy` (built-ins: `random` and `auto` — llm-if-available-else-random —
+  in Core, `llm` in AEngine.Llm); see "Policies & NPC turns" above. Planned:
+  perception-driven policies (the
   random policy ignores signals), agenda-driven NPCs, multi-player (multiple
   players controlling different agents).
 - **Real-time mode** — implemented in the CLI: `--real-time` (or the

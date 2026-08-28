@@ -2,6 +2,7 @@ using AEngine.Core.Actions;
 using AEngine.Core.Policies;
 using AEngine.Core.Runtime;
 using AEngine.Core.World;
+using AEngine.Llm;
 
 namespace AEngine.Tests;
 
@@ -146,6 +147,34 @@ public class PolicyTests
         slow.Complete(look);
         engine.TurnManager.RunNpcTurns();
         Assert.Equal(turn0 + 1, engine.TurnManager.Turn);
+    }
+
+    [Fact]
+    public void AutoPolicy_FallsBackToRandom_WhenNoLlmRegistered()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.Random = new Random(0);
+        engine.World.SetFieldOverride("bob", "agent", "policy", World.ToJson("auto"));
+
+        var turn0 = engine.TurnManager.Turn;
+        engine.TurnManager.RunNpcTurns(); // start selection
+        engine.TurnManager.RunNpcTurns(); // execute
+        Assert.True(engine.TurnManager.Turn > turn0);
+    }
+
+    [Fact]
+    public void AutoPolicy_UsesLlm_WhenRegistered()
+    {
+        var llm = new FakeLlmClient();
+        llm.Enqueue("Take the pear");
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.PolicyRegistry.Register(new LlmPolicy(new LlmPlanner(llm, engine)));
+        engine.World.SetFieldOverride("bob", "agent", "policy", World.ToJson("auto"));
+
+        engine.TurnManager.RunNpcTurns(); // start selection (LLM call)
+        engine.TurnManager.RunNpcTurns(); // execute
+        Assert.Equal("bob", engine.World.GetObject("pear").Parent);
+        Assert.Equal(0, llm.Remaining);
     }
 
     /// <summary>A test policy that always returns the same pre-baked action.</summary>
