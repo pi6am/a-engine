@@ -132,6 +132,7 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
 }
 
 // Slash commands are meta actions: they never consume a turn.
+var console = new ConsolePrompt();
 CancellationTokenSource? realTimeCts = null;
 var slash = new SlashCommandRegistry();
 slash.Register("actions", [], "List the actions currently available to you", _ =>
@@ -189,9 +190,7 @@ while (true)
             : $"You hear: {signal.Text}");
     }
 
-    Console.Write("> ");
-
-    var input = Console.ReadLine();
+    var input = console.ReadLine("> ");
     if (input is null) // EOF (e.g. piped input exhausted) — exit cleanly
     {
         realTimeCts?.Cancel();
@@ -279,8 +278,7 @@ while (true)
     if (action.Prompt is not null)
     {
         // prompted verbs (e.g. say) take a free-text argument
-        Console.Write(action.Prompt + " ");
-        text = Console.ReadLine();
+        text = console.ReadLine(action.Prompt + " ");
         if (text is null) // EOF
         {
             realTimeCts?.Cancel();
@@ -349,14 +347,14 @@ async Task RealTimeLoop(CancellationToken ct)
             }
             if (signals.Count == 0)
                 continue;
-            // MUD-style: observed events appear above the input line
             var sb = new StringBuilder();
             foreach (var signal in signals)
-                sb.Append('\n')
-                  .Append(signal.Sense == SignalSense.Visual ? "You see: " : "You hear: ")
-                  .Append(signal.Text);
-            sb.Append("\n> ");
-            Console.Write(sb);
+                sb.AppendLine(signal.Sense == SignalSense.Visual
+                    ? $"You see: {signal.Text}"
+                    : $"You hear: {signal.Text}");
+            // prints above the input line; the prompt and partial input
+            // are redrawn underneath
+            console.WriteAbove(sb.ToString().TrimEnd());
         }
     }
     catch (OperationCanceledException)
