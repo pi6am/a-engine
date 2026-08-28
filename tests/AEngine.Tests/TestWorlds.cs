@@ -20,9 +20,9 @@ internal static class TestWorlds
           { "name": "memoryLength", "type": "int", "default": 25 }
         ],
         "affordances": [
-          { "verb": "look", "handler": "look" },
+          { "verb": "look", "handler": "look", "repeatBackoff": true },
           { "verb": "inventory", "handler": "inventory" },
-          { "verb": "wait", "handler": "wait" }
+          { "verb": "wait", "handler": "wait", "repeatBackoff": true }
         ]
       },
       {

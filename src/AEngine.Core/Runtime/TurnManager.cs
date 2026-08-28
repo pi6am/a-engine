@@ -24,6 +24,13 @@ public sealed class TurnManager
     /// <summary>Per-agent busy-until turn, from action durations.</summary>
     private readonly Dictionary<string, int> _busyUntil = new(StringComparer.Ordinal);
 
+    /// <summary>Per-agent consecutive-repeat streaks for backoff affordances (idle verbs).</summary>
+    private readonly Dictionary<string, (string Verb, int Count)> _repeatStreaks =
+        new(StringComparer.Ordinal);
+
+    /// <summary>Agents whose current busy spell is idle backoff — interruptible by new signals.</summary>
+    private readonly HashSet<string> _busyInterruptible = new(StringComparer.Ordinal);
+
     public TurnManager(GameEngine engine) => _engine = engine;
 
     public int Turn { get; private set; }
@@ -64,7 +71,7 @@ public sealed class TurnManager
                 return result;
             if (result.Success)
                 EmitSignals(agent, action, text, departureRoomId);
-            _busyUntil[agent.Id] = Turn + (result.Duration ?? DurationOf(action));
+            _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, result);
             if (_engine.TimeMode == TimeMode.TurnBased)
                 AdvanceTurn();
             return result;
@@ -114,7 +121,7 @@ public sealed class TurnManager
                     continue;
                 }
                 var agent = _engine.World.GetObject(agentId);
-                if (IsBusy(agentId))
+                if (IsBusy(agentId) && !CanWake(agentId))
                     continue; // still performing a long-running action
                 var policyId = _engine.ModuleRegistry.ResolveString(agent, "agent", "policy")!;
                 if (!_engine.PolicyRegistry.Has(policyId))
@@ -211,14 +218,46 @@ public sealed class TurnManager
     private bool IsBusy(string agentId) =>
         _busyUntil.TryGetValue(agentId, out var until) && Turn < until;
 
-    /// <summary>The action's data-driven duration (affordance "duration", default 1).</summary>
-    private int DurationOf(AvailableAction action)
+    /// <summary>
+    /// Idle backoff (repeated look/wait) is interruptible: a busy agent
+    /// whose busy spell came from a backoff affordance wakes early when
+    /// new signals are pending, so idling agents stay reactive.
+    /// </summary>
+    private bool CanWake(string agentId) =>
+        _busyInterruptible.Contains(agentId) && _engine.SignalBus.Peek(agentId).Count > 0;
+
+    /// <summary>
+    /// The action's effective duration: the handler's dynamic override
+    /// (e.g. say) or the affordance's declared duration. Idle verbs
+    /// (affordances with repeatBackoff) back off exponentially on
+    /// consecutive repeats — 1x, 2x, 4x, ... up to repeatBackoffCap — and
+    /// mark the busy spell interruptible; any other verb resets the
+    /// streak.
+    /// </summary>
+    private int BusyDuration(WorldObject agent, AvailableAction action, ActionResult result)
+    {
+        var affordance = LookupAffordance(action);
+        var baseDuration = result.Duration ?? affordance?.Duration ?? 1;
+        if (affordance is not { RepeatBackoff: true })
+        {
+            _repeatStreaks.Remove(agent.Id);
+            _busyInterruptible.Remove(agent.Id);
+            return baseDuration;
+        }
+        _repeatStreaks.TryGetValue(agent.Id, out var streak);
+        var count = streak.Verb == action.Verb ? streak.Count + 1 : 1;
+        _repeatStreaks[agent.Id] = (action.Verb, count);
+        _busyInterruptible.Add(agent.Id);
+        var scaled = baseDuration << Math.Min(count - 1, 10); // 1x, 2x, 4x, ...
+        return Math.Min(scaled, Math.Max(baseDuration, affordance.RepeatBackoffCap));
+    }
+
+    private Modules.AffordanceDefinition? LookupAffordance(AvailableAction action)
     {
         if (!_engine.ModuleRegistry.Has(action.ModuleId))
-            return 1;
-        var affordance = _engine.ModuleRegistry.Get(action.ModuleId).Affordances
+            return null;
+        return _engine.ModuleRegistry.Get(action.ModuleId).Affordances
             .FirstOrDefault(a => a.Verb == action.Verb);
-        return affordance?.Duration ?? 1;
     }
 
     private void AdvanceTurn()

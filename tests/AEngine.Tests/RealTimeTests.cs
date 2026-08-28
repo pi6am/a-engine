@@ -100,5 +100,121 @@ public class RealTimeTests
         Assert.True(engine.TurnManager.PerformAction(bob, say, new string('x', 100)).Success);
         Assert.Equal(turn + 6, engine.TurnManager.BusyUntilTurn("bob"));
     }
+
+    [Fact]
+    public void RepeatBackoff_DoublesConsecutiveIdleDuration_AndResetsOnOtherVerb()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var bob = engine.World.GetObject("bob");
+        var look = TestWorlds.Find(engine, "bob", "look");
+        var inventory = TestWorlds.Find(engine, "bob", "inventory");
+
+        // consecutive looks back off: 1x, 2x, 4x (busy until 1, 3, 6)
+        engine.TurnManager.PerformAction(bob, look); // turn 0
+        Assert.Equal(1, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.PerformAction(bob, look); // turn 1
+        Assert.Equal(3, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.PerformAction(bob, look); // turn 2
+        Assert.Equal(6, engine.TurnManager.BusyUntilTurn("bob"));
+
+        // a different verb resets the streak (inventory has no backoff: 1 turn)
+        engine.TurnManager.PerformAction(bob, inventory); // turn 3
+        Assert.Equal(4, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.PerformAction(bob, look); // turn 4 — back to 1x
+        Assert.Equal(5, engine.TurnManager.BusyUntilTurn("bob"));
+    }
+
+    [Fact]
+    public void RepeatBackoff_CapsAtConfiguredMaximum()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.ModuleRegistry.LoadJson("""
+        [
+          {
+            "id": "agent", "name": "Agent",
+            "fields": [
+              { "name": "policy", "type": "string", "default": "player" },
+              { "name": "memoryLength", "type": "int", "default": 25 }
+            ],
+            "affordances": [
+              { "verb": "look", "handler": "look", "repeatBackoff": true, "repeatBackoffCap": 4 },
+              { "verb": "inventory", "handler": "inventory" },
+              { "verb": "wait", "handler": "wait", "repeatBackoff": true }
+            ]
+          }
+        ]
+        """);
+        var bob = engine.World.GetObject("bob");
+        var look = TestWorlds.Find(engine, "bob", "look");
+
+        engine.TurnManager.PerformAction(bob, look); // turn 0 -> busy 1 (1x)
+        engine.TurnManager.PerformAction(bob, look); // turn 1 -> busy 3 (2x)
+        engine.TurnManager.PerformAction(bob, look); // turn 2 -> busy 6 (4x)
+        Assert.Equal(6, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.PerformAction(bob, look); // turn 3 -> 8x capped to 4: busy 7
+        Assert.Equal(7, engine.TurnManager.BusyUntilTurn("bob"));
+    }
+
+    [Fact]
+    public void IdleBusyAgent_WakesOnNewSignal()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.Random = new Random(0);
+        var bob = engine.World.GetObject("bob");
+        var alice = engine.World.GetObject("alice");
+
+        // Bob idles: three consecutive looks back off to 4 turns busy
+        var look = TestWorlds.Find(engine, "bob", "look");
+        engine.TurnManager.PerformAction(bob, look);
+        engine.TurnManager.PerformAction(bob, look);
+        engine.TurnManager.PerformAction(bob, look); // busy until turn 6 (turn now 3)
+        Assert.Equal(6, engine.TurnManager.BusyUntilTurn("bob"));
+
+        // Alice speaks; the audio crosses the closed door to Bob
+        var say = TestWorlds.Find(engine, "alice", "say");
+        Assert.True(engine.TurnManager.PerformAction(alice, say, "wake up!").Success);
+
+        // idle backoff is interruptible: Bob's selection starts despite being busy
+        var turnBefore = engine.TurnManager.Turn;
+        engine.TurnManager.RunNpcTurns(); // wakes: starts Bob's selection
+        engine.TurnManager.RunNpcTurns(); // executes it
+        Assert.True(engine.TurnManager.Turn > turnBefore);
+    }
+
+    [Fact]
+    public void NonIdleBusyAgent_DoesNotWakeOnSignal()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.Random = new Random(0);
+        // make "take" a long-running action (5 turns, no backoff)
+        engine.ModuleRegistry.LoadJson("""
+        [
+          {
+            "id": "portable", "name": "Portable", "fields": [],
+            "affordances": [
+              {
+                "verb": "take", "handler": "take", "duration": 5,
+                "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}." } ]
+              },
+              { "verb": "drop", "handler": "drop" }
+            ]
+          }
+        ]
+        """);
+        var bob = engine.World.GetObject("bob");
+        var alice = engine.World.GetObject("alice");
+
+        var take = TestWorlds.Find(engine, "bob", "take", "pear");
+        Assert.True(engine.TurnManager.PerformAction(bob, take).Success); // busy until turn 5
+
+        // Alice speaks; Bob observes it but is doing real work, not idling
+        var say = TestWorlds.Find(engine, "alice", "say");
+        Assert.True(engine.TurnManager.PerformAction(alice, say, "hurry up!").Success);
+        var turn = engine.TurnManager.Turn;
+
+        engine.TurnManager.RunNpcTurns();
+        engine.TurnManager.RunNpcTurns();
+        Assert.Equal(turn, engine.TurnManager.Turn); // Bob stayed busy
+    }
 }
 

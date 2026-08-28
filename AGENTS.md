@@ -48,8 +48,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `SetAttribute`, `SetFieldOverride`. All are safe to call mid-game.
 - **Modules** — composable, data-driven types (`scenarios/mvp/modules.json`):
   `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler,
-  prompt?, signals?, duration?}] }`. Field types: `string | int | bool | ref`.
-  Field resolution: per-object override → module default. `ModuleRegistry`
+  prompt?, signals?, duration?, repeatBackoff?, repeatBackoffCap?}] }`. Field
+  types: `string | int | bool | ref`. Field resolution: per-object override →
+  module default. `ModuleRegistry`
   supports register/update/unregister at runtime. An affordance's optional
   `prompt` marks the verb as taking a free-text argument (surfaced to the
   handler as `ActionContext.Args["text"]`); its optional `signals` list
@@ -57,7 +58,11 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   (seconds/turns, default 1) is how long the action takes — the actor is
   busy for that many turns. Handlers may override the duration dynamically
   via `ActionResult.Duration` — `say` scales with the length of the speech
-  (1s + 0.05s/char, so a 60-char sentence takes ~4s).
+  (1s + 0.05s/char, so a 60-char sentence takes ~4s). Idle verbs (look,
+  wait) carry `repeatBackoff`: each consecutive repeat doubles the duration
+  up to `repeatBackoffCap` (default 30), so a bored agent idles instead of
+  thrashing its policy with LLM calls; the backoff is interruptible — a
+  busy-but-idle agent wakes early when new signals arrive.
 - **Actions** — module affordances name a `handler` **string id**, resolved through
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
   seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,

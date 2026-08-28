@@ -130,6 +130,8 @@ public class LlmPolicyTests
         Assert.Contains("grizzled old cook", messages[1].Content);
         Assert.Contains("Goals:", messages[1].Content);
         Assert.Contains("Available actions", messages[1].Content);
+        // the request nudges idle agents to Wait instead of polling with Look
+        Assert.Contains("prefer Wait", messages[1].Content);
     }
 
     [Fact]

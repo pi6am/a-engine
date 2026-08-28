@@ -24,7 +24,11 @@ public sealed class FieldDefinition
 /// optional prompt (the verb takes a free-text argument), and optional
 /// signal specs emitted to observers on success. Duration is how long the
 /// action takes, in seconds/turns (default 1) — in real-time mode an
-/// agent is busy for that many ticks after performing it.
+/// agent is busy for that many ticks after performing it. RepeatBackoff
+/// marks an idle verb (look, wait): each consecutive repeat doubles the
+/// duration up to RepeatBackoffCap, so a bored agent idles instead of
+/// thrashing its policy — and the backoff is interruptible by new
+/// observed signals, so the agent stays reactive.
 /// </summary>
 public sealed class AffordanceDefinition
 {
@@ -33,6 +37,8 @@ public sealed class AffordanceDefinition
     public string? Requires { get; init; }
     public string? Prompt { get; init; }
     public int Duration { get; init; } = 1;
+    public bool RepeatBackoff { get; init; }
+    public int RepeatBackoffCap { get; init; } = 30;
     public List<Signals.SignalSpec> Signals { get; init; } = [];
 }
 
