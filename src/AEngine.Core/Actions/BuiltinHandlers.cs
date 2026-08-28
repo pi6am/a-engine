@@ -126,6 +126,8 @@ public static class BuiltinHandlers
         public ActionResult Execute(ActionContext ctx)
         {
             var target = ctx.Target ?? throw new InvalidOperationException("take requires a target.");
+            if (target.Id == ctx.Agent.Id)
+                return ActionResult.Fail("You can't take yourself.");
             if (!target.HasModule("portable"))
                 return ActionResult.Fail($"You can't take the {target.Name}.");
             if (HandlerState.IsHeld(ctx, target))

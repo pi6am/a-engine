@@ -130,8 +130,8 @@ public sealed class ActionResolver
             "inventory" => target.Id == agent.Id,
             "wait" => target.Id == agent.Id,
             "say" => target.Id == agent.Id, // speech comes from your own can_speak
-            "take" => !held,
-            "drop" => held,
+            "take" => !held && target.Id != agent.Id, // can't pick up yourself
+            "drop" => held && target.Id != agent.Id,
             "open" => HasOpenState(target) && (!stateFiltered || !IsOpenState(target)),
             "close" => HasOpenState(target) && (!stateFiltered || IsOpenState(target)),
             "unlock" => HasLockState(target),

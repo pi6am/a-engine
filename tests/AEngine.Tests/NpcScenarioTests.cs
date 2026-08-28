@@ -52,12 +52,12 @@ public class NpcScenarioTests
     }
 
     [Fact]
-    public void ScenarioLoads_CookHasRandomPolicy()
+    public void ScenarioLoads_CookHasAutoPolicy()
     {
         var engine = NewEngine(1);
         var cook = engine.World.GetObject("cook");
         Assert.Equal("dining_hall", cook.Parent);
-        Assert.Equal("random",
+        Assert.Equal("auto",
             engine.ModuleRegistry.ResolveString(cook, "agent", "policy"));
         Assert.Equal("player",
             engine.ModuleRegistry.ResolveString(

@@ -338,23 +338,35 @@ async Task RealTimeLoop(CancellationToken ct)
     {
         while (await timer.WaitForNextTickAsync(ct))
         {
-            IReadOnlyList<Signal> signals;
-            lock (engine.SyncRoot)
+            try
             {
-                engine.TurnManager.Tick();
-                engine.TurnManager.RunNpcTurns();
-                signals = engine.SignalBus.Drain(player.Id);
+                IReadOnlyList<Signal> signals;
+                lock (engine.SyncRoot)
+                {
+                    engine.TurnManager.Tick();
+                    engine.TurnManager.RunNpcTurns();
+                    signals = engine.SignalBus.Drain(player.Id);
+                }
+                if (signals.Count == 0)
+                    continue;
+                var sb = new StringBuilder();
+                foreach (var signal in signals)
+                    sb.AppendLine(signal.Sense == SignalSense.Visual
+                        ? $"You see: {signal.Text}"
+                        : $"You hear: {signal.Text}");
+                // prints above the input line; the prompt and partial input
+                // are redrawn underneath
+                console.WriteAbove(sb.ToString().TrimEnd());
             }
-            if (signals.Count == 0)
-                continue;
-            var sb = new StringBuilder();
-            foreach (var signal in signals)
-                sb.AppendLine(signal.Sense == SignalSense.Visual
-                    ? $"You see: {signal.Text}"
-                    : $"You hear: {signal.Text}");
-            // prints above the input line; the prompt and partial input
-            // are redrawn underneath
-            console.WriteAbove(sb.ToString().TrimEnd());
+            catch (OperationCanceledException)
+            {
+                throw; // mode switched or shutting down — handled outside
+            }
+            catch (Exception ex)
+            {
+                // a faulty handler/policy must not kill the world clock
+                console.WriteAbove($"[engine error] {ex.Message}");
+            }
         }
     }
     catch (OperationCanceledException)
