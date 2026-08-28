@@ -114,4 +114,26 @@ public class AgentContextBuilderTests
         var context = new AgentContextBuilder(engine).BuildContext(player, npc: false);
         Assert.DoesNotContain("Goals:", context);
     }
+
+    [Fact]
+    public void PlayerContext_IncludesMemory_WithoutDrainingSignals()
+    {
+        var engine = NewEngine("npc");
+        var player = engine.World.GetObject("player");
+        var cook = engine.World.GetObject("cook");
+        var builder = new AgentContextBuilder(engine);
+
+        // the cook speaks; the audio crosses the closed door to the player
+        var say = engine.ActionResolver.Resolve(cook).First(a => a.Verb == "say");
+        Assert.True(engine.TurnManager.PerformAction(cook, say, "Dinner soon!").Success);
+        Assert.Single(engine.SignalBus.Peek(player.Id));
+
+        // the observation is remembered and shown when planning...
+        var context = builder.BuildContext(player, npc: false);
+        Assert.Contains("Recent observations and actions", context);
+        Assert.Contains("Dinner soon!", context);
+        // ...but building a context does not drain the player's pending
+        // queue — the console display path (REPL / real-time ticker) owns it
+        Assert.Single(engine.SignalBus.Peek(player.Id));
+    }
 }

@@ -1,3 +1,4 @@
+using System.Text;
 using AEngine.Cli;
 using AEngine.Core.Actions;
 using AEngine.Core.Runtime;
@@ -7,9 +8,10 @@ using AEngine.DebugServer;
 using AEngine.Llm;
 
 // CLI entry point: loads a scenario (scenarios/mvp by default, or e.g.
-// scenarios/npc for the NPC demo) and runs a text-first, turn-based REPL.
+// scenarios/npc for the NPC demo) and runs a text-first REPL.
 // Usage: AEngine.Cli [scenarioDir] [--debug-api[=PORT]] [--debug-port N]
 //        [--llm-endpoint URL] [--llm-model NAME] [--llm-api-key KEY]
+//        [--real-time]
 // The action list is shown on demand via the /actions slash command;
 // slash commands (see SlashCommandRegistry) are meta actions that never
 // consume a turn. The debug API is off by default; it is an
@@ -19,12 +21,16 @@ using AEngine.Llm;
 // With an LLM endpoint configured (or AENGINE_LLM_ENDPOINT/MODEL/API_KEY
 // set), other non-numeric free text is sent to the LLM as a planning
 // request: the extracted plan is printed and executed stepwise. Action
-// numbers keep working either way.
+// numbers keep working either way. In real-time mode (--real-time or
+// /realtime) a per-second timer advances the world on its own — NPCs act
+// without waiting for the player, and signals the player observes print
+// as they happen; /turnbased switches back.
 
 const int defaultDebugPort = 5050;
 
 var debugApi = false;
 var debugPort = defaultDebugPort;
+var realTime = false;
 string? scenarioDirArg = null;
 string? llmEndpoint = Environment.GetEnvironmentVariable("AENGINE_LLM_ENDPOINT");
 string? llmModel = Environment.GetEnvironmentVariable("AENGINE_LLM_MODEL");
@@ -50,6 +56,10 @@ for (var i = 0; i < args.Length; i++)
     {
         debugApi = true;
         debugPort = int.Parse(arg["--debug-port=".Length..]);
+    }
+    else if (arg == "--real-time")
+    {
+        realTime = true;
     }
     else if (arg.StartsWith("--llm-endpoint=", StringComparison.Ordinal))
     {
@@ -122,6 +132,7 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
 }
 
 // Slash commands are meta actions: they never consume a turn.
+CancellationTokenSource? realTimeCts = null;
 var slash = new SlashCommandRegistry();
 slash.Register("actions", [], "List the actions currently available to you", _ =>
 {
@@ -137,6 +148,16 @@ slash.Register("help", [], "List the slash commands", _ =>
         (planner is null ? " number (see /actions)." : " (free text or a number from /actions)."));
     return false;
 });
+slash.Register("realtime", ["rt"], "Real-time mode: the world advances on its own", _ =>
+{
+    SetTimeMode(TimeMode.RealTime);
+    return false;
+});
+slash.Register("turnbased", ["tb"], "Turn-based mode: time advances with your actions", _ =>
+{
+    SetTimeMode(TimeMode.TurnBased);
+    return false;
+});
 slash.Register("quit", ["exit"], "Leave the game", _ => true);
 
 Console.WriteLine(planner is null
@@ -149,6 +170,9 @@ if (debugServer is not null)
     debugServer.Start();
     Console.WriteLine($"Debug API listening on {debugServer.Address}");
 }
+
+if (realTime)
+    SetTimeMode(TimeMode.RealTime);
 
 while (true)
 {
@@ -170,6 +194,7 @@ while (true)
     var input = Console.ReadLine();
     if (input is null) // EOF (e.g. piped input exhausted) — exit cleanly
     {
+        realTimeCts?.Cancel();
         Console.WriteLine();
         Console.WriteLine("Goodbye.");
         return 0;
@@ -182,6 +207,7 @@ while (true)
     {
         if (slash.Dispatch(input))
         {
+            realTimeCts?.Cancel();
             Console.WriteLine("Goodbye.");
             return 0;
         }
@@ -198,7 +224,8 @@ while (true)
         {
             var directResult = engine.TurnManager.PerformAction(player, direct);
             Console.WriteLine(directResult.Message);
-            engine.TurnManager.RunNpcTurns();
+            if (engine.TimeMode == TimeMode.TurnBased)
+                engine.TurnManager.RunNpcTurns(); // real-time: the timer drives NPCs
             continue;
         }
         if (planner is null)
@@ -229,8 +256,8 @@ while (true)
         var steps = executor.Execute(plan, step =>
         {
             Console.WriteLine(step.Result!.Message);
-            if (step.Result.Success)
-                engine.TurnManager.RunNpcTurns();
+            if (step.Result.Success && engine.TimeMode == TimeMode.TurnBased)
+                engine.TurnManager.RunNpcTurns(); // real-time: the timer drives NPCs
         });
         var lastStep = steps[^1];
         if (lastStep.Note is not null)
@@ -256,6 +283,7 @@ while (true)
         text = Console.ReadLine();
         if (text is null) // EOF
         {
+            realTimeCts?.Cancel();
             Console.WriteLine();
             Console.WriteLine("Goodbye.");
             return 0;
@@ -264,7 +292,8 @@ while (true)
 
     var result = engine.TurnManager.PerformAction(player, action, text);
     Console.WriteLine(result.Message);
-    engine.TurnManager.RunNpcTurns();
+    if (engine.TimeMode == TimeMode.TurnBased)
+        engine.TurnManager.RunNpcTurns(); // real-time: the timer drives NPCs
 }
 
 static string? FindScenarioDir(string relative)
@@ -280,4 +309,58 @@ static string? FindScenarioDir(string relative)
     // fall back to the current working directory
     var cwdCandidate = Path.GetFullPath(relative);
     return File.Exists(Path.Combine(cwdCandidate, "world.json")) ? cwdCandidate : null;
+}
+
+// Switch between turn-based and real-time mode on the fly. Real-time runs
+// a per-second background timer that advances the world and prints the
+// signals the player observes as they happen.
+void SetTimeMode(TimeMode mode)
+{
+    if (mode == engine.TimeMode)
+        return;
+    engine.TimeMode = mode;
+    if (mode == TimeMode.RealTime)
+    {
+        realTimeCts = new CancellationTokenSource();
+        _ = RealTimeLoop(realTimeCts.Token);
+        Console.WriteLine("Real-time mode: the world advances on its own.");
+    }
+    else
+    {
+        realTimeCts?.Cancel();
+        realTimeCts = null;
+        Console.WriteLine("Turn-based mode: time advances with your actions.");
+    }
+}
+
+async Task RealTimeLoop(CancellationToken ct)
+{
+    using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+    try
+    {
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            IReadOnlyList<Signal> signals;
+            lock (engine.SyncRoot)
+            {
+                engine.TurnManager.Tick();
+                engine.TurnManager.RunNpcTurns();
+                signals = engine.SignalBus.Drain(player.Id);
+            }
+            if (signals.Count == 0)
+                continue;
+            // MUD-style: observed events appear above the input line
+            var sb = new StringBuilder();
+            foreach (var signal in signals)
+                sb.Append('\n')
+                  .Append(signal.Sense == SignalSense.Visual ? "You see: " : "You hear: ")
+                  .Append(signal.Text);
+            sb.Append("\n> ");
+            Console.Write(sb);
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        // mode switched or shutting down
+    }
 }

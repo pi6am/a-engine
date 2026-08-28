@@ -22,7 +22,9 @@ public sealed class FieldDefinition
 /// <summary>
 /// An action affordance exposed by a module: verb + handler id, an
 /// optional prompt (the verb takes a free-text argument), and optional
-/// signal specs emitted to observers on success.
+/// signal specs emitted to observers on success. Duration is how long the
+/// action takes, in seconds/turns (default 1) — in real-time mode an
+/// agent is busy for that many ticks after performing it.
 /// </summary>
 public sealed class AffordanceDefinition
 {
@@ -30,6 +32,7 @@ public sealed class AffordanceDefinition
     public required string Handler { get; init; }
     public string? Requires { get; init; }
     public string? Prompt { get; init; }
+    public int Duration { get; init; } = 1;
     public List<Signals.SignalSpec> Signals { get; init; } = [];
 }
 

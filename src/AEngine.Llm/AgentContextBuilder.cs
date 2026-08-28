@@ -10,8 +10,9 @@ namespace AEngine.Llm;
 /// room name/description, visible items (same visibility rules as `look` —
 /// closed containers hide their contents), exits (open/closed only; lock
 /// state is not observable), the agent's inventory, and the current action
-/// menu labels. For NPCs additionally the agent module's character/goals
-/// fields and the agent's memory of recent observations and own actions.
+/// menu labels. NPCs additionally get the agent module's character/goals
+/// fields; every agent's context carries their memory of recent
+/// observations and own actions.
 /// </summary>
 public sealed class AgentContextBuilder
 {
@@ -66,13 +67,19 @@ public sealed class AgentContextBuilder
                 // memory; draining here just marks the pending queue as
                 // seen (it is also LlmPolicy's re-plan interrupt signal)
                 _engine.SignalBus.Drain(agent.Id);
-                var memory = _engine.Memory.Recall(agent.Id);
-                if (memory.Count > 0)
-                {
-                    sb.AppendLine("Recent observations and actions (oldest first):");
-                    foreach (var entry in memory)
-                        sb.AppendLine($"- {entry}");
-                }
+            }
+
+            // memory is shown to players too — displayed signals keep
+            // accumulating here (capped at memoryLength) so plans made
+            // after watching events unfold still know what happened. The
+            // player's pending queue is NOT drained: the console display
+            // path owns it.
+            var memory = _engine.Memory.Recall(agent.Id);
+            if (memory.Count > 0)
+            {
+                sb.AppendLine("Recent observations and actions (oldest first):");
+                foreach (var entry in memory)
+                    sb.AppendLine($"- {entry}");
             }
 
             var actions = _engine.ActionResolver.Resolve(agent);

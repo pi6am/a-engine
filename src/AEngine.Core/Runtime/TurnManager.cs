@@ -4,11 +4,14 @@ using AEngine.Core.World;
 namespace AEngine.Core.Runtime;
 
 /// <summary>
-/// Turn-based turn manager: each performed action advances the turn
-/// counter and flushes due scheduled actions. Successful actions emit
-/// their affordance's sensory signals to observers. RunNpcTurns drives
-/// autonomous agents through their policies via an async-ready
-/// start/skip/validate-execute pipeline.
+/// Turn manager. In turn-based mode each performed action advances the
+/// turn counter and flushes due scheduled actions; in real-time mode the
+/// driver (e.g. the CLI's per-second timer) calls <see cref="Tick"/> to
+/// advance time instead, and actions leave the acting agent busy for
+/// their affordance's data-driven duration (seconds/turns, default 1).
+/// Successful actions emit their affordance's sensory signals to
+/// observers. RunNpcTurns drives autonomous agents through their policies
+/// via an async-ready start/skip/validate-execute pipeline.
 /// </summary>
 public sealed class TurnManager
 {
@@ -18,14 +21,33 @@ public sealed class TurnManager
     private readonly Dictionary<string, Task<AvailableAction?>> _inFlightSelections =
         new(StringComparer.Ordinal);
 
+    /// <summary>Per-agent busy-until turn, from action durations.</summary>
+    private readonly Dictionary<string, int> _busyUntil = new(StringComparer.Ordinal);
+
     public TurnManager(GameEngine engine) => _engine = engine;
 
     public int Turn { get; private set; }
 
     /// <summary>
-    /// Execute an action for an agent and advance the turn. Noop results
-    /// (the intended end state already held) consume no turn and emit no
-    /// signals; failures still consume the turn (the attempt took time).
+    /// Advance one turn and flush due scheduled actions. The real-time
+    /// driver calls this on a wall-clock timer; in turn-based mode the
+    /// turn advances per action instead (see <see cref="PerformAction"/>).
+    /// </summary>
+    public void Tick()
+    {
+        lock (_engine.SyncRoot)
+        {
+            AdvanceTurn();
+        }
+    }
+
+    /// <summary>
+    /// Execute an action for an agent. Noop results (the intended end
+    /// state already held) consume no turn and emit no signals; failures
+    /// still take time (the attempt happened). Turn-consuming actions mark
+    /// the agent busy for the affordance's duration. In turn-based mode
+    /// the turn then advances; in real-time mode time advances via
+    /// <see cref="Tick"/>.
     /// </summary>
     public ActionResult PerformAction(WorldObject agent, AvailableAction action, string? text = null)
     {
@@ -41,7 +63,9 @@ public sealed class TurnManager
                 return result;
             if (result.Success)
                 EmitSignals(agent, action, text, departureRoomId);
-            AdvanceTurn();
+            _busyUntil[agent.Id] = Turn + DurationOf(action);
+            if (_engine.TimeMode == TimeMode.TurnBased)
+                AdvanceTurn();
             return result;
         }
     }
@@ -74,7 +98,8 @@ public sealed class TurnManager
     /// incomplete the agent keeps skipping; once complete, the chosen
     /// (verb, targetId) is re-validated against the current world —
     /// executed if still available, discarded if stale — and the slot
-    /// clears so a fresh selection starts next turn.
+    /// clears so a fresh selection starts next turn. Agents still busy
+    /// with a long-running action (per the affordance's duration) skip.
     /// </summary>
     public void RunNpcTurns()
     {
@@ -88,6 +113,8 @@ public sealed class TurnManager
                     continue;
                 }
                 var agent = _engine.World.GetObject(agentId);
+                if (IsBusy(agentId))
+                    continue; // still performing a long-running action
                 var policyId = _engine.ModuleRegistry.ResolveString(agent, "agent", "policy")!;
                 if (!_engine.PolicyRegistry.Has(policyId))
                     continue;
@@ -174,6 +201,19 @@ public sealed class TurnManager
                 ? _engine.ModuleRegistry.ResolveString(c, "portal", "stateRef") == exitStateRef
                 : _engine.ModuleRegistry.ResolveString(c, "portal", "to") == departureRoomId));
         return new Signals.TraversalContext(departureRoomId, arrivalRoomId, target, entrySide);
+    }
+
+    private bool IsBusy(string agentId) =>
+        _busyUntil.TryGetValue(agentId, out var until) && Turn < until;
+
+    /// <summary>The action's data-driven duration (affordance "duration", default 1).</summary>
+    private int DurationOf(AvailableAction action)
+    {
+        if (!_engine.ModuleRegistry.Has(action.ModuleId))
+            return 1;
+        var affordance = _engine.ModuleRegistry.Get(action.ModuleId).Affordances
+            .FirstOrDefault(a => a.Verb == action.Verb);
+        return affordance?.Duration ?? 1;
     }
 
     private void AdvanceTurn()

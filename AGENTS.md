@@ -24,7 +24,8 @@ not retarget to net8.0 without installing its runtime.
 
 ```
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
-src/AEngine.Cli/          # text-first console REPL (slash commands, optional LLM free-text planning)
+src/AEngine.Cli/          # text-first console REPL (slash commands, optional LLM free-text
+                          # planning, --real-time mode)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
 src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
@@ -47,12 +48,14 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `SetAttribute`, `SetFieldOverride`. All are safe to call mid-game.
 - **Modules** — composable, data-driven types (`scenarios/mvp/modules.json`):
   `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler,
-  prompt?, signals?}] }`. Field types: `string | int | bool | ref`. Field
-  resolution: per-object override → module default. `ModuleRegistry` supports
-  register/update/unregister at runtime. An affordance's optional `prompt`
-  marks the verb as taking a free-text argument (surfaced to the handler as
-  `ActionContext.Args["text"]`); its optional `signals` list declares the
-  sensory signals emitted on success.
+  prompt?, signals?, duration?}] }`. Field types: `string | int | bool | ref`.
+  Field resolution: per-object override → module default. `ModuleRegistry`
+  supports register/update/unregister at runtime. An affordance's optional
+  `prompt` marks the verb as taking a free-text argument (surfaced to the
+  handler as `ActionContext.Args["text"]`); its optional `signals` list
+  declares the sensory signals emitted on success; its optional `duration`
+  (seconds/turns, default 1) is how long the action takes — the actor is
+  busy for that many turns.
 - **Actions** — module affordances name a `handler` **string id**, resolved through
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
   seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,
@@ -145,9 +148,13 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   drained into the context whenever a plan is made) interrupt the cached
   plan and trigger an immediate re-plan, so agents respond to being spoken
   to instead of carrying out a stale plan.
-- **Runtime** — `GameEngine` ties everything together; `TurnManager` is turn-based;
-  `Scheduler` is a wake-up queue for long-running actions; `TimeMode`
-  (`TurnBased`/`RealTime`) is settable but real-time is not yet implemented.
+- **Runtime** — `GameEngine` ties everything together; `TurnManager` runs both
+  time modes: turn-based (each action advances the turn) and real-time (the
+  CLI's per-second timer calls `TurnManager.Tick()`, and NPC turns are driven
+  by the timer instead of player input). Turn-consuming actions leave the
+  actor **busy** for their affordance's data-driven `duration`
+  (seconds/turns, default 1); busy NPCs skip their turns.
+  `Scheduler` is a wake-up queue for long-running actions.
 - **Scenarios** — JSON files defining modules and an initial world tree;
   `ScenarioLoader` composes multiple files in order (later overrides by id).
 - **Debug REST API** — `AEngine.DebugServer.DebugServer` serves the live world
@@ -217,8 +224,16 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   "Policies & NPC turns" above. Planned: perception-driven policies (the
   random policy ignores signals), agenda-driven NPCs, multi-player (multiple
   players controlling different agents).
-- **Real-time mode** — `TimeMode.RealTime` is a config stub. Planned: short turns
-  with auto-pass, suitable for simultaneous multi-player action.
+- **Real-time mode** — implemented in the CLI: `--real-time` (or the
+  `/realtime` slash command; `/turnbased` switches back) runs a per-second
+  background timer that calls `TurnManager.Tick()` and `RunNpcTurns()` and
+  prints the player's observed signals as they happen. Actions do not
+  advance the turn themselves in this mode; the timer does. Observed
+  events accumulate in the player's memory (capped at `memoryLength`), so
+  plans made after watching events still know what happened. Planned:
+  pacing the player's own multi-step plans by action duration (steps
+  currently execute back-to-back), multi-player (several players,
+  different agents).
 - **Custom conflict/skill handlers** — e.g. lockpicking resolved by an RPG
   stats+skills system, pickpocket/combat adjudication; handlers registered into
   `HandlerRegistry` and wired from data.
