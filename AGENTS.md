@@ -161,3 +161,11 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   actions yet.
 - **Signals in the debug web client** — a `GET /api/signals?agentId=` peek
   endpoint + panel would slot in (`SignalBus.Peek` already exists).
+- **Signal intensity & attenuation** — generalize transmission: emitters get an
+  `intensity` (audible and visual), transmitters (portal sides) get an
+  `attenuation` (abstract decibels). Loud sounds (gunshots) carry several rooms;
+  soft sounds may not leave the room. Signal specs could declare multiple
+  representations chosen by surviving intensity — full fidelity up close
+  ("the old cook says: "Hm, where did I put it?""), degraded at range
+  ("someone says something"). Propagation would extend beyond adjacent rooms,
+  attenuating per hop.
