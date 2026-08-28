@@ -13,6 +13,10 @@ public sealed class Scheduler
 
     public int Count => _queue.Count;
 
+    /// <summary>Read-only snapshot of pending actions, in wake-turn order.</summary>
+    public IReadOnlyList<ScheduledAction> Pending =>
+        _queue.UnorderedItems.Select(item => item.Element).OrderBy(a => a.WakeTurn).ToList();
+
     public void Schedule(ScheduledAction action) => _queue.Enqueue(action, action.WakeTurn);
 
     /// <summary>Dequeue all actions due at or before <paramref name="turn"/>, in wake-turn order.</summary>

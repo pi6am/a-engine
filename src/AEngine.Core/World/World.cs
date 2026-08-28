@@ -123,6 +123,10 @@ public sealed class World
         GetObject(id).Attributes[name] = value;
     }
 
+    /// <summary>Remove a plain attribute from an object. Returns false if absent.</summary>
+    public bool RemoveAttribute(string id, string name) =>
+        GetObject(id).Attributes.Remove(name);
+
     /// <summary>Set a per-object module field override.</summary>
     public void SetFieldOverride(string id, string moduleId, string field, JsonElement value)
     {

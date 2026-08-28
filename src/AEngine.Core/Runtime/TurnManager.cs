@@ -18,23 +18,29 @@ public sealed class TurnManager
     /// <summary>Execute an action for an agent and advance the turn.</summary>
     public ActionResult PerformAction(WorldObject agent, AvailableAction action)
     {
-        var result = Execute(agent, action.HandlerId, action.TargetId);
-        AdvanceTurn();
-        return result;
+        lock (_engine.SyncRoot)
+        {
+            var result = Execute(agent, action.HandlerId, action.TargetId);
+            AdvanceTurn();
+            return result;
+        }
     }
 
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(WorldObject agent, string handlerId, string? targetId = null)
     {
-        var handler = _engine.HandlerRegistry.Get(handlerId);
-        var ctx = new ActionContext
+        lock (_engine.SyncRoot)
         {
-            World = _engine.World,
-            Modules = _engine.ModuleRegistry,
-            Agent = agent,
-            Target = targetId is null ? null : _engine.World.GetObject(targetId),
-        };
-        return handler.Execute(ctx);
+            var handler = _engine.HandlerRegistry.Get(handlerId);
+            var ctx = new ActionContext
+            {
+                World = _engine.World,
+                Modules = _engine.ModuleRegistry,
+                Agent = agent,
+                Target = targetId is null ? null : _engine.World.GetObject(targetId),
+            };
+            return handler.Execute(ctx);
+        }
     }
 
     private void AdvanceTurn()

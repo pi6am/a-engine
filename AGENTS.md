@@ -10,6 +10,7 @@ handlers. Built in stages; stage 1 (core + MVP scenario) is complete.
 dotnet build          # build the solution (a-engine.slnx, .NET 10 XML format)
 dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (menu-driven)
+dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
 ```
 
 Targets **net10.0**. The SDK is .NET 10; only the 10.0 runtime is installed, so do
@@ -18,10 +19,11 @@ not retarget to net8.0 without installing its runtime.
 ## Layout
 
 ```
-src/AEngine.Core/     # engine: World/, Modules/, Actions/, Runtime/, Scenarios/
-src/AEngine.Cli/      # menu-driven console REPL
-scenarios/mvp/        # MVP scenario: modules.json + world.json
-tests/AEngine.Tests/  # xUnit, includes scripted-playthrough integration test
+src/AEngine.Core/         # engine: World/, Modules/, Actions/, Runtime/, Scenarios/
+src/AEngine.Cli/          # menu-driven console REPL
+src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
+scenarios/mvp/            # MVP scenario: modules.json + world.json
+tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 ```
 
 ## Architecture (as implemented)
@@ -50,12 +52,33 @@ tests/AEngine.Tests/  # xUnit, includes scripted-playthrough integration test
   (`TurnBased`/`RealTime`) is settable but real-time is not yet implemented.
 - **Scenarios** — JSON files defining modules and an initial world tree;
   `ScenarioLoader` composes multiple files in order (later overrides by id).
+- **Debug REST API** — `AEngine.DebugServer.DebugServer` serves the live world
+  over HTTP for dev tooling. Built on `System.Net.HttpListener` (base class
+  library, zero extra dependencies), bound to **loopback only**. Enable it in
+  the CLI with `--debug-api` (default port 5050), `--debug-api=PORT`, or
+  `--debug-port N`. **Off by default; unauthenticated — never expose it beyond
+  localhost.** Endpoints (JSON in/out, camelCase):
+  `GET /api/health`; `GET /api/engine` (time mode, current turn, pending
+  scheduler entries); `GET /api/world/tree`; `GET /api/objects`;
+  `GET /api/objects/{id}` (attributes + modules with resolved field values);
+  `POST /api/objects` `{id, parentId, name?, description?}`;
+  `DELETE /api/objects/{id}` (recursive); `POST /api/objects/{id}/move`;
+  `PUT|DELETE /api/objects/{id}/attributes/{name}`;
+  `PUT|DELETE /api/objects/{id}/modules/{moduleId}`;
+  `PUT /api/objects/{id}/modules/{moduleId}/fields/{field}`;
+  `GET /api/modules`; `GET /api/actions?agentId=`. Errors: unknown id → 404,
+  cycle/duplicate/root-guard → 409, bad JSON → 400, wrong method → 405.
+  Permissive CORS (any origin, OPTIONS preflight) for a future browser client.
+  All world access (HTTP and REPL alike) is serialized on `GameEngine.SyncRoot`.
 
 ## Conventions
 
-- System.Text.Json only; no third-party runtime dependencies.
+- System.Text.Json only; no third-party runtime dependencies — the debug server
+  uses `System.Net.HttpListener` from the base class library (no ASP.NET).
 - New world behavior goes in data (modules/scenarios) first; new *verbs* get an
   `IActionHandler` registered in `HandlerRegistry`, not hardcoded branches.
+- Concurrent world access (e.g. from the debug HTTP server) must take
+  `lock (engine.SyncRoot)`; `TurnManager` already does.
 - Tests are required for engine changes; the MVP playthrough
   (`tests/AEngine.Tests/MvpPlaythroughTests.cs`) must stay green.
 - Do not commit build artifacts (`bin/`, `obj/`, `*.dll`) — see `.gitignore`.

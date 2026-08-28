@@ -19,6 +19,13 @@ public sealed class GameEngine
     /// <summary>Config surface for future real-time support; stage 1 is turn-based only.</summary>
     public TimeMode TimeMode { get; set; } = TimeMode.TurnBased;
 
+    /// <summary>
+    /// Lock guarding world access. The REPL (via <see cref="TurnManager"/>) and
+    /// any concurrent reader/writer (e.g. the debug HTTP server) must hold this
+    /// lock while touching the world, registries, or scheduler.
+    /// </summary>
+    public object SyncRoot { get; } = new();
+
     public GameEngine()
     {
         World = new World.World();

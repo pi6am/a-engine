@@ -1,10 +1,47 @@
 using AEngine.Core.Runtime;
 using AEngine.Core.Scenarios;
+using AEngine.DebugServer;
 
 // CLI entry point: loads the MVP scenario and runs a menu-driven,
-// turn-based REPL. Usage: AEngine.Cli [scenarioDir]
+// turn-based REPL.
+// Usage: AEngine.Cli [scenarioDir] [--debug-api[=PORT]] [--debug-port N]
+// The debug API is off by default; it is an unauthenticated loopback-only
+// REST endpoint for inspecting and mutating the world while the game runs.
 
-var scenarioDir = args.Length > 0 ? args[0] : FindScenarioDir("scenarios/mvp");
+const int defaultDebugPort = 5050;
+
+var debugApi = false;
+var debugPort = defaultDebugPort;
+string? scenarioDirArg = null;
+for (var i = 0; i < args.Length; i++)
+{
+    var arg = args[i];
+    if (arg == "--debug-api")
+    {
+        debugApi = true;
+    }
+    else if (arg.StartsWith("--debug-api=", StringComparison.Ordinal))
+    {
+        debugApi = true;
+        debugPort = int.Parse(arg["--debug-api=".Length..]);
+    }
+    else if (arg == "--debug-port" && i + 1 < args.Length)
+    {
+        debugApi = true;
+        debugPort = int.Parse(args[++i]);
+    }
+    else if (arg.StartsWith("--debug-port=", StringComparison.Ordinal))
+    {
+        debugApi = true;
+        debugPort = int.Parse(arg["--debug-port=".Length..]);
+    }
+    else
+    {
+        scenarioDirArg = arg;
+    }
+}
+
+var scenarioDir = scenarioDirArg ?? FindScenarioDir("scenarios/mvp");
 if (scenarioDir is null)
 {
     Console.Error.WriteLine("Could not find the scenario directory 'scenarios/mvp'.");
@@ -29,6 +66,13 @@ catch (Exception ex)
 var player = engine.World.GetObject("player");
 Console.WriteLine($"=== {scenarioName} ===");
 Console.WriteLine("Type a menu number (or 'quit') and press Enter.");
+
+using var debugServer = debugApi ? new DebugServer(engine, debugPort) : null;
+if (debugServer is not null)
+{
+    debugServer.Start();
+    Console.WriteLine($"Debug API listening on {debugServer.Address}");
+}
 
 while (true)
 {
