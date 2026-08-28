@@ -43,8 +43,10 @@
           "verb": "go",
           "handler": "go",
           "signals": [
-            { "sense": "visual", "priority": 10, "text": "{agent} goes through the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear footsteps fading." }
+            { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
+            { "sense": "audible", "priority": 5, "scope": "departure", "text": "{agent} leaving through the {exitPortal}." },
+            { "sense": "visual", "priority": 10, "scope": "arrival", "text": "{agent} enters from the {entryPortal} to the {entryDirection}." },
+            { "sense": "audible", "priority": 5, "scope": "arrival", "text": "footsteps approaching from the {entryPortal}." }
           ]
         },
         {
@@ -52,7 +54,7 @@
           "handler": "open",
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear the sound of wood sliding on wood." }
+            { "sense": "audible", "priority": 5, "text": "the sound of wood sliding on wood." }
           ]
         },
         {
@@ -60,7 +62,7 @@
           "handler": "close",
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear a door thud shut." }
+            { "sense": "audible", "priority": 5, "text": "a door thudding shut." }
           ]
         }
       ]
@@ -86,7 +88,7 @@
           "handler": "open",
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear something creak open." }
+            { "sense": "audible", "priority": 5, "text": "something creaking open." }
           ]
         },
         {
@@ -94,7 +96,7 @@
           "handler": "close",
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear something thud shut." }
+            { "sense": "audible", "priority": 5, "text": "something thudding shut." }
           ]
         }
       ]
@@ -124,7 +126,7 @@
           "handler": "drop",
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
-            { "sense": "audible", "priority": 3, "text": "You hear something hit the floor." }
+            { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
           ]
         }
       ]
@@ -141,7 +143,7 @@
           "handler": "unlock",
           "signals": [
             { "sense": "visual", "priority": 3, "text": "{agent} unlocks the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear a click." }
+            { "sense": "audible", "priority": 5, "text": "a click." }
           ]
         },
         {
@@ -149,7 +151,7 @@
           "handler": "lock",
           "signals": [
             { "sense": "visual", "priority": 3, "text": "{agent} locks the {target}." },
-            { "sense": "audible", "priority": 5, "text": "You hear a click." }
+            { "sense": "audible", "priority": 5, "text": "a click." }
           ]
         }
       ]

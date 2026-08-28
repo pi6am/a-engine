@@ -32,10 +32,13 @@ public class SignalTests
         var open = TestWorlds.Find(engine, "alice", "open", "chest");
         engine.TurnManager.PerformAction(engine.World.GetObject("alice"), open);
 
-        // visual (whenOpen, door closed) is blocked; audio (always) passes
+        // visual (whenOpen, door closed) is blocked; audio (always) passes,
+        // with a directional suffix naming the portal side in bob's room
         var signal = Assert.Single(engine.SignalBus.Drain("bob"));
         Assert.Equal(SignalSense.Audible, signal.Sense);
-        Assert.Equal("You hear something creak open.", signal.Text);
+        Assert.Equal(
+            "You hear something creak open through the wooden door to the south.",
+            signal.Text);
     }
 
     [Fact]
@@ -55,7 +58,7 @@ public class SignalTests
         // door open: visual (whenOpen -> open) now passes and wins on priority
         var signal = Assert.Single(engine.SignalBus.Drain("bob"));
         Assert.Equal(SignalSense.Visual, signal.Sense);
-        Assert.Equal("Alice opens the chest.", signal.Text);
+        Assert.Equal("Alice opens the chest through the wooden door to the south.", signal.Text);
     }
 
     [Fact]
@@ -88,7 +91,7 @@ public class SignalTests
         engine.TurnManager.PerformAction(engine.World.GetObject("alice"), take);
         var seen = Assert.Single(engine.SignalBus.Drain("bob"));
         Assert.Equal(SignalSense.Visual, seen.Sense);
-        Assert.Equal("Alice picks up the apple.", seen.Text);
+        Assert.Equal("Alice picks up the apple through the wooden door to the south.", seen.Text);
 
         // B -> A: bob takes the pear; the room_b side transmits nothing visual,
         // and 'take' has no audible spec, so alice gets nothing at all
@@ -168,5 +171,100 @@ public class SignalTests
         engine.TurnManager.PerformAction(engine.World.GetObject("alice"), open);
 
         Assert.Empty(engine.SignalBus.Drain("carol"));
+    }
+
+    [Fact]
+    public void OpenDoor_ObservedThroughItself_NoSuffix()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine(); // bob in room_b, door closed
+
+        // alice opens the door; bob perceives it through that very door —
+        // the directional suffix would be redundant
+        var openDoor = TestWorlds.Find(engine, "alice", "open", "door_a");
+        engine.TurnManager.PerformAction(engine.World.GetObject("alice"), openDoor);
+
+        var signal = Assert.Single(engine.SignalBus.Drain("bob"));
+        Assert.Equal(SignalSense.Visual, signal.Sense);
+        Assert.Equal("Alice opens the wooden door.", signal.Text);
+    }
+
+    [Fact]
+    public void CloseDoor_ObservedFromOtherSide_SeesVisual()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine(); // alice in room_a, bob in room_b
+        var bob = engine.World.GetObject("bob");
+
+        engine.TurnManager.PerformAction(bob, TestWorlds.Find(engine, "bob", "open", "door_b"));
+        engine.SignalBus.Drain("alice");
+        var close = TestWorlds.Find(engine, "bob", "close", "door_b");
+        Assert.True(engine.TurnManager.PerformAction(bob, close).Success);
+
+        // the door manifests in both rooms: alice sees her side close even
+        // though the door (now closed) would not transmit visual
+        var signal = Assert.Single(engine.SignalBus.Drain("alice"));
+        Assert.Equal(SignalSense.Visual, signal.Sense);
+        Assert.Equal("Bob closes the wooden door.", signal.Text);
+        Assert.Equal("door_b", signal.TargetId);
+    }
+
+    [Fact]
+    public void Say_ThroughPortal_HasDirectionSuffix()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine(); // alice in room_a, bob in room_b, door closed
+
+        var say = TestWorlds.Find(engine, "alice", "say", "alice");
+        engine.TurnManager.PerformAction(engine.World.GetObject("alice"), say, "one moment");
+
+        // audible passes through the closed door, naming bob's side of it
+        var signal = Assert.Single(engine.SignalBus.Drain("bob"));
+        Assert.Equal(SignalSense.Audible, signal.Sense);
+        Assert.Equal(
+            "Alice says: \"one moment\" through the wooden door to the south.",
+            signal.Text);
+    }
+
+    [Fact]
+    public void Go_ObserverInArrivalRoom_SeesEntry()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var bob = engine.World.GetObject("bob");
+
+        // bob opens the door and walks from room_b into room_a (alice's room)
+        engine.TurnManager.PerformAction(bob, TestWorlds.Find(engine, "bob", "open", "door_b"));
+        engine.SignalBus.Drain("alice");
+        var go = TestWorlds.Find(engine, "bob", "go", "door_b");
+        Assert.True(engine.TurnManager.PerformAction(bob, go).Success);
+
+        // alice sees the entry, named from the room_a side of the door (to the north)
+        var signal = Assert.Single(engine.SignalBus.Drain("alice"));
+        Assert.Equal(SignalSense.Visual, signal.Sense);
+        Assert.Equal("Bob enters from the wooden door to the north.", signal.Text);
+        Assert.Equal("room_a", signal.OriginRoomId);
+    }
+
+    [Fact]
+    public void Go_ObserverInDepartureRoom_SeesExit()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        // carol watches from room_b, bob's departure room
+        engine.World.CreateObject("carol", "room_b", "Carol");
+        engine.World.AddModule("carol", "agent");
+        var bob = engine.World.GetObject("bob");
+
+        engine.TurnManager.PerformAction(bob, TestWorlds.Find(engine, "bob", "open", "door_b"));
+        engine.SignalBus.Drain("carol");
+        engine.SignalBus.Drain("alice"); // the door-open audio; not what we're asserting
+        var go = TestWorlds.Find(engine, "bob", "go", "door_b");
+        Assert.True(engine.TurnManager.PerformAction(bob, go).Success);
+
+        // carol sees the exit through the room_b side of the door (to the south)
+        var signal = Assert.Single(engine.SignalBus.Drain("carol"));
+        Assert.Equal(SignalSense.Visual, signal.Sense);
+        Assert.Equal("Bob exits through the wooden door to the south.", signal.Text);
+        Assert.Equal("room_b", signal.OriginRoomId);
+
+        // alice (arrival room) sees the entry in the same traversal
+        var entry = Assert.Single(engine.SignalBus.Drain("alice"));
+        Assert.Equal("Bob enters from the wooden door to the north.", entry.Text);
     }
 }

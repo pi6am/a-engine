@@ -38,7 +38,15 @@ internal static class TestWorlds
           { "name": "transmitAudio", "type": "string", "default": "always" }
         ],
         "affordances": [
-          { "verb": "go", "handler": "go" },
+          {
+            "verb": "go", "handler": "go",
+            "signals": [
+              { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
+              { "sense": "audible", "priority": 5, "scope": "departure", "text": "You hear {agent} leave through the {exitPortal}." },
+              { "sense": "visual", "priority": 10, "scope": "arrival", "text": "{agent} enters from the {entryPortal} to the {entryDirection}." },
+              { "sense": "audible", "priority": 5, "scope": "arrival", "text": "You hear footsteps approaching from the {entryPortal}." }
+            ]
+          },
           {
             "verb": "open", "handler": "open",
             "signals": [
@@ -46,7 +54,13 @@ internal static class TestWorlds
               { "sense": "audible", "priority": 5, "text": "You hear the sound of wood sliding on wood." }
             ]
           },
-          { "verb": "close", "handler": "close" }
+          {
+            "verb": "close", "handler": "close",
+            "signals": [
+              { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+              { "sense": "audible", "priority": 5, "text": "You hear a door thud shut." }
+            ]
+          }
         ]
       },
       {

@@ -27,9 +27,10 @@ public sealed class TurnManager
     {
         lock (_engine.SyncRoot)
         {
+            var departureRoomId = agent.Parent;
             var result = Execute(agent, action.HandlerId, action.TargetId, text);
             if (result.Success)
-                EmitSignals(agent, action, text);
+                EmitSignals(agent, action, text, departureRoomId);
             AdvanceTurn();
             return result;
         }
@@ -125,7 +126,7 @@ public sealed class TurnManager
     }
 
     /// <summary>Emit the affordance's signal specs for a successful action.</summary>
-    private void EmitSignals(WorldObject agent, AvailableAction action, string? text)
+    private void EmitSignals(WorldObject agent, AvailableAction action, string? text, string departureRoomId)
     {
         if (!_engine.ModuleRegistry.Has(action.ModuleId))
             return;
@@ -136,7 +137,33 @@ public sealed class TurnManager
         var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
             ? _engine.World.GetObject(action.TargetId)
             : null;
-        _engine.SignalBus.Emit(agent, target, affordance.Signals, text);
+        var traversal = BuildTraversal(agent, action, target, departureRoomId);
+        _engine.SignalBus.Emit(agent, target, affordance.Signals, text, traversal);
+    }
+
+    /// <summary>
+    /// Build the traversal context when a successful "go" moved the agent
+    /// through a portal into another room; null for non-traversal actions.
+    /// The entry side is the portal in the arrival room sharing the exit
+    /// side's stateRef (falling back to a side pointing back at the
+    /// departure room); null for one-way portals with no return side.
+    /// </summary>
+    private Signals.TraversalContext? BuildTraversal(
+        WorldObject agent, AvailableAction action, WorldObject? target, string departureRoomId)
+    {
+        if (action.Verb != "go" || target is null || !target.HasModule("portal"))
+            return null;
+        var arrivalRoomId = agent.Parent;
+        if (arrivalRoomId == departureRoomId)
+            return null;
+
+        var exitStateRef = _engine.ModuleRegistry.ResolveString(target, "portal", "stateRef");
+        var entrySide = _engine.World.ChildrenOf(arrivalRoomId).FirstOrDefault(c =>
+            c.HasModule("portal") && c.Id != target.Id &&
+            (exitStateRef is not null
+                ? _engine.ModuleRegistry.ResolveString(c, "portal", "stateRef") == exitStateRef
+                : _engine.ModuleRegistry.ResolveString(c, "portal", "to") == departureRoomId));
+        return new Signals.TraversalContext(departureRoomId, arrivalRoomId, target, entrySide);
     }
 
     private void AdvanceTurn()

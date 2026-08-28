@@ -13,7 +13,19 @@ namespace AEngine.Core.Signals;
 /// observer one portal away receives a sense only if the portal side in
 /// the origin room transmits it (portal fields transmitVisual /
 /// transmitAudio: always | whenOpen | never — whenOpen reads the shared
-/// doorstate via the side's own stateRef). Anything farther gets nothing.
+/// doorstate via the side's own stateRef), and the delivered text gains a
+/// directional suffix ("… through the wooden door to the south.") naming
+/// the portal side in the observer's room, suppressed when the signal's
+/// target is that same door. Anything farther gets nothing. An action
+/// targeting a portal (e.g. closing a door) manifests on both sides of the
+/// door: observers in the other side's room perceive it as a same-room
+/// event.
+///
+/// Portal traversal (a successful "go") is delivered from scoped specs
+/// instead: Departure specs to observers in the room the actor left
+/// ("{agent} exits through the {exitPortal} to the {exitDirection}."),
+/// Arrival specs to observers in the room entered ("{agent} enters from
+/// the {entryPortal} to the {entryDirection}.").
 /// </summary>
 public sealed class SignalBus
 {
@@ -28,21 +40,94 @@ public sealed class SignalBus
     }
 
     /// <summary>Format and deliver the given specs for an action performed by <paramref name="actor"/>.</summary>
-    public void Emit(WorldObject actor, WorldObject? target, IReadOnlyList<SignalSpec> specs, string? arg = null)
+    public void Emit(
+        WorldObject actor, WorldObject? target, IReadOnlyList<SignalSpec> specs,
+        string? arg = null, TraversalContext? traversal = null)
     {
         if (specs.Count == 0)
             return;
+        if (traversal is not null)
+        {
+            EmitTraversal(actor, specs, traversal);
+            return;
+        }
         var originRoomId = actor.Parent;
+        // A portal action (e.g. closing a door) manifests on both sides of
+        // the door: observers in the other side's room perceive it as if it
+        // happened in their room, transmission rules notwithstanding.
+        var otherSideRoomId = OtherSideRoom(target, originRoomId);
+        var normalSpecs = specs.Where(s => s.Scope == SignalScope.None).ToList();
         foreach (var observer in _world.Objects.Values)
         {
             if (observer.Id == actor.Id || !observer.HasModule("agent"))
                 continue;
-            var best = BestReceivable(observer, originRoomId, actor, target, specs, arg);
+            var best = BestReceivable(
+                observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg);
             if (best is null)
                 continue;
-            if (!_queues.TryGetValue(observer.Id, out var queue))
-                _queues[observer.Id] = queue = new Queue<Signal>();
-            queue.Enqueue(best);
+            Enqueue(observer.Id, best);
+        }
+    }
+
+    /// <summary>
+    /// The room of the other side of the targeted portal (same shared
+    /// doorstate), or null when the target is not a two-sided portal.
+    /// </summary>
+    private string? OtherSideRoom(WorldObject? target, string originRoomId)
+    {
+        if (target is null || !target.HasModule("portal"))
+            return null;
+        var stateRef = _modules.ResolveString(target, "portal", "stateRef");
+        if (stateRef is null)
+            return null;
+        foreach (var obj in _world.Objects.Values)
+        {
+            if (obj.Id != target.Id && obj.HasModule("portal") &&
+                _modules.ResolveString(obj, "portal", "stateRef") == stateRef &&
+                obj.Parent != originRoomId)
+                return obj.Parent;
+        }
+        return null;
+    }
+
+    /// <summary>Deliver scoped specs for a portal traversal to the departure and arrival rooms.</summary>
+    private void EmitTraversal(
+        WorldObject actor, IReadOnlyList<SignalSpec> specs, TraversalContext traversal)
+    {
+        var extra = new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["{exitPortal}"] = traversal.ExitSide.Name,
+            ["{exitDirection}"] = DirectionOf(traversal.ExitSide),
+            ["{entryPortal}"] = traversal.EntrySide?.Name ?? traversal.ExitSide.Name,
+            ["{entryDirection}"] = DirectionOf(traversal.EntrySide ?? traversal.ExitSide),
+        };
+        foreach (var observer in _world.Objects.Values)
+        {
+            if (observer.Id == actor.Id || !observer.HasModule("agent"))
+                continue;
+            var scope = observer.Parent == traversal.DepartureRoomId ? SignalScope.Departure
+                : observer.Parent == traversal.ArrivalRoomId ? SignalScope.Arrival
+                : SignalScope.None;
+            if (scope == SignalScope.None)
+                continue;
+            Signal? best = null;
+            foreach (var spec in specs)
+            {
+                if (spec.Scope != scope)
+                    continue;
+                if (best is null || spec.Priority > best.Priority)
+                {
+                    best = new Signal(
+                        spec.Sense, spec.Priority,
+                        Format(spec.Text, actor, null, null, extra),
+                        scope == SignalScope.Departure
+                            ? traversal.DepartureRoomId
+                            : traversal.ArrivalRoomId,
+                        traversal.ExitSide.Id);
+                }
+            }
+            if (best is not null)
+                Enqueue(observer.Id, best);
         }
     }
 
@@ -61,12 +146,13 @@ public sealed class SignalBus
         _queues.TryGetValue(agentId, out var queue) ? queue.ToArray() : [];
 
     private Signal? BestReceivable(
-        WorldObject observer, string originRoomId,
+        WorldObject observer, string originRoomId, string? otherSideRoomId,
         WorldObject actor, WorldObject? target,
         IReadOnlyList<SignalSpec> specs, string? arg)
     {
         WorldObject? portalSide = null;
-        if (observer.Parent != originRoomId)
+        WorldObject? observerSide = null;
+        if (observer.Parent != originRoomId && observer.Parent != otherSideRoomId)
         {
             // adjacent-room observer: find the portal side in the origin
             // room leading toward the observer — that side's transmission
@@ -78,6 +164,10 @@ public sealed class SignalBus
                 _modules.ResolveString(c, "portal", "to") == observer.Parent);
             if (portalSide is null)
                 return null; // not adjacent
+            // the side in the observer's own room, for the directional suffix
+            observerSide = _world.ChildrenOf(observer.Parent).FirstOrDefault(c =>
+                c.HasModule("portal") &&
+                _modules.ResolveString(c, "portal", "to") == originRoomId);
         }
 
         Signal? best = null;
@@ -87,13 +177,42 @@ public sealed class SignalBus
                 continue;
             if (best is null || spec.Priority > best.Priority)
             {
-                best = new Signal(
-                    spec.Sense, spec.Priority,
-                    Format(spec.Text, actor, target, arg), originRoomId);
+                var text = Format(spec.Text, actor, target, arg);
+                if (observerSide is not null && !SameDoor(target, observerSide))
+                    text = text.TrimEnd('.') + Suffix(observerSide);
+                best = new Signal(spec.Sense, spec.Priority, text, originRoomId, target?.Id);
             }
         }
         return best;
     }
+
+    /// <summary>
+    /// True when the action's target is the very door the observer is
+    /// perceiving through (same portal side, or the other side of the same
+    /// shared doorstate) — the directional suffix is redundant then.
+    /// </summary>
+    private bool SameDoor(WorldObject? target, WorldObject observerSide)
+    {
+        if (target is null || !target.HasModule("portal"))
+            return false;
+        if (target.Id == observerSide.Id)
+            return true;
+        var targetRef = _modules.ResolveString(target, "portal", "stateRef");
+        return targetRef is not null &&
+            targetRef == _modules.ResolveString(observerSide, "portal", "stateRef");
+    }
+
+    /// <summary>Directional suffix for signals observed through a portal (" through the wooden door to the south.").</summary>
+    private string Suffix(WorldObject observerSide)
+    {
+        var direction = DirectionOf(observerSide);
+        return direction.Length > 0
+            ? $" through the {observerSide.Name} to the {direction}."
+            : $" through the {observerSide.Name}.";
+    }
+
+    private string DirectionOf(WorldObject portalSide) =>
+        _modules.ResolveString(portalSide, "portal", "direction") ?? "";
 
     private bool Transmits(WorldObject portalSide, SignalSense sense)
     {
@@ -116,9 +235,24 @@ public sealed class SignalBus
             _modules.ResolveBool(_world.GetObject(stateRef), "doorstate", "open");
     }
 
-    private static string Format(string template, WorldObject actor, WorldObject? target, string? arg) =>
-        template
+    private void Enqueue(string observerId, Signal signal)
+    {
+        if (!_queues.TryGetValue(observerId, out var queue))
+            _queues[observerId] = queue = new Queue<Signal>();
+        queue.Enqueue(signal);
+    }
+
+    private static string Format(
+        string template, WorldObject actor, WorldObject? target, string? arg,
+        IReadOnlyDictionary<string, string>? extra = null)
+    {
+        var text = template
             .Replace("{agent}", actor.Name, StringComparison.Ordinal)
             .Replace("{target}", target?.Name ?? "", StringComparison.Ordinal)
             .Replace("{arg}", arg ?? "", StringComparison.Ordinal);
+        if (extra is not null)
+            foreach (var (placeholder, value) in extra)
+                text = text.Replace(placeholder, value, StringComparison.Ordinal);
+        return text;
+    }
 }

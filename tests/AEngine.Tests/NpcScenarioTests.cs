@@ -87,8 +87,11 @@ public class NpcScenarioTests
                     engine.World.GetObject("cook").Parent == "dining_hall";
                 if (!DoorOpen(engine) && playerInKitchen && cookInHall)
                 {
-                    // closed wooden door between them: audio only
-                    Assert.Equal(SignalSense.Audible, signal.Sense);
+                    // closed wooden door between them: audio only — except
+                    // actions on the door itself, which manifest on both sides
+                    var doorTarget = signal.TargetId is "door_kitchen_side" or "door_hall_side";
+                    if (!doorTarget)
+                        Assert.Equal(SignalSense.Audible, signal.Sense);
                 }
             }
         }

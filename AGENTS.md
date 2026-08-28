@@ -67,7 +67,18 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   (`portal` fields `transmitVisual`/`transmitAudio`: `always | whenOpen | never`,
   defaults `whenOpen`/`always`; `whenOpen` reads the shared doorstate via that
   side's own `stateRef`); farther rooms get nothing. One-way propagation (e.g.
-  a one-way mirror) is pure data on the two sides.
+  a one-way mirror) is pure data on the two sides. Signals delivered through a
+  portal get a directional suffix naming the side in the observer's room
+  ("… through the wooden door to the south."), suppressed when the signal's
+  target is that same door ("the cook opens the wooden door."). An action
+  targeting a portal manifests on both sides of the door: observers in the
+  other side's room perceive it as a same-room event (visual included),
+  transmission rules notwithstanding. Signal specs have a `scope`:
+  unset = normal propagation; `departure`/`arrival` are delivered only on
+  portal traversal (a successful `go`) to observers in the room left / the
+  room entered, with `{exitPortal}`/`{exitDirection}`/`{entryPortal}`/
+  `{entryDirection}` placeholders ("the cook exits through the wooden door to
+  the south." / "the cook enters from the wooden door to the north.").
 - **Policies & NPC turns** — agents with `agent.policy != "player"` are
   autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
   actions; policies resolve by string id through `PolicyRegistry` (replaceable
