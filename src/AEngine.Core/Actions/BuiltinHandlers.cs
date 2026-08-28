@@ -44,8 +44,8 @@ public static class BuiltinHandlers
                 var parts = exits.Select(p =>
                 {
                     var dir = ctx.Modules.ResolveString(p, "portal", "direction") ?? "somewhere";
-                    var state = HandlerState.IsOpen(ctx, p) ? "open"
-                        : HandlerState.IsLocked(ctx, p) ? "locked" : "closed";
+                    // lock state is not observable: exits show open/closed only
+                    var state = HandlerState.IsOpen(ctx, p) ? "open" : "closed";
                     return $"{dir} ({p.Name}, {state})";
                 });
                 sb.AppendLine("Exits: " + string.Join(", ", parts));
@@ -92,7 +92,7 @@ public static class BuiltinHandlers
             if (HandlerState.IsLocked(ctx, target))
                 return ActionResult.Fail($"The {target.Name} is locked.");
             if (HandlerState.IsOpen(ctx, target))
-                return ActionResult.Fail($"The {target.Name} is already open.");
+                return ActionResult.Noop($"The {target.Name} is already open.");
             HandlerState.SetOpen(ctx, target, true);
             return ActionResult.Ok($"You open the {target.Name}.");
         }
@@ -108,7 +108,7 @@ public static class BuiltinHandlers
             if (HandlerState.GetOpenState(ctx, target) is null)
                 return ActionResult.Fail($"You can't close the {target.Name}.");
             if (!HandlerState.IsOpen(ctx, target))
-                return ActionResult.Fail($"The {target.Name} is already closed.");
+                return ActionResult.Noop($"The {target.Name} is already closed.");
             HandlerState.SetOpen(ctx, target, false);
             return ActionResult.Ok($"You close the {target.Name}.");
         }
@@ -124,7 +124,7 @@ public static class BuiltinHandlers
             if (!target.HasModule("portable"))
                 return ActionResult.Fail($"You can't take the {target.Name}.");
             if (HandlerState.IsHeld(ctx, target))
-                return ActionResult.Fail($"You already have the {target.Name}.");
+                return ActionResult.Noop($"You already have the {target.Name}.");
 
             var room = HandlerState.RoomOf(ctx);
             if (target.Parent == room.Id)
@@ -158,7 +158,7 @@ public static class BuiltinHandlers
         {
             var target = ctx.Target ?? throw new InvalidOperationException("drop requires a target.");
             if (!HandlerState.IsHeld(ctx, target))
-                return ActionResult.Fail($"You're not carrying the {target.Name}.");
+                return ActionResult.Noop($"You're not carrying the {target.Name}.");
             var room = HandlerState.RoomOf(ctx);
             ctx.World.MoveObject(target.Id, room.Id);
             return ActionResult.Ok($"You drop the {target.Name}.");
@@ -176,6 +176,9 @@ public static class BuiltinHandlers
             var target = ctx.Target ?? throw new InvalidOperationException("lock/unlock requires a target.");
             if (!target.HasModule("lockable"))
                 return ActionResult.Fail($"The {target.Name} has no lock.");
+            // end state already holds: a noop, no key needed
+            if (HandlerState.IsLocked(ctx, target) == locked)
+                return ActionResult.Noop($"The {target.Name} is already {(locked ? "locked" : "unlocked")}.");
             var keyRef = ctx.Modules.ResolveString(target, "lockable", "keyRef");
             if (keyRef is not null)
             {
@@ -184,8 +187,6 @@ public static class BuiltinHandlers
                 if (!HandlerState.IsHeld(ctx, ctx.World.GetObject(keyRef)))
                     return ActionResult.Fail($"You need the {ctx.World.GetObject(keyRef).Name} to {(locked ? "lock" : "unlock")} the {target.Name}.");
             }
-            if (HandlerState.IsLocked(ctx, target) == locked)
-                return ActionResult.Fail($"The {target.Name} is already {(locked ? "locked" : "unlocked")}.");
             HandlerState.SetLocked(ctx, target, locked);
             return ActionResult.Ok($"You {(locked ? "lock" : "unlock")} the {target.Name}.");
         }

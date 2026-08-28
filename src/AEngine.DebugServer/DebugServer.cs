@@ -3,6 +3,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AEngine.Core.Actions;
 using AEngine.Core.Runtime;
 using AEngine.Core.World;
 
@@ -281,6 +282,7 @@ public sealed class DebugServer : IDisposable
                 return Ok(new
                 {
                     success = result.Success,
+                    outcome = result.Outcome,
                     message = result.Message,
                     turn = _engine.TurnManager.Turn,
                 });

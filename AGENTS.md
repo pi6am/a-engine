@@ -2,7 +2,8 @@
 
 A data-driven text adventure engine and runtime, inspired by z-engine but with no
 virtual machine: runtime behavior is driven by an extensible library of runners and
-handlers. Built in stages; stage 1 (core + MVP scenario) is complete.
+handlers. Built in stages; stage 1 (core + MVP scenario) and the LLM harness
+stage (player free-text planning + LLM-driven NPC policy) are complete.
 
 ## Build & Test
 
@@ -12,6 +13,7 @@ dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (menu-driven)
 dotnet run --project src/AEngine.Cli -- scenarios/npc   # play the NPC demo scenario
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
+dotnet run --project src/AEngine.Cli -- --llm-endpoint http://127.0.0.1:5001 --llm-model NAME   # LLM planning
 cd client && npm install && npm run dev   # debug web client (needs the CLI with --debug-api)
 ```
 
@@ -22,8 +24,9 @@ not retarget to net8.0 without installing its runtime.
 
 ```
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
-src/AEngine.Cli/          # menu-driven console REPL
+src/AEngine.Cli/          # menu-driven console REPL (optional LLM free-text planning)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
+src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: modules.json + world.json
 scenarios/npc/            # NPC demo: kitchen/dining hall, random-policy cook, signals
@@ -54,8 +57,16 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
   seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,
   say. `ActionResolver` enumerates the actions currently available to an agent as
-  structured `(verb, target, label, handlerId, moduleId, prompt?)` entries,
-  filtered by world state.
+  structured `(verb, target, label, handlerId, moduleId, prompt?)` entries.
+  Listings are filtered by **observable** state: `open`/`close` follow the
+  visible open state, take/drop follow held — while `unlock`/`lock` are always
+  listed since lock state is not observable. `ResolvePotential` returns the same
+  set without open/close state filtering, so a generated-but-redundant plan line
+  still resolves (and noops at runtime). Results are three-valued
+  (`ActionOutcome.Success | Noop | Failure`): redundant attempts whose end state
+  already holds are **noops** (no turn consumed, no signals, not a failure —
+  plan executors skip over them), wrong-state/missing-key attempts are failures
+  (turn consumed). `look` exits show `open`/`closed` only (never "locked").
 - **Signals** — ephemeral sensory observations (`SignalSense.Visual | Audible`)
   delivered by `SignalBus` on `GameEngine` into per-agent in-memory queues
   (`Emit`/`Drain`/`Peek`). After a successful action, `TurnManager.PerformAction`
@@ -90,6 +101,23 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   if the chosen `(verb, targetId)` is still available (stale choices are
   discarded). The CLI calls `RunNpcTurns()` after each player action and prints
   the player's drained signals as `You see: …`/`You hear: …` lines.
+- **LLM harness** (`src/AEngine.Llm`, no third-party deps) — one machinery
+  serves both player free text and NPC decisions. `OpenAiCompatibleClient`
+  POSTs `{BaseUrl}/v1/chat/completions` (OpenAI chat schema, optional Bearer
+  key; works against KoboldCPP/llama.cpp, OpenRouter, Kimi, DeepSeek);
+  `FakeLlmClient` queues canned responses for tests. `AgentContextBuilder`
+  renders the **public** world view only (room, visible items with
+  closed-container contents hidden, exits open/closed, inventory, action menu
+  labels; NPC extras: `agent` module `character`/`goals` fields + drained
+  signals). `LlmPlanner` builds the system/user prompts (output contract: one
+  action per line, exactly as listed); `PlanParser` tolerantly strips
+  numbering/bullets/prose (keeps lines starting with a known verb);
+  `PlanExecutor` matches each line against **currently** available actions
+  (case-insensitive label equality, then normalized containment) and stops on
+  no-match or failure — conditional availability (unlock → open → go) resolves
+  at execution time. `LlmPolicy` (id `llm`) asks for a full plan on first
+  selection, caches steps, pops them matched against current availability; a
+  stale step discards the plan remainder and re-plans next selection.
 - **Runtime** — `GameEngine` ties everything together; `TurnManager` is turn-based;
   `Scheduler` is a wake-up queue for long-running actions; `TimeMode`
   (`TurnBased`/`RealTime`) is settable but real-time is not yet implemented.
@@ -142,16 +170,22 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
 
 ## Future goals (NOT yet implemented — don't assume these exist)
 
-- **LLM integration** — parse player natural language into actions, translate
-  outcomes into narration, and guided world expansion for *open* scenarios.
-  Seams: `HandlerRegistry` id indirection; `ActionResolver` already returns
-  structured data suitable for an LLM prompt. No LLM code exists yet.
+- **LLM integration** — partially implemented: the harness (`AEngine.Llm`)
+  parses player free text into action plans and drives NPCs via `LlmPolicy`;
+  see "LLM harness" above. CLI options `--llm-endpoint/--llm-model/
+  --llm-api-key` (env fallbacks `AENGINE_LLM_ENDPOINT/MODEL/API_KEY`); with an
+  endpoint configured, non-numeric input is planned and executed stepwise
+  (menu numbers still work). Live verification against a real server (e.g.
+  KoboldCPP) is manual. Still planned: narration (LLM translating outcomes
+  into prose), guided world expansion for *open* scenarios, `say` with
+  LLM-chosen phrases inside plans (plans can't yet carry free-text args),
+  provider config files, streaming, retries/backoff.
 - **Autonomous agents** — partially implemented: NPCs with
   `agent.policy != "player"` act through the same affordances via
-  `IAgentPolicy` (built-in: `random`); see "Policies & NPC turns" above.
-  Planned: LLM-driven and perception-driven policies (the random policy
-  ignores signals), agenda-driven NPCs, multi-player (multiple players
-  controlling different agents).
+  `IAgentPolicy` (built-ins: `random` in Core, `llm` in AEngine.Llm); see
+  "Policies & NPC turns" above. Planned: perception-driven policies (the
+  random policy ignores signals), agenda-driven NPCs, multi-player (multiple
+  players controlling different agents).
 - **Real-time mode** — `TimeMode.RealTime` is a config stub. Planned: short turns
   with auto-pass, suitable for simultaneous multi-player action.
 - **Custom conflict/skill handlers** — e.g. lockpicking resolved by an RPG

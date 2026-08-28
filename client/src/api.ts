@@ -72,6 +72,7 @@ export interface AvailableAction {
 
 export interface ExecuteResult {
   success: boolean
+  outcome?: 'success' | 'noop' | 'failure'
   message: string
   turn: number
 }

@@ -37,7 +37,14 @@
           "name": "the old cook",
           "description": "A grizzled old cook, forever bustling about.",
           "modules": [
-            { "module": "agent", "overrides": { "policy": "random" } }
+            {
+              "module": "agent",
+              "overrides": {
+                "policy": "random",
+                "character": "A grizzled old cook who takes pride in his kitchen and mutters to himself while he works.",
+                "goals": "Keep the dining hall stocked: fetch the loaf of bread and the carving knife, and tidy up."
+              }
+            }
           ]
         },
         {

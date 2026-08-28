@@ -120,17 +120,18 @@ public class SignalTests
     }
 
     [Fact]
-    public void FailedAction_EmitsNoSignals()
+    public void NonSuccessAction_EmitsNoSignals()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
         engine.World.MoveObject("bob", "room_a");
 
-        // the chest is already closed; closing it fails
+        // the chest is already closed; closing it is a noop
         var close = new Core.Actions.AvailableAction(
             "close", "chest", "Close the chest", "close", "openable");
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), close);
         Assert.False(result.Success);
+        Assert.Equal(Core.Actions.ActionOutcome.Noop, result.Outcome);
         Assert.Empty(engine.SignalBus.Drain("bob"));
     }
 

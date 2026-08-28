@@ -20,13 +20,29 @@ public sealed class ActionResolver
         _modules = modules;
     }
 
-    public IReadOnlyList<AvailableAction> Resolve(WorldObject agent)
+    /// <summary>
+    /// The actions currently available to an agent, state-filtered for
+    /// display: open/close follow the visible open state, take/drop follow
+    /// held. (unlock/lock are always listed — lock state is not observable.)
+    /// </summary>
+    public IReadOnlyList<AvailableAction> Resolve(WorldObject agent) =>
+        Resolve(agent, stateFiltered: true);
+
+    /// <summary>
+    /// All affordances on reachable objects without open/close state
+    /// filtering — for plan matching: a generated but currently redundant
+    /// "open"/"close" line still resolves here and noops at runtime.
+    /// </summary>
+    public IReadOnlyList<AvailableAction> ResolvePotential(WorldObject agent) =>
+        Resolve(agent, stateFiltered: false);
+
+    private IReadOnlyList<AvailableAction> Resolve(WorldObject agent, bool stateFiltered)
     {
         var room = _world.GetObject(agent.Parent);
         var actions = new List<AvailableAction>();
 
         // agent's own affordances (look, inventory)
-        AddFromModules(actions, agent, agent, room);
+        AddFromModules(actions, agent, agent, stateFiltered);
 
         // things in the room (items, furniture, portals)
         foreach (var childId in room.Children)
@@ -34,25 +50,25 @@ public sealed class ActionResolver
             if (childId == agent.Id)
                 continue;
             var child = _world.GetObject(childId);
-            AddFromModules(actions, agent, child, room);
+            AddFromModules(actions, agent, child, stateFiltered);
 
             // contents of open containers are reachable too
             if (child.HasModule("container") && IsOpenState(child))
             {
                 foreach (var innerId in child.Children)
-                    AddFromModules(actions, agent, _world.GetObject(innerId), room);
+                    AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered);
             }
         }
 
         // inventory
         foreach (var itemId in agent.Children)
-            AddFromModules(actions, agent, _world.GetObject(itemId), room);
+            AddFromModules(actions, agent, _world.GetObject(itemId), stateFiltered);
 
         return actions;
     }
 
     private void AddFromModules(
-        List<AvailableAction> actions, WorldObject agent, WorldObject target, WorldObject room)
+        List<AvailableAction> actions, WorldObject agent, WorldObject target, bool stateFiltered)
     {
         foreach (var attachment in target.Modules)
         {
@@ -60,7 +76,7 @@ public sealed class ActionResolver
                 continue;
             foreach (var affordance in _modules.Get(attachment.ModuleId).Affordances)
             {
-                if (!Applies(affordance.Verb, agent, target))
+                if (!Applies(affordance.Verb, agent, target, stateFiltered))
                     continue;
                 var label = LabelFor(affordance.Verb, target);
                 actions.Add(new AvailableAction(
@@ -70,8 +86,14 @@ public sealed class ActionResolver
         }
     }
 
-    /// <summary>State-based filtering so menus only show sensible verbs.</summary>
-    private bool Applies(string verb, WorldObject agent, WorldObject target)
+    /// <summary>
+    /// State-based filtering. Observability stays: take/drop by held.
+    /// Lock state is not observable, so unlock/lock are always listed for
+    /// lockable targets. open/close follow the visible open state in
+    /// listings (stateFiltered) but are always present in the potential
+    /// set so generated-but-redundant lines resolve and noop at runtime.
+    /// </summary>
+    private bool Applies(string verb, WorldObject agent, WorldObject target, bool stateFiltered)
     {
         bool held = target.Parent == agent.Id;
         return verb switch
@@ -80,22 +102,21 @@ public sealed class ActionResolver
             "inventory" => target.Id == agent.Id,
             "take" => !held,
             "drop" => held,
-            "open" => !IsOpenState(target) && !IsLockedState(target),
-            "close" => IsOpenState(target),
-            "unlock" => IsLockedState(target),
-            "lock" => HasLockState(target) && !IsLockedState(target),
+            "open" => HasOpenState(target) && (!stateFiltered || !IsOpenState(target)),
+            "close" => HasOpenState(target) && (!stateFiltered || IsOpenState(target)),
+            "unlock" => HasLockState(target),
+            "lock" => HasLockState(target),
             _ => true,
         };
     }
+
+    private bool HasOpenState(WorldObject target) => PortalOrSelf(target) is not null;
 
     private bool HasLockState(WorldObject target) =>
         target.HasModule("lockable");
 
     private bool IsOpenState(WorldObject target) => PortalOrSelf(target) is { } s &&
         _modules.ResolveBool(s.StateObject, s.ModuleId, "open");
-
-    private bool IsLockedState(WorldObject target) => PortalOrSelf(target) is { } s &&
-        _modules.ResolveBool(s.StateObject, s.ModuleId, "locked");
 
     private (WorldObject StateObject, string ModuleId)? PortalOrSelf(WorldObject target)
     {

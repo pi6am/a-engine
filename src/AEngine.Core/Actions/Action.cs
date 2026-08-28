@@ -14,11 +14,29 @@ public sealed class ActionContext
         new Dictionary<string, string>();
 }
 
-/// <summary>Outcome of executing an action.</summary>
-public sealed record ActionResult(bool Success, string Message)
+/// <summary>How an action attempt ended.</summary>
+public enum ActionOutcome
 {
-    public static ActionResult Ok(string message) => new(true, message);
-    public static ActionResult Fail(string message) => new(false, message);
+    /// <summary>The action changed the world.</summary>
+    Success,
+    /// <summary>
+    /// The intended end state already held (e.g. unlocking an unlocked
+    /// door): nothing happened, no time passes, not a failure.
+    /// </summary>
+    Noop,
+    /// <summary>The action was attempted and failed.</summary>
+    Failure,
+}
+
+/// <summary>Outcome of executing an action.</summary>
+public sealed record ActionResult(ActionOutcome Outcome, string Message)
+{
+    /// <summary>True only when the action actually changed the world.</summary>
+    public bool Success => Outcome == ActionOutcome.Success;
+
+    public static ActionResult Ok(string message) => new(ActionOutcome.Success, message);
+    public static ActionResult Noop(string message) => new(ActionOutcome.Noop, message);
+    public static ActionResult Fail(string message) => new(ActionOutcome.Failure, message);
 }
 
 /// <summary>An action handler, addressable by string id.</summary>

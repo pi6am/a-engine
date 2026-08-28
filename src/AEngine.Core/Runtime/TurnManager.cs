@@ -22,13 +22,19 @@ public sealed class TurnManager
 
     public int Turn { get; private set; }
 
-    /// <summary>Execute an action for an agent and advance the turn.</summary>
+    /// <summary>
+    /// Execute an action for an agent and advance the turn. Noop results
+    /// (the intended end state already held) consume no turn and emit no
+    /// signals; failures still consume the turn (the attempt took time).
+    /// </summary>
     public ActionResult PerformAction(WorldObject agent, AvailableAction action, string? text = null)
     {
         lock (_engine.SyncRoot)
         {
             var departureRoomId = agent.Parent;
             var result = Execute(agent, action.HandlerId, action.TargetId, text);
+            if (result.Outcome == ActionOutcome.Noop)
+                return result;
             if (result.Success)
                 EmitSignals(agent, action, text, departureRoomId);
             AdvanceTurn();

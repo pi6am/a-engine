@@ -11,7 +11,9 @@
       "id": "agent",
       "name": "Agent",
       "fields": [
-        { "name": "policy", "type": "string", "default": "player" }
+        { "name": "policy", "type": "string", "default": "player" },
+        { "name": "character", "type": "string", "default": "" },
+        { "name": "goals", "type": "string", "default": "" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look" },
