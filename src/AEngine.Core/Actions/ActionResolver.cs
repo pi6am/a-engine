@@ -40,16 +40,33 @@ public sealed class ActionResolver
     {
         // room-granular location: a carried agent acts from the carrier's room
         var room = _world.RoomOf(agent.Id);
+        var posture = Postures.Of(_world, _modules, agent);
         var actions = new List<AvailableAction>();
 
-        // other agents in the room, for directed-speech entries
-        var others = room.Children
-            .Where(id => id != agent.Id && _world.GetObject(id).HasModule("agent"))
-            .Select(_world.GetObject)
-            .ToList();
+        // other agents in the room, for directed-speech entries — including
+        // agents seated on furniture (grandchildren of the room)
+        var others = new List<WorldObject>();
+        foreach (var childId in room.Children)
+        {
+            if (childId == agent.Id)
+                continue;
+            var child = _world.GetObject(childId);
+            if (child.HasModule("agent"))
+                others.Add(child);
+            foreach (var occupantId in child.Children)
+            {
+                if (occupantId != agent.Id && _world.GetObject(occupantId).HasModule("agent"))
+                    others.Add(_world.GetObject(occupantId));
+            }
+        }
 
         // agent's own affordances (look, inventory, say, wait)
         AddFromModules(actions, agent, agent, stateFiltered, others);
+
+        // a carried agent can only use its own verbs (look/say/wait/...) —
+        // no escape until the carrier puts it down
+        if (posture == Postures.Carried)
+            return actions;
 
         // things in the room (items, furniture, portals)
         foreach (var childId in room.Children)
@@ -59,7 +76,13 @@ public sealed class ActionResolver
             var child = _world.GetObject(childId);
             AddFromModules(actions, agent, child, stateFiltered, others);
 
-            // contents of open containers are reachable too
+            // occupants of furniture are reachable (cuddle a bed-mate, talk
+            // to a seated agent), as are contents of open containers
+            if (child.HasModule("sittable") || child.HasModule("lyable"))
+            {
+                foreach (var occupantId in child.Children)
+                    AddFromModules(actions, agent, _world.GetObject(occupantId), stateFiltered, others);
+            }
             if (child.HasModule("container") && IsOpenState(child))
             {
                 foreach (var innerId in child.Children)
@@ -84,7 +107,7 @@ public sealed class ActionResolver
                 continue;
             foreach (var affordance in _modules.Get(attachment.ModuleId).Affordances)
             {
-                if (!Applies(affordance.Verb, agent, target, stateFiltered))
+                if (!Applies(affordance, agent, target, stateFiltered))
                     continue;
                 // speech is parameterized: the label carries a {speech}
                 // placeholder, plus an addressee when several agents are
@@ -120,11 +143,15 @@ public sealed class ActionResolver
     /// lockable targets. open/close follow the visible open state in
     /// listings (stateFiltered) but are always present in the potential
     /// set so generated-but-redundant lines resolve and noop at runtime.
+    /// Posture rules come from the affordance: its posture allow-list
+    /// (go requires standing, stand requires sitting/lying) and its
+    /// same-support requirement, checked against the derived posture.
     /// </summary>
-    private bool Applies(string verb, WorldObject agent, WorldObject target, bool stateFiltered)
+    private bool Applies(
+        Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target, bool stateFiltered)
     {
         bool held = target.Parent == agent.Id;
-        return verb switch
+        var applies = affordance.Verb switch
         {
             "look" => target.Id == agent.Id,
             "inventory" => target.Id == agent.Id,
@@ -136,8 +163,12 @@ public sealed class ActionResolver
             "close" => HasOpenState(target) && (!stateFiltered || IsOpenState(target)),
             "unlock" => HasLockState(target),
             "lock" => HasLockState(target),
+            "sit" => target.HasModule("sittable"),
+            "lie" => target.HasModule("lyable"),
+            "stand" => target.Id == agent.Parent, // get up from what you're on
             _ => true,
         };
+        return applies && Postures.CanUse(_world, _modules, affordance, agent, target);
     }
 
     private bool HasOpenState(WorldObject target) => PortalOrSelf(target) is not null;
@@ -166,6 +197,9 @@ public sealed class ActionResolver
         "inventory" => "Check inventory",
         "wait" => "Wait",
         "go" => $"Go {_modules.ResolveString(target, "portal", "direction") ?? target.Name}",
+        "sit" => $"Sit on the {target.Name}",
+        "lie" => $"Lie down on the {target.Name}",
+        "stand" => $"Get off the {target.Name}",
         _ => $"{Capitalize(verb)} the {target.Name}",
     };
 

@@ -74,6 +74,18 @@ public static class Perception
                 foreach (var inner in world.ChildrenOf(child.Id))
                     items.Add($"{inner.Name} (in {child.Name})");
             }
+            // occupants of furniture (or of a carrier) list like container
+            // contents: "the old cook (sitting on the chair)"
+            foreach (var occupant in world.ChildrenOf(child.Id))
+            {
+                if (occupant.Id == agentId || !occupant.HasModule("agent"))
+                    continue;
+                var posture = Postures.Of(world, modules, occupant);
+                var where = posture == Postures.Carried
+                    ? $"carried by {child.Name}"
+                    : $"{posture} on the {child.Name}";
+                items.Add($"{NameFor(observer, occupant)} ({where})");
+            }
         }
         return items;
     }
@@ -98,6 +110,22 @@ public static class Perception
         name.StartsWith("an ", StringComparison.OrdinalIgnoreCase)
             ? name
             : "a " + name;
+
+    /// <summary>
+    /// Sentence reporting the agent's own posture when not standing:
+    /// "You are sitting on the chair." / "You are being carried by the
+    /// guest." Null while standing (the unmarked default).
+    /// </summary>
+    public static string? PostureLine(World.World world, ModuleRegistry modules, WorldObject agent)
+    {
+        var posture = Postures.Of(world, modules, agent);
+        if (posture == Postures.Standing)
+            return null;
+        var parent = world.GetObject(agent.Parent);
+        return posture == Postures.Carried
+            ? $"You are being carried by {parent.Name}."
+            : $"You are {posture} on the {parent.Name}.";
+    }
 
     /// <summary>
     /// Observer-relative naming: every agent is the protagonist of their

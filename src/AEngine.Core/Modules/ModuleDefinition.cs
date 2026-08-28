@@ -28,7 +28,11 @@ public sealed class FieldDefinition
 /// marks an idle verb (look, wait): each consecutive repeat doubles the
 /// duration up to RepeatBackoffCap, so a bored agent idles instead of
 /// thrashing its policy — and the backoff is interruptible by new
-/// observed signals, so the agent stays reactive.
+/// observed signals, so the agent stays reactive. Postures is an optional
+/// allow-list of postures the affordance is usable from ("standing",
+/// "sitting", "lying", "carried"); null = any posture. SameSupport
+/// requires the target to share the agent's parent (e.g. cuddle only
+/// between occupants of the same bed).
 /// </summary>
 public sealed class AffordanceDefinition
 {
@@ -39,6 +43,8 @@ public sealed class AffordanceDefinition
     public int Duration { get; init; } = 1;
     public bool RepeatBackoff { get; init; }
     public int RepeatBackoffCap { get; init; } = 30;
+    public List<string>? Postures { get; init; }
+    public bool SameSupport { get; init; }
     public List<Signals.SignalSpec> Signals { get; init; } = [];
 }
 

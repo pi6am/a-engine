@@ -50,6 +50,7 @@ internal static class TestWorlds
         "affordances": [
           {
             "verb": "go", "handler": "go",
+            "postures": ["standing"],
             "signals": [
               { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
               { "sense": "audible", "priority": 5, "scope": "departure", "text": "You hear {agent} leave through the {exitPortal}." },

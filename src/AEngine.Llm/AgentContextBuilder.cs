@@ -29,6 +29,8 @@ public sealed class AgentContextBuilder
             sb.AppendLine($"Location: {room.Name}");
             if (room.Description.Length > 0)
                 sb.AppendLine(room.Description);
+            if (Perception.PostureLine(_engine.World, _engine.ModuleRegistry, agent) is { } posture)
+                sb.AppendLine(posture);
 
             // same rendering as look: state annotations, open containers'
             // contents listed as separate entries

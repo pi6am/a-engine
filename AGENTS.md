@@ -30,7 +30,7 @@ src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback on
 src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: modules.json + world.json
-scenarios/npc/            # NPC demo: kitchen/dining hall, random-policy cook, signals
+scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook, signals, sittable chairs
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 ```
 
@@ -48,7 +48,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `SetAttribute`, `SetFieldOverride`. All are safe to call mid-game.
 - **Modules** — composable, data-driven types (`scenarios/mvp/modules.json`):
   `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler,
-  prompt?, signals?, duration?, repeatBackoff?, repeatBackoffCap?}] }`. Field
+  prompt?, signals?, duration?, repeatBackoff?, repeatBackoffCap?, postures?,
+  sameSupport?}] }`. Field
   types: `string | int | bool | ref`. Field resolution: per-object override →
   module default. `ModuleRegistry`
   supports register/update/unregister at runtime. An affordance's optional
@@ -118,6 +119,31 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   room entered, with `{exitPortal}`/`{exitDirection}`/`{entryPortal}`/
   `{entryDirection}` placeholders ("the cook exits through the wooden door to
   the south." / "the cook enters from the wooden door to the north.").
+- **Posture** — sitting, lying, and being carried are **containment in the
+  world tree**, derived by `Postures.Of` (Core/Actions): parent is a room →
+  `standing`; parent is an agent → `carried`; parent is furniture → the
+  `agent` module's `posture` field (`sitting`/`lying`, set by the sit/lie
+  handlers, cleared by stand/take/drop) so a bed can offer both. Getting
+  on/off furniture is ordinary affordances on composable modules —
+  `sittable` (`sit`, and `stand` gated to `postures: ["sitting"]`) and
+  `lyable` (`lie`, and `stand` gated to `["lying"]`), each with a
+  `capacity` field; both modules carry their own `stand` so a lyable-only
+  mat never traps anyone, and the posture gates guarantee only one `stand`
+  is ever listed. Action compatibility is authored **on the affordance**:
+  `postures` is an allow-list (absent = any posture; `go` declares
+  `["standing"]` — you must stand up before leaving) and `sameSupport:
+  true` requires the target to share the agent's parent (cuddle a bed-mate,
+  not someone on a chair). Everything else keeps same-room reach while
+  seated (open the drawer, read the book) with zero extra authoring.
+  `ActionResolver` enforces the rules in both `Resolve` and
+  `ResolvePotential`, so the CLI menu, LLM planner, NPC validation, and
+  debug API all inherit them; furniture occupants are scanned as action
+  targets and say-addressees (grandchildren of the room). While `carried`,
+  only the agent's own verbs (look/inventory/wait/say) are offered — no
+  escape until the carrier drops them. Perception renders posture
+  everywhere: look and the LLM context open with "You are sitting on the
+  chair." / "You are being carried by the guest.", and room listings show
+  occupants container-style: "the old cook (sitting on the chair)".
 - **Policies & NPC turns** — agents with `agent.policy != "player"` are
   autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
   actions; policies resolve by string id through `PolicyRegistry` (replaceable

@@ -19,6 +19,9 @@ public static class BuiltinHandlers
         new InventoryHandler(),
         new SayHandler(),
         new WaitHandler(),
+        new SitHandler(),
+        new LieHandler(),
+        new StandHandler(),
     ];
 
     private sealed class LookHandler : IActionHandler
@@ -32,6 +35,8 @@ public static class BuiltinHandlers
             sb.AppendLine(room.Name);
             if (room.Description.Length > 0)
                 sb.AppendLine(room.Description);
+            if (Perception.PostureLine(ctx.World, ctx.Modules, ctx.Agent) is { } posture)
+                sb.AppendLine(posture);
 
             // openables report their state; open containers' contents list
             // as separate entries ("brass key (in desk drawer)")
@@ -140,12 +145,14 @@ public static class BuiltinHandlers
             }
             else if (target.Parent.Length > 0 && ctx.World.HasObject(target.Parent))
             {
-                // inside a container in the room: the container must be open
-                var container = ctx.World.GetObject(target.Parent);
-                if (container.Parent != room.Id)
+                // on furniture the target is reachable; inside a container
+                // in the room, the container must be open
+                var holder = ctx.World.GetObject(target.Parent);
+                if (holder.Parent != room.Id)
                     return ActionResult.Fail($"You don't see the {target.Name} here.");
-                if (!HandlerState.IsOpen(ctx, container))
-                    return ActionResult.Fail($"The {target.Name} is inside the closed {container.Name}.");
+                if (!holder.HasModule("sittable") && !holder.HasModule("lyable") &&
+                    !HandlerState.IsOpen(ctx, holder))
+                    return ActionResult.Fail($"The {target.Name} is inside the closed {holder.Name}.");
             }
             else
             {
@@ -153,6 +160,11 @@ public static class BuiltinHandlers
             }
 
             ctx.World.MoveObject(target.Id, ctx.Agent.Id);
+            if (target.HasModule("agent"))
+                // a carried agent's posture is derived from containment;
+                // clear any stored sit/lie so it can't go stale
+                ctx.World.SetFieldOverride(
+                    target.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
             return ActionResult.Ok($"You take the {target.Name}.");
         }
     }
@@ -168,6 +180,10 @@ public static class BuiltinHandlers
                 return ActionResult.Noop($"You're not carrying the {target.Name}.");
             var room = HandlerState.RoomOf(ctx);
             ctx.World.MoveObject(target.Id, room.Id);
+            if (target.HasModule("agent"))
+                // a dropped agent lands on their feet
+                ctx.World.SetFieldOverride(
+                    target.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
             return ActionResult.Ok($"You drop the {target.Name}.");
         }
     }
@@ -241,5 +257,67 @@ public static class BuiltinHandlers
         public string Id => "wait";
 
         public ActionResult Execute(ActionContext ctx) => ActionResult.Ok("You wait.");
+    }
+
+    // getting onto furniture: sit (sittable) and lie (lyable) share Enter;
+    // the agent becomes a child of the support and its posture is recorded
+    // on the agent module so a bed can offer both postures
+    private sealed class SitHandler : IActionHandler
+    {
+        public string Id => "sit";
+
+        public ActionResult Execute(ActionContext ctx) =>
+            Enter(ctx, "sittable", "sit", Postures.Sitting);
+    }
+
+    private sealed class LieHandler : IActionHandler
+    {
+        public string Id => "lie";
+
+        public ActionResult Execute(ActionContext ctx) =>
+            Enter(ctx, "lyable", "lie", Postures.Lying);
+    }
+
+    private static ActionResult Enter(ActionContext ctx, string supportModule, string verb, string posture)
+    {
+        var target = ctx.Target ?? throw new InvalidOperationException($"{verb} requires a target.");
+        if (!target.HasModule(supportModule))
+            return ActionResult.Fail($"You can't {verb} on the {target.Name}.");
+        if (ctx.Agent.Parent == target.Id &&
+            Postures.Of(ctx.World, ctx.Modules, ctx.Agent) == posture)
+            return ActionResult.Noop(posture == Postures.Lying
+                ? $"You're already lying on the {target.Name}."
+                : $"You're already sitting on the {target.Name}.");
+        if (Postures.Of(ctx.World, ctx.Modules, ctx.Agent) != Postures.Standing)
+            return ActionResult.Fail("You need to stand up first.");
+        var capacity = ctx.Modules.ResolveInt(target, supportModule, "capacity", 1);
+        var occupants = target.Children.Count(id => ctx.World.GetObject(id).HasModule("agent"));
+        if (occupants >= capacity)
+            return ActionResult.Fail($"There's no room on the {target.Name}.");
+        ctx.World.MoveObject(ctx.Agent.Id, target.Id);
+        ctx.World.SetFieldOverride(ctx.Agent.Id, "agent", "posture", World.World.ToJson(posture));
+        return ActionResult.Ok(posture == Postures.Lying
+            ? $"You lie down on the {target.Name}."
+            : $"You sit down on the {target.Name}.");
+    }
+
+    private sealed class StandHandler : IActionHandler
+    {
+        public string Id => "stand";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var posture = Postures.Of(ctx.World, ctx.Modules, ctx.Agent);
+            if (posture == Postures.Standing)
+                return ActionResult.Noop("You're already standing.");
+            if (posture == Postures.Carried)
+                return ActionResult.Fail("You can't get up while being carried.");
+            var support = ctx.World.GetObject(ctx.Agent.Parent);
+            var room = HandlerState.RoomOf(ctx);
+            ctx.World.MoveObject(ctx.Agent.Id, room.Id);
+            ctx.World.SetFieldOverride(
+                ctx.Agent.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
+            return ActionResult.Ok($"You get up from the {support.Name}.");
+        }
     }
 }
