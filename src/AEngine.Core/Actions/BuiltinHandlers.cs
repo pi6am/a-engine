@@ -8,6 +8,7 @@ public static class BuiltinHandlers
 {
     public static IEnumerable<IActionHandler> All() =>
     [
+        new BasicHandler(),
         new LookHandler(),
         new GoHandler(),
         new OpenHandler(),
@@ -25,6 +26,20 @@ public static class BuiltinHandlers
         new WearHandler(),
         new RemoveHandler(),
     ];
+
+    // flavor verbs that don't change the world ("Touch the red flower") —
+    // the message interpolates the affordance's verb
+    private sealed class BasicHandler : IActionHandler
+    {
+        public string Id => "basic";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("basic requires a target.");
+            var verb = ctx.Verb ?? "touch";
+            return ActionResult.Ok($"You {verb} the {target.Name}.");
+        }
+    }
 
     private sealed class LookHandler : IActionHandler
     {

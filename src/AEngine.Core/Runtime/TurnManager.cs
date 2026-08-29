@@ -62,7 +62,7 @@ public sealed class TurnManager
         lock (_engine.SyncRoot)
         {
             var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
-            var result = Execute(agent, action.HandlerId, action.TargetId, text);
+            var result = Execute(agent, action.HandlerId, action.TargetId, text, action.Verb);
             // remember your own action and its outcome (a look result is too
             // verbose to store verbatim)
             _engine.Memory.Record(agent,
@@ -80,7 +80,8 @@ public sealed class TurnManager
 
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(
-        WorldObject agent, string handlerId, string? targetId = null, string? text = null)
+        WorldObject agent, string handlerId, string? targetId = null, string? text = null,
+        string? verb = null)
     {
         lock (_engine.SyncRoot)
         {
@@ -91,6 +92,7 @@ public sealed class TurnManager
                 Modules = _engine.ModuleRegistry,
                 Agent = agent,
                 Target = targetId is null ? null : _engine.World.GetObject(targetId),
+                Verb = verb,
                 Args = text is null
                     ? new Dictionary<string, string>()
                     : new Dictionary<string, string> { ["text"] = text },

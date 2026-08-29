@@ -10,6 +10,12 @@ public sealed class ActionContext
     public required ModuleRegistry Modules { get; init; }
     public required WorldObject Agent { get; init; }
     public WorldObject? Target { get; init; }
+    /// <summary>
+    /// The affordance verb that was performed ("touch", "go", ...). Null
+    /// when the handler was invoked without an affordance (e.g. scheduled
+    /// actions via TurnManager.Execute).
+    /// </summary>
+    public string? Verb { get; init; }
     public IReadOnlyDictionary<string, string> Args { get; init; } =
         new Dictionary<string, string>();
 }
