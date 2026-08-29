@@ -152,6 +152,40 @@
       ]
     },
     {
+      "id": "body",
+      "name": "Body",
+      "fields": [
+        { "name": "regions", "type": "list", "default": ["head", "top", "bottom", "feet"] }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "wearable",
+      "name": "Wearable",
+      "fields": [
+        { "name": "regions", "type": "list", "default": [] },
+        { "name": "worn", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "wear",
+          "handler": "wear",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} puts on the {target}." }
+          ]
+        },
+        {
+          "verb": "remove",
+          "handler": "remove",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} takes off the {target}." }
+          ]
+        }
+      ]
+    },
+    {
       "id": "sittable",
       "name": "Sittable",
       "fields": [

@@ -11,7 +11,16 @@
           "id": "player",
           "name": "the guest",
           "description": "A visitor looking for a meal.",
-          "modules": ["agent", "can_speak"]
+          "modules": ["agent", "can_speak", "body"]
+        },
+        {
+          "id": "chefs_hat",
+          "name": "chef's hat",
+          "description": "A tall white chef's hat.",
+          "modules": [
+            "portable",
+            { "module": "wearable", "overrides": { "regions": ["head"] } }
+          ]
         },
         {
           "id": "door_kitchen_side",
@@ -45,7 +54,19 @@
                 "goals": "Keep the dining hall stocked: fetch the loaf of bread and the carving knife, and tidy up."
               }
             },
-            "can_speak"
+            "can_speak",
+            "body"
+          ],
+          "children": [
+            {
+              "id": "apron",
+              "name": "apron",
+              "description": "A flour-dusted kitchen apron.",
+              "modules": [
+                "portable",
+                { "module": "wearable", "overrides": { "regions": ["top"], "worn": true } }
+              ]
+            }
           ]
         },
         {
