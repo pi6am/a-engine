@@ -22,6 +22,22 @@ public sealed class SlashCommandRegistry
         input.StartsWith("/", StringComparison.Ordinal);
 
     /// <summary>
+    /// All commands and aliases ("/quit", "/exit", …) with their
+    /// descriptions, for tab completion in the console prompt.
+    /// </summary>
+    public IReadOnlyList<(string Name, string Description)> CompletionItems()
+    {
+        var list = new List<(string, string)>();
+        foreach (var entry in _entries)
+        {
+            list.Add(("/" + entry.Name, entry.Description));
+            foreach (var alias in entry.Aliases)
+                list.Add(("/" + alias, entry.Description));
+        }
+        return list;
+    }
+
+    /// <summary>
     /// Dispatch a slash command. Returns true to exit the REPL, false to
     /// continue. Unknown commands print a hint and return false.
     /// </summary>

@@ -182,6 +182,7 @@ slash.Register("timescale", ["ts"], "Set the real-time clock speed (1.0 = normal
     return false;
 });
 slash.Register("quit", ["exit"], "Leave the game", _ => true);
+console.Completions = slash.CompletionItems();
 
 Console.WriteLine(planner is null
     ? "Type /actions to see what you can do, /help for commands."
@@ -300,7 +301,7 @@ while (true)
     if (action.Prompt is not null)
     {
         // prompted verbs (e.g. say) take a free-text argument
-        text = console.ReadLine(action.Prompt + " ");
+        text = console.ReadLine(action.Prompt + " ", completions: false);
         if (text is null) // EOF
         {
             realTimeCts?.Cancel();

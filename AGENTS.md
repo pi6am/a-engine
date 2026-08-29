@@ -26,8 +26,9 @@ not retarget to net8.0 without installing its runtime.
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
 src/AEngine.Cli/          # text-first console REPL (slash commands, optional LLM free-text
                           # planning, --real-time mode; ConsolePrompt does per-key line
-                          # editing — cursor movement, mid-line insert, up/down history —
-                          # and redraws the input line around background output)
+                          # editing — cursor movement, mid-line insert, up/down history,
+                          # slash-command completion popup with tab — and redraws the
+                          # input line around background output)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
 src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
