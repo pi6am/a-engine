@@ -172,7 +172,8 @@
           "handler": "wear",
           "duration": 2,
           "signals": [
-            { "sense": "visual", "priority": 5, "text": "{agent} puts on the {target}." }
+            { "sense": "visual", "priority": 5, "text": "{agent} puts on the {target}." },
+            { "sense": "audible", "priority": 3, "text": "the rustling of clothing being put on." }
           ]
         },
         {
@@ -180,7 +181,8 @@
           "handler": "remove",
           "duration": 2,
           "signals": [
-            { "sense": "visual", "priority": 5, "text": "{agent} takes off the {target}." }
+            { "sense": "visual", "priority": 5, "text": "{agent} takes off the {target}." },
+            { "sense": "audible", "priority": 3, "text": "the rustling of clothing being removed." }
           ]
         }
       ]
