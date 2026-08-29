@@ -21,6 +21,7 @@
             "agent",
             "can_speak",
             "shoveable",
+            { "module": "health", "overrides": { "maxHp": 20, "hp": 20 } },
             { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
             { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3 } } }
           ]
@@ -40,6 +41,7 @@
             },
             "can_speak",
             "shoveable",
+            { "module": "health", "overrides": { "maxHp": 24, "hp": 24 } },
             { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12, "perception": 10 } } },
             { "module": "skills", "overrides": { "values": { "brawling": 4 } } }
           ],

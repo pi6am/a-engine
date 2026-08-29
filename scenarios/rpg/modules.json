@@ -27,6 +27,16 @@
       "affordances": []
     },
     {
+      "id": "health",
+      "name": "Health",
+      "fields": [
+        { "name": "maxHp", "type": "int", "default": 10 },
+        { "name": "hp", "type": "int", "default": 10 },
+        { "name": "incapacitatedAt", "type": "int", "default": 0 }
+      ],
+      "affordances": []
+    },
+    {
       "id": "room",
       "name": "Room",
       "fields": [],
