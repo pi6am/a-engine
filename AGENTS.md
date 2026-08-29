@@ -30,7 +30,8 @@ src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback on
 src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: modules.json + world.json
-scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook, signals, sittable chairs
+scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook, signals,
+                          # sittable chairs, wearable clothing (apron, chef's hat)
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 ```
 
@@ -50,7 +51,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler,
   prompt?, signals?, duration?, repeatBackoff?, repeatBackoffCap?, postures?,
   sameSupport?}] }`. Field
-  types: `string | int | bool | ref`. Field resolution: per-object override →
+  types: `string | int | bool | ref | list` (list = string array; tolerates a
+  comma-separated string). Field resolution: per-object override →
   module default. `ModuleRegistry`
   supports register/update/unregister at runtime. An affordance's optional
   `prompt` marks the verb as taking a free-text argument (surfaced to the
@@ -144,6 +146,19 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   everywhere: look and the LLM context open with "You are sitting on the
   chair." / "You are being carried by the guest.", and room listings show
   occupants container-style: "the old cook (sitting on the chair)".
+- **Clothing** — garments have the `wearable` module (`regions`: the body
+  regions they occupy; `worn` flag) and are **worn as children of the
+  agent** (same containment as inventory) with `worn: true`. `wear`/`remove`
+  handlers (`Clothing` helper in Core/Actions): wearing requires holding the
+  garment and a `body` module whose `regions` list covers the garment's
+  (no body, no wearing — a horse has `back`, not `top`); at most one worn
+  garment per region (conflict = region-set intersection, so layering is
+  the author's choice of region names — shirt `["top"]`, coat `["outer"]`,
+  armor `["top","bottom"]`; sizes are expressible the same way, e.g.
+  `giant_top`). `drop` refuses worn items. Room listings stay compact;
+  `look` (and the LLM context) adds a dressed line per agent ("the old cook
+  is wearing an apron.") until an examine verb exists, and `inventory`
+  splits "You are wearing: …" from "You are carrying: …".
 - **Policies & NPC turns** — agents with `agent.policy != "player"` are
   autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
   actions; policies resolve by string id through `PolicyRegistry` (replaceable
@@ -281,6 +296,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `HandlerRegistry` and wired from data.
 - **Long-running actions** — `Scheduler` exists but nothing schedules multi-turn
   actions yet.
+- **Examine verb** — `examine {object}` for per-object detail (an agent's worn
+  clothing currently rides the `look` dressed lines; garment stat effects wait
+  for the stats system).
 - **Signals in the debug web client** — a `GET /api/signals?agentId=` peek
   endpoint + panel would slot in (`SignalBus.Peek` already exists).
 - **Signal intensity & attenuation** — generalize transmission: emitters get an

@@ -94,4 +94,24 @@ public sealed class ModuleRegistry
         ResolveField(obj, moduleId, field) is { } e && e.ValueKind == JsonValueKind.Number
             ? e.GetInt32()
             : fallback;
+
+    /// <summary>
+    /// Resolve a list-of-strings field: a JSON array of strings, tolerantly
+    /// also a comma-separated string. Null when neither exists.
+    /// </summary>
+    public List<string>? ResolveStringList(WorldObject obj, string moduleId, string field)
+    {
+        if (ResolveField(obj, moduleId, field) is not { } e)
+            return null;
+        if (e.ValueKind == JsonValueKind.Array)
+            return e.EnumerateArray()
+                .Where(x => x.ValueKind == JsonValueKind.String)
+                .Select(x => x.GetString()!)
+                .ToList();
+        if (e.ValueKind == JsonValueKind.String)
+            return e.GetString()!
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+        return null;
+    }
 }

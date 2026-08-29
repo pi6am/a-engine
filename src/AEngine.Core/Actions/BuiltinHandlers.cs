@@ -22,6 +22,8 @@ public static class BuiltinHandlers
         new SitHandler(),
         new LieHandler(),
         new StandHandler(),
+        new WearHandler(),
+        new RemoveHandler(),
     ];
 
     private sealed class LookHandler : IActionHandler
@@ -43,6 +45,10 @@ public static class BuiltinHandlers
             var items = Perception.DescribeRoomContents(ctx.World, ctx.Modules, room, ctx.Agent.Id);
             if (items.Count > 0)
                 sb.AppendLine("You see: " + string.Join(", ", items));
+
+            // dressed agents get a line each — the listing stays compact
+            foreach (var line in Perception.DressedLines(ctx.World, ctx.Modules, room, ctx.Agent.Id))
+                sb.AppendLine(line);
 
             var exits = ctx.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
             if (exits.Count > 0)
@@ -178,6 +184,8 @@ public static class BuiltinHandlers
             var target = ctx.Target ?? throw new InvalidOperationException("drop requires a target.");
             if (!HandlerState.IsHeld(ctx, target))
                 return ActionResult.Noop($"You're not carrying the {target.Name}.");
+            if (Clothing.IsWorn(ctx.Modules, target))
+                return ActionResult.Fail($"Take off the {target.Name} first.");
             var room = HandlerState.RoomOf(ctx);
             ctx.World.MoveObject(target.Id, room.Id);
             if (target.HasModule("agent"))
@@ -228,10 +236,18 @@ public static class BuiltinHandlers
 
         public ActionResult Execute(ActionContext ctx)
         {
-            var items = ctx.World.ChildrenOf(ctx.Agent.Id).ToList();
-            return ActionResult.Ok(items.Count == 0
+            var worn = new List<string>();
+            var carried = new List<string>();
+            foreach (var item in ctx.World.ChildrenOf(ctx.Agent.Id))
+                (Clothing.IsWorn(ctx.Modules, item) ? worn : carried).Add(item.Name);
+
+            var parts = new List<string>();
+            if (worn.Count > 0)
+                parts.Add("You are wearing: " + string.Join(", ", worn.Select(Perception.WithArticle)));
+            parts.Add(carried.Count == 0
                 ? "You are carrying nothing."
-                : "You are carrying: " + string.Join(", ", items.Select(i => i.Name)));
+                : "You are carrying: " + string.Join(", ", carried.Select(Perception.WithArticle)));
+            return ActionResult.Ok(string.Join("\n", parts));
         }
     }
 
@@ -318,6 +334,58 @@ public static class BuiltinHandlers
             ctx.World.SetFieldOverride(
                 ctx.Agent.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
             return ActionResult.Ok($"You get up from the {support.Name}.");
+        }
+    }
+
+    // clothing: wearing is containment (the garment is a child of the
+    // agent) plus a "worn" flag; conflicts and fit are region-set data —
+    // see Clothing
+    private sealed class WearHandler : IActionHandler
+    {
+        public string Id => "wear";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("wear requires a target.");
+            if (!target.HasModule("wearable"))
+                return ActionResult.Fail($"You can't wear the {target.Name}.");
+            if (Clothing.IsWorn(ctx.Modules, target))
+                return ActionResult.Noop($"You're already wearing the {target.Name}.");
+            if (Clothing.BodyRegions(ctx.Modules, ctx.Agent) is not { } bodyRegions)
+                return ActionResult.Fail("You have nothing to wear that on.");
+            var regions = Clothing.GarmentRegions(ctx.Modules, target);
+            if (regions.Any(r => !bodyRegions.Contains(r)))
+                return ActionResult.Fail($"The {target.Name} doesn't fit you.");
+            if (!HandlerState.IsHeld(ctx, target))
+                return ActionResult.Fail($"You need to pick up the {target.Name} first.");
+
+            // one garment per region: conflict on any shared region
+            foreach (var worn in Clothing.WornItems(ctx.World, ctx.Modules, ctx.Agent))
+            {
+                var overlap = Clothing.GarmentRegions(ctx.Modules, worn).Intersect(regions).ToList();
+                if (overlap.Count > 0)
+                    return ActionResult.Fail(
+                        $"You're already wearing the {worn.Name} on your {overlap[0]}.");
+            }
+
+            ctx.World.SetFieldOverride(
+                target.Id, "wearable", "worn", World.World.ToJson(true));
+            return ActionResult.Ok($"You put on the {target.Name}.");
+        }
+    }
+
+    private sealed class RemoveHandler : IActionHandler
+    {
+        public string Id => "remove";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("remove requires a target.");
+            if (!Clothing.IsWorn(ctx.Modules, target))
+                return ActionResult.Noop($"You're not wearing the {target.Name}.");
+            ctx.World.SetFieldOverride(
+                target.Id, "wearable", "worn", World.World.ToJson(false));
+            return ActionResult.Ok($"You take off the {target.Name}.");
         }
     }
 }

@@ -91,6 +91,41 @@ public static class Perception
     }
 
     /// <summary>
+    /// One line per visibly dressed agent in the room (top-level agents and
+    /// furniture occupants, the observer included):
+    /// "the old cook is wearing an apron, a chef's hat." /
+    /// "You are wearing an apron." Placeholder for per-agent detail until an
+    /// examine verb exists; the "You see:" listing stays compact.
+    /// </summary>
+    public static List<string> DressedLines(
+        World.World world, ModuleRegistry modules, WorldObject room, string observerId)
+    {
+        var lines = new List<string>();
+        foreach (var child in world.ChildrenOf(room.Id))
+        {
+            if (child.HasModule("portal"))
+                continue;
+            AddLine(child);
+            foreach (var occupant in world.ChildrenOf(child.Id))
+                AddLine(occupant);
+        }
+        return lines;
+
+        void AddLine(WorldObject obj)
+        {
+            if (!obj.HasModule("agent"))
+                return;
+            var worn = Clothing.WornItems(world, modules, obj);
+            if (worn.Count == 0)
+                return;
+            var list = string.Join(", ", worn.Select(w => WithArticle(w.Name)));
+            lines.Add(obj.Id == observerId
+                ? $"You are wearing {list}."
+                : $"{obj.Name} is wearing {list}.");
+        }
+    }
+
+    /// <summary>
     /// Sentence reporting a container's contents, for the open action:
     /// "There is a brass key inside." / "It's empty."
     /// </summary>
@@ -103,13 +138,13 @@ public static class Perception
               string.Join(", ", contents.Select(c => WithArticle(c.Name))) + " inside.";
     }
 
-    /// <summary>"brass key" -> "a brass key"; names with an article stay as-is.</summary>
+    /// <summary>"brass key" -> "a brass key"; "apron" -> "an apron"; names with an article stay as-is.</summary>
     public static string WithArticle(string name) =>
         name.StartsWith("the ", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("a ", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("an ", StringComparison.OrdinalIgnoreCase)
             ? name
-            : "a " + name;
+            : (name.Length > 0 && "aeiou".Contains(char.ToLowerInvariant(name[0])) ? "an " : "a ") + name;
 
     /// <summary>
     /// Sentence reporting the agent's own posture when not standing:

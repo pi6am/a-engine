@@ -39,6 +39,10 @@ public sealed class AgentContextBuilder
             if (visible.Count > 0)
                 sb.AppendLine("You see: " + string.Join(", ", visible));
 
+            foreach (var line in Perception.DressedLines(
+                         _engine.World, _engine.ModuleRegistry, room, agent.Id))
+                sb.AppendLine(line);
+
             var exits = _engine.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
             if (exits.Count > 0)
             {

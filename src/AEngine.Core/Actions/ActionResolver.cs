@@ -158,7 +158,10 @@ public sealed class ActionResolver
             "wait" => target.Id == agent.Id,
             "say" => target.Id == agent.Id, // speech comes from your own can_speak
             "take" => !held && target.Id != agent.Id, // can't pick up yourself
-            "drop" => held && target.Id != agent.Id,
+            "drop" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
+            "wear" => held && target.HasModule("wearable") &&
+                      !Clothing.IsWorn(_modules, target) && agent.HasModule("body"),
+            "remove" => target.HasModule("wearable") && Clothing.IsWorn(_modules, target),
             "open" => HasOpenState(target) && (!stateFiltered || !IsOpenState(target)),
             "close" => HasOpenState(target) && (!stateFiltered || IsOpenState(target)),
             "unlock" => HasLockState(target),
@@ -200,6 +203,8 @@ public sealed class ActionResolver
         "sit" => $"Sit on the {target.Name}",
         "lie" => $"Lie down on the {target.Name}",
         "stand" => $"Get off the {target.Name}",
+        "wear" => $"Wear the {target.Name}",
+        "remove" => $"Take off the {target.Name}",
         _ => $"{Capitalize(verb)} the {target.Name}",
     };
 

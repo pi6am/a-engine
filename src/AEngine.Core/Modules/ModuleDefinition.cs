@@ -9,6 +9,7 @@ public enum FieldType
     Int,
     Bool,
     Ref, // object-id reference
+    List, // list of strings (e.g. body regions)
 }
 
 /// <summary>A field declared by a module: name, type, and default value.</summary>
