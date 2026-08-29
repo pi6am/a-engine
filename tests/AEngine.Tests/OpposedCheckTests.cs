@@ -221,6 +221,7 @@ public class OpposedCheckTests
         engine.World.SetFieldOverride("apple", "wearable", "worn", Core.World.World.ToJson(true));
 
         var actions = engine.ActionResolver.Resolve(engine.World.GetObject("alice"));
-        Assert.DoesNotContain(actions, a => a.TargetId == "apple");
+        Assert.DoesNotContain(actions,
+            a => (a.Verb == "steal" || a.Verb == "take") && a.TargetId == "apple");
     }
 }

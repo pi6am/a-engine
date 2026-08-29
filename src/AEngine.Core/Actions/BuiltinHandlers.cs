@@ -28,6 +28,7 @@ public static class BuiltinHandlers
         new RemoveHandler(),
         new ShoveHandler(),
         new StealHandler(),
+        new ExamineHandler(),
     ];
 
     // flavor verbs that don't change the world ("Touch the red flower") —
@@ -309,6 +310,50 @@ public static class BuiltinHandlers
         public string Id => "wait";
 
         public ActionResult Execute(ActionContext ctx) => ActionResult.Ok("You wait.");
+    }
+
+    // examine: per-object detail. Universal (the resolver offers it for
+    // every visible object); agents show what they're wearing and carrying,
+    // open containers their contents, openables/portal sides their state.
+    // Lock state is never observable.
+    private sealed class ExamineHandler : IActionHandler
+    {
+        public string Id => "examine";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("examine requires a target.");
+            var sb = new StringBuilder();
+            sb.AppendLine(target.Name);
+            if (target.Description.Length > 0)
+                sb.AppendLine(target.Description);
+
+            if (target.HasModule("agent"))
+            {
+                var posture = Postures.Of(ctx.World, ctx.Modules, target);
+                if (posture == Postures.Prone)
+                    sb.AppendLine($"{target.Name} is prone on the ground.");
+                else if (posture == Postures.Carried)
+                    sb.AppendLine($"{target.Name} is being carried by {ctx.World.GetObject(target.Parent).Name}.");
+                else if (posture != Postures.Standing)
+                    sb.AppendLine($"{target.Name} is {posture} on {Perception.WithDefiniteArticle(ctx.World.GetObject(target.Parent).Name)}.");
+                var worn = Clothing.WornItems(ctx.World, ctx.Modules, target);
+                if (worn.Count > 0)
+                    sb.AppendLine($"Wearing: {string.Join(", ", worn.Select(w => Perception.WithArticle(w.Name)))}.");
+                var carried = ctx.World.ChildrenOf(target.Id)
+                    .Where(c => !Clothing.IsWorn(ctx.Modules, c)).ToList();
+                if (carried.Count > 0)
+                    sb.AppendLine($"Carrying: {string.Join(", ", carried.Select(c => Perception.WithArticle(c.Name)))}.");
+            }
+            else
+            {
+                if (HandlerState.GetOpenState(ctx, target) is not null)
+                    sb.AppendLine(HandlerState.IsOpen(ctx, target) ? "It is open." : "It is closed.");
+                if (target.HasModule("container") && HandlerState.IsOpen(ctx, target))
+                    sb.AppendLine(Perception.ContentsSentence(ctx.World, target));
+            }
+            return ActionResult.Ok(sb.ToString().TrimEnd());
+        }
     }
 
     // getting onto furniture: sit (sittable) and lie (lyable) share Enter;

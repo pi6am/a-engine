@@ -70,8 +70,16 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   busy-but-idle agent wakes early when new signals arrive.
 - **Actions** — module affordances name a `handler` **string id**, resolved through
   `HandlerRegistry` (handlers are replaceable at runtime — this is the extension
-  seam). Built-ins: look, go, open, close, take, drop, unlock, lock, inventory,
-  say, wait (`wait` just passes the turn; it is quiet — no signals). `ActionResolver` enumerates the actions currently available to an agent as
+  seam). Built-ins: basic (flavor verbs, interpolates the verb into its
+  message), look, go, open, close, take, drop, unlock, lock, pick, inventory,
+  say, wait (`wait` just passes the turn; it is quiet — no signals), sit, lie,
+  stand, wear, remove, shove, steal, examine. `examine` is universal: the
+  resolver offers it for every visible object (room contents, agents and
+  their pockets, open containers' contents, inventory) with no module of its
+  own (moduleId "" — no signals, default duration, no check); its handler
+  shows the full description, an agent's worn/carried items and posture, an
+  openable's state and an open container's contents — but never lock state.
+  Carried agents can't examine. `ActionResolver` enumerates the actions currently available to an agent as
   structured `(verb, target, label, handlerId, moduleId, prompt?)` entries.
   Listings are filtered by **observable** state: `open`/`close` follow the
   visible open state, take/drop follow held — while `unlock`/`lock` are always
@@ -331,9 +339,6 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   register into `HandlerRegistry` and wire from data.
 - **Long-running actions** — `Scheduler` exists but nothing schedules multi-turn
   actions yet.
-- **Examine verb** — `examine {object}` for per-object detail (an agent's worn
-  clothing currently rides the `look` dressed lines; garment stat effects wait
-  for the stats system).
 - **Signals in the debug web client** — a `GET /api/signals?agentId=` peek
   endpoint + panel would slot in (`SignalBus.Peek` already exists).
 - **Signal intensity & attenuation** — generalize transmission: emitters get an

@@ -61,7 +61,8 @@ public sealed class ActionResolver
         }
 
         // agent's own affordances (look, inventory, say, wait)
-        AddFromModules(actions, agent, agent, stateFiltered, others);
+        var examinable = new List<WorldObject>();
+        AddFromModules(actions, agent, agent, stateFiltered, others, examinable);
 
         // a carried agent can only use its own verbs (look/say/wait/...) —
         // no escape until the carrier puts it down
@@ -74,14 +75,14 @@ public sealed class ActionResolver
             if (childId == agent.Id)
                 continue;
             var child = _world.GetObject(childId);
-            AddFromModules(actions, agent, child, stateFiltered, others);
+            AddFromModules(actions, agent, child, stateFiltered, others, examinable);
 
             // other agents' pockets are scan targets too (steal); Applies
             // restricts items held by another agent to steal verbs only
             if (child.HasModule("agent"))
             {
                 foreach (var pocketId in child.Children)
-                    AddFromModules(actions, agent, _world.GetObject(pocketId), stateFiltered, others);
+                    AddFromModules(actions, agent, _world.GetObject(pocketId), stateFiltered, others, examinable);
             }
 
             // occupants of furniture are reachable (cuddle a bed-mate, talk
@@ -91,32 +92,45 @@ public sealed class ActionResolver
                 foreach (var occupantId in child.Children)
                 {
                     var occupant = _world.GetObject(occupantId);
-                    AddFromModules(actions, agent, occupant, stateFiltered, others);
+                    AddFromModules(actions, agent, occupant, stateFiltered, others, examinable);
                     if (occupant.HasModule("agent"))
                     {
                         foreach (var pocketId in occupant.Children)
-                            AddFromModules(actions, agent, _world.GetObject(pocketId), stateFiltered, others);
+                            AddFromModules(actions, agent, _world.GetObject(pocketId), stateFiltered, others, examinable);
                     }
                 }
             }
             if (child.HasModule("container") && IsOpenState(child))
             {
                 foreach (var innerId in child.Children)
-                    AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered, others);
+                    AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered, others, examinable);
             }
         }
 
         // inventory
         foreach (var itemId in agent.Children)
-            AddFromModules(actions, agent, _world.GetObject(itemId), stateFiltered, others);
+            AddFromModules(actions, agent, _world.GetObject(itemId), stateFiltered, others, examinable);
+
+        // everything visible can be examined in detail — a universal verb
+        // with no module/affordance of its own (moduleId "" skips
+        // affordance lookups: no signals, default duration, no check)
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var target in examinable)
+        {
+            if (target.Id == agent.Id || !seen.Add(target.Id))
+                continue;
+            actions.Add(new AvailableAction(
+                "examine", target.Id, $"Examine {The(target)}", "examine", ""));
+        }
 
         return actions;
     }
 
     private void AddFromModules(
         List<AvailableAction> actions, WorldObject agent, WorldObject target, bool stateFiltered,
-        IReadOnlyList<WorldObject> others)
+        IReadOnlyList<WorldObject> others, List<WorldObject> examinable)
     {
+        examinable.Add(target);
         foreach (var attachment in target.Modules)
         {
             if (!_modules.Has(attachment.ModuleId))
