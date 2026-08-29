@@ -225,9 +225,16 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   is observable ("{agent} swings at the {target} and misses."). The arena
   armory has a dagger (1d4), an arming sword (1d8), padded armor
   (protection 2), and the strongbox rapier (1d8+1).
-  **Planned stages:** 5 — grappling
-  (`grapple` = forced carrying, `escape` self-verb, `choke` on grappled
-  victims); 6 — granular body parts and targeted damage (per-part pools,
+  **Stage 5 (done):** grappling. `grappleable` exposes `grapple`
+  (opposed, gated on the affordance): success hauls the victim into
+  **forced carrying** — the carried-posture rules restrict them (own
+  verbs only) plus `escape` from the agent-side `grappler` module, an
+  opposed break-out rolled in the handler (its defender is the carrier,
+  not the self-target; an incapacitated carrier can't hold anyone). The
+  grappler gets `release` (set the victim down, standing) and `choke`
+  (on `chokeable`) — a no-roll unarmed attack, combatant damage, armor
+  ignored; victims choked unconscious stay in the grappler's grasp.
+  **Planned stages:** 6 — granular body parts and targeted damage (per-part pools,
   region-scoped armor). Stage 6 should also make damage/health reporting
   crunch-level configurable via scenario data (e.g. a `rules` module
   field): in "numeric" mode attacks report damage numbers and

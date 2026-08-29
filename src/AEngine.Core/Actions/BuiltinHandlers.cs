@@ -29,6 +29,10 @@ public static class BuiltinHandlers
         new ShoveHandler(),
         new StealHandler(),
         new AttackHandler(),
+        new GrappleHandler(),
+        new ReleaseHandler(),
+        new EscapeHandler(),
+        new ChokeHandler(),
         new ExamineHandler(),
     ];
 
@@ -623,6 +627,98 @@ public static class BuiltinHandlers
             var holder = ctx.World.GetObject(target.Parent);
             ctx.World.MoveObject(target.Id, ctx.Agent.Id);
             return ActionResult.Ok($"You steal the {target.Name} from {holder.Name}.");
+        }
+    }
+
+    // grappling (RPG stage 5): grapple hauls the victim into forced
+    // carrying — the carried-posture restrictions do the rest. The opposed
+    // check gates in PerformAction. release sets a grappled victim down;
+    // escape is the victim's opposed break-out, rolled here (like attack)
+    // because the check's defender is the carrier, not the self-target;
+    // choke is a no-roll unarmed attack on a victim you're holding and
+    // ignores armor.
+    private sealed class GrappleHandler : IActionHandler
+    {
+        public string Id => "grapple";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("grapple requires a target.");
+            if (!target.HasModule("agent"))
+                return ActionResult.Fail($"You can't grapple the {target.Name}.");
+            if (target.Parent == ctx.Agent.Id)
+                return ActionResult.Noop(
+                    $"You're already grappling {Perception.WithDefiniteArticle(target.Name)}.");
+            ctx.World.MoveObject(target.Id, ctx.Agent.Id);
+            // hauled upright — whatever they were on, they're in your grasp
+            ctx.World.SetFieldOverride(
+                target.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
+            return ActionResult.Ok($"You seize {Perception.WithDefiniteArticle(target.Name)}.");
+        }
+    }
+
+    private sealed class ReleaseHandler : IActionHandler
+    {
+        public string Id => "release";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("release requires a target.");
+            if (target.Parent != ctx.Agent.Id)
+                return ActionResult.Fail($"You aren't holding {Perception.WithDefiniteArticle(target.Name)}.");
+            ctx.World.MoveObject(target.Id, HandlerState.RoomOf(ctx).Id);
+            return ActionResult.Ok($"You release {Perception.WithDefiniteArticle(target.Name)}.");
+        }
+    }
+
+    private sealed class EscapeHandler : IActionHandler
+    {
+        public string Id => "escape";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            if (ctx.Agent.Parent.Length == 0 || !ctx.World.HasObject(ctx.Agent.Parent) ||
+                ctx.World.GetObject(ctx.Agent.Parent) is not { } carrier || !carrier.HasModule("agent"))
+                return ActionResult.Fail("No one is holding you.");
+            var random = ctx.Random ?? new Random();
+            var spec = new Modules.CheckSpec
+            {
+                Stat = Field(ctx, ctx.Agent, "combatant", "attackStat") ?? "strength",
+                Skill = Field(ctx, ctx.Agent, "combatant", "attackSkill") ?? "brawling",
+                Opposed = new Modules.OpposedSpec
+                {
+                    Stat = Field(ctx, carrier, "combatant", "defenseStat") ?? "agility",
+                    Skill = Field(ctx, carrier, "combatant", "defenseSkill"),
+                },
+            };
+            if (Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, carrier) < 0)
+                return ActionResult.Fail($"You struggle against {carrier.Name}, but can't break free.");
+            ctx.World.MoveObject(ctx.Agent.Id, HandlerState.RoomOf(ctx).Id);
+            return ActionResult.Ok($"You break free of {carrier.Name}.");
+        }
+    }
+
+    private sealed class ChokeHandler : IActionHandler
+    {
+        public string Id => "choke";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("choke requires a target.");
+            if (target.Parent != ctx.Agent.Id)
+                return ActionResult.Fail($"You aren't holding {Perception.WithDefiniteArticle(target.Name)}.");
+            var random = ctx.Random ?? new Random();
+            var combatant = ctx.Agent.HasModule("combatant");
+            var damage = (combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageBonus") : 0)
+                         + Checks.RollDice(
+                             random,
+                             combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageDice", 1) : 1,
+                             combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageSides", 2) : 2);
+            var message =
+                $"You choke {Perception.WithDefiniteArticle(target.Name)} for {damage} damage.";
+            if (Damage.Apply(ctx.World, ctx.Modules, target, damage) is { } fragment)
+                message += " " + fragment;
+            return ActionResult.Ok(message);
         }
     }
 }

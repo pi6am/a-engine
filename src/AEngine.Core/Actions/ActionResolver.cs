@@ -209,6 +209,15 @@ public sealed class ActionResolver
             "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
             "shove" => target.HasModule("agent") && target.Id != agent.Id,
             "attack" => target.HasModule("attackable") && target.Id != agent.Id,
+            // grappling: seize a free agent (not one already carried);
+            // release/choke apply to a victim you're carrying; escape is
+            // the carried victim's own break-out
+            "grapple" => target.HasModule("agent") && target.Id != agent.Id &&
+                         Postures.Of(_world, _modules, target) != Postures.Carried,
+            "release" => target.HasModule("agent") && target.Parent == agent.Id,
+            "escape" => target.Id == agent.Id &&
+                        Postures.Of(_world, _modules, agent) == Postures.Carried,
+            "choke" => target.HasModule("agent") && target.Parent == agent.Id,
             "wear" => held && target.HasModule("wearable") &&
                       !Clothing.IsWorn(_modules, target) && agent.HasModule("body"),
             "remove" => target.HasModule("wearable") && Clothing.IsWorn(_modules, target),
@@ -257,6 +266,7 @@ public sealed class ActionResolver
         "lie" => $"Lie down on {The(target)}",
         // stand from prone targets yourself; stand from furniture targets it
         "stand" => target.Id == agent.Id ? "Stand up" : $"Get off {The(target)}",
+        "escape" => "Break free",
         "wear" => $"Wear {The(target)}",
         "remove" => $"Take off {The(target)}",
         _ => $"{Capitalize(verb)} {The(target)}",

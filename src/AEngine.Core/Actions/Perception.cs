@@ -98,6 +98,13 @@ public static class Perception
                 items.Add($"{NameFor(observer, occupant)} ({where})");
             }
         }
+        // agents the observer is carrying (a grappled victim) list like
+        // furniture occupants: "the arena duelist (carried by you)"
+        foreach (var carried in world.ChildrenOf(agentId))
+        {
+            if (carried.HasModule("agent"))
+                items.Add($"{NameFor(observer, carried)} (carried by you)");
+        }
         return items;
     }
 
