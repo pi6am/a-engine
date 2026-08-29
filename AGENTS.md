@@ -371,7 +371,10 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   prints the player's observed signals as they happen. Actions do not
   advance the turn themselves in this mode; the timer does. Observed
   events accumulate in the player's memory (capped at `memoryLength`), so
-  plans made after watching events still know what happened. Planned:
+  plans made after watching events still know what happened. `/timescale N`
+  scales the clock: each real second accumulates N game seconds (default
+  1.0; action durations are unchanged — 0.5 makes a 2s action take 4s of
+  real time). Planned:
   pacing the player's own multi-step plans by action duration (steps
   currently execute back-to-back), multi-player (several players,
   different agents).

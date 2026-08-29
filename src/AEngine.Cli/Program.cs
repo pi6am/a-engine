@@ -134,6 +134,10 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
 // Slash commands are meta actions: they never consume a turn.
 var console = new ConsolePrompt();
 CancellationTokenSource? realTimeCts = null;
+// real-time clock speed: 1.0 = one game second per real second; 0.5 makes
+// a 2s action take 4s of real time, 2.0 takes 1s. Read/written across
+// threads (the timer loop), so use Interlocked.
+var timescale = 1.0;
 var slash = new SlashCommandRegistry();
 slash.Register("actions", [], "List the actions currently available to you", _ =>
 {
@@ -157,6 +161,24 @@ slash.Register("realtime", ["rt"], "Real-time mode: the world advances on its ow
 slash.Register("turnbased", ["tb"], "Turn-based mode: time advances with your actions", _ =>
 {
     SetTimeMode(TimeMode.TurnBased);
+    return false;
+});
+slash.Register("timescale", ["ts"], "Set the real-time clock speed (1.0 = normal, 2 = twice as fast, 0.5 = half)", args =>
+{
+    if (args.Length == 0)
+    {
+        Console.WriteLine($"Timescale is {Interlocked.CompareExchange(ref timescale, 0.0, 0.0)}x.");
+        return false;
+    }
+    if (!double.TryParse(args[0], System.Globalization.NumberStyles.Float,
+            System.Globalization.CultureInfo.InvariantCulture, out var factor) || factor <= 0)
+    {
+        Console.WriteLine("Usage: /timescale <factor> — e.g. /timescale 2 or /timescale 0.5");
+        return false;
+    }
+    Interlocked.Exchange(ref timescale, factor);
+    Console.WriteLine($"Timescale set to {factor}x — one real second advances {factor}s of game time." +
+        (engine.TimeMode == TimeMode.TurnBased ? " (Takes effect in real-time mode.)" : ""));
     return false;
 });
 slash.Register("quit", ["exit"], "Leave the game", _ => true);
@@ -334,6 +356,9 @@ void SetTimeMode(TimeMode mode)
 async Task RealTimeLoop(CancellationToken ct)
 {
     using var timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+    // fractional game seconds carried between ticks: each real second the
+    // timescale accumulates, and whole game seconds tick off as they fill
+    var pending = 0.0;
     try
     {
         while (await timer.WaitForNextTickAsync(ct))
@@ -343,7 +368,12 @@ async Task RealTimeLoop(CancellationToken ct)
                 IReadOnlyList<Signal> signals;
                 lock (engine.SyncRoot)
                 {
-                    engine.TurnManager.Tick();
+                    pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
+                    while (pending >= 1.0)
+                    {
+                        engine.TurnManager.Tick();
+                        pending -= 1.0;
+                    }
                     engine.TurnManager.RunNpcTurns();
                     signals = engine.SignalBus.Drain(player.Id);
                 }
