@@ -232,19 +232,37 @@ public sealed class TurnManager
     /// when there is no check or the check passes (the handler then runs);
     /// a failed check returns a Failure result without running the handler
     /// — it still consumes the turn and records memory via the caller.
+    /// Opposed checks roll the defender (the target agent, or the agent
+    /// holding the target item) against the actor. A failed check emits
+    /// the spec's failSignals, if any (a botched pickpocketing rattles
+    /// the victim).
     /// </summary>
     private ActionResult? EvaluateCheck(WorldObject agent, AvailableAction action)
     {
         if (LookupAffordance(action)?.Check is not { } check)
             return null;
-        var margin = Checks.Evaluate(_engine.World, _engine.ModuleRegistry, _engine.Random, agent, check);
+        var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+            ? _engine.World.GetObject(action.TargetId)
+            : null;
+        int margin;
+        if (check.Opposed is not null)
+        {
+            var defender = Checks.OpposedDefender(_engine.World, agent, target);
+            if (defender is null)
+                return ActionResult.Fail("Nothing opposes your attempt.");
+            margin = Checks.EvaluateOpposed(
+                _engine.World, _engine.ModuleRegistry, _engine.Random, agent, check, defender);
+        }
+        else
+        {
+            margin = Checks.Evaluate(_engine.World, _engine.ModuleRegistry, _engine.Random, agent, check);
+        }
         if (margin >= 0)
             return null;
-        var targetName = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
-            ? _engine.World.GetObject(action.TargetId).Name
-            : null;
-        return ActionResult.Fail(check.FailText ?? (targetName is not null
-            ? $"You try to {action.Verb} the {targetName}, but fail."
+        if (check.FailSignals.Count > 0)
+            _engine.SignalBus.Emit(agent, target, check.FailSignals, null, null);
+        return ActionResult.Fail(check.FailText ?? (target is not null
+            ? $"You try to {action.Verb} {Perception.WithDefiniteArticle(target.Name)}, but fail."
             : $"You try to {action.Verb}, but fail."));
     }
 

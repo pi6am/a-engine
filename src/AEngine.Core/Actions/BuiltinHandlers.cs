@@ -26,6 +26,8 @@ public static class BuiltinHandlers
         new StandHandler(),
         new WearHandler(),
         new RemoveHandler(),
+        new ShoveHandler(),
+        new StealHandler(),
     ];
 
     // flavor verbs that don't change the world ("Touch the red flower") —
@@ -362,6 +364,13 @@ public static class BuiltinHandlers
                 return ActionResult.Noop("You're already standing.");
             if (posture == Postures.Carried)
                 return ActionResult.Fail("You can't get up while being carried.");
+            if (posture == Postures.Prone)
+            {
+                // knocked down in the room: no furniture to climb off
+                ctx.World.SetFieldOverride(
+                    ctx.Agent.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
+                return ActionResult.Ok("You get up.");
+            }
             var support = ctx.World.GetObject(ctx.Agent.Parent);
             var room = HandlerState.RoomOf(ctx);
             ctx.World.MoveObject(ctx.Agent.Id, room.Id);
@@ -420,6 +429,46 @@ public static class BuiltinHandlers
             ctx.World.SetFieldOverride(
                 target.Id, "wearable", "worn", World.World.ToJson(false));
             return ActionResult.Ok($"You take off the {target.Name}.");
+        }
+    }
+
+    // shove: the opposed check gates this in PerformAction; the handler
+    // knocks the victim prone
+    private sealed class ShoveHandler : IActionHandler
+    {
+        public string Id => "shove";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("shove requires a target.");
+            if (!target.HasModule("agent"))
+                return ActionResult.Fail($"You can't shove the {target.Name}.");
+            if (Postures.Of(ctx.World, ctx.Modules, target) == Postures.Prone)
+                return ActionResult.Noop("They're already prone.");
+            ctx.World.SetFieldOverride(
+                target.Id, "agent", "posture", World.World.ToJson(Postures.Prone));
+            return ActionResult.Ok($"You shove {Perception.WithDefiniteArticle(target.Name)} to the ground.");
+        }
+    }
+
+    // steal: the opposed check (against the item's holder) gates this in
+    // PerformAction; the handler moves the item into the thief's inventory
+    private sealed class StealHandler : IActionHandler
+    {
+        public string Id => "steal";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("steal requires a target.");
+            if (target.Parent.Length == 0 || !ctx.World.HasObject(target.Parent) ||
+                !ctx.World.GetObject(target.Parent).HasModule("agent") ||
+                target.Parent == ctx.Agent.Id)
+                return ActionResult.Fail($"The {target.Name} isn't in anyone's pockets.");
+            if (Clothing.IsWorn(ctx.Modules, target))
+                return ActionResult.Fail($"You can't slip off the worn {target.Name}.");
+            var holder = ctx.World.GetObject(target.Parent);
+            ctx.World.MoveObject(target.Id, ctx.Agent.Id);
+            return ActionResult.Ok($"You steal the {target.Name} from {holder.Name}.");
         }
     }
 }

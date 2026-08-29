@@ -68,7 +68,11 @@ public static class Perception
         {
             if (child.Id == agentId || child.HasModule("portal"))
                 continue;
-            items.Add(NameFor(observer, child) + Annotate(world, modules, child));
+            var entry = NameFor(observer, child) + Annotate(world, modules, child);
+            if (child.HasModule("agent") &&
+                Postures.Of(world, modules, child) == Postures.Prone)
+                entry += " (prone)";
+            items.Add(entry);
             if (child.HasModule("container") && IsOpen(world, modules, child))
             {
                 foreach (var inner in world.ChildrenOf(child.Id))
@@ -146,6 +150,14 @@ public static class Perception
             ? name
             : (name.Length > 0 && "aeiou".Contains(char.ToLowerInvariant(name[0])) ? "an " : "a ") + name;
 
+    /// <summary>"brass key" -> "the brass key"; names with an article stay as-is.</summary>
+    public static string WithDefiniteArticle(string name) =>
+        name.StartsWith("the ", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("a ", StringComparison.OrdinalIgnoreCase) ||
+        name.StartsWith("an ", StringComparison.OrdinalIgnoreCase)
+            ? name
+            : "the " + name;
+
     /// <summary>
     /// Sentence reporting the agent's own posture when not standing:
     /// "You are sitting on the chair." / "You are being carried by the
@@ -157,9 +169,12 @@ public static class Perception
         if (posture == Postures.Standing)
             return null;
         var parent = world.GetObject(agent.Parent);
-        return posture == Postures.Carried
-            ? $"You are being carried by {parent.Name}."
-            : $"You are {posture} on the {parent.Name}.";
+        return posture switch
+        {
+            Postures.Carried => $"You are being carried by {parent.Name}.",
+            Postures.Prone => "You are prone on the ground.",
+            _ => $"You are {posture} on the {parent.Name}.",
+        };
     }
 
     /// <summary>

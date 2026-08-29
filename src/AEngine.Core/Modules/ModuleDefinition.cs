@@ -62,14 +62,29 @@ public sealed class AffordanceDefinition
 /// A stat/skill check declared on an affordance. The actor's bonus is
 /// their stat plus skill value; success when dice + bonus >= difficulty.
 /// The dice formula (n d m) comes from the scenario's rules module.
+/// When Opposed is set, a defender (the target agent, or the agent
+/// holding the target item) rolls their own dice + opposed stat/skill and
+/// the actor must beat them. FailSignals are emitted on a failed check —
+/// e.g. a botched pickpocketing rattles the victim.
 /// </summary>
 public sealed class CheckSpec
 {
     public string? Stat { get; init; }
     public string? Skill { get; init; }
     public int Difficulty { get; init; }
+    /// <summary>Defender's stat/skill for opposed checks; null = uncontested.</summary>
+    public OpposedSpec? Opposed { get; init; }
     /// <summary>Failure message; defaults to "You try to {verb}..., but fail."</summary>
     public string? FailText { get; init; }
+    /// <summary>Signals emitted on a failed check (failed actions are otherwise silent).</summary>
+    public List<Signals.SignalSpec> FailSignals { get; init; } = [];
+}
+
+/// <summary>The defender's side of an opposed check: their stat/skill.</summary>
+public sealed class OpposedSpec
+{
+    public string? Stat { get; init; }
+    public string? Skill { get; init; }
 }
 
 /// <summary>

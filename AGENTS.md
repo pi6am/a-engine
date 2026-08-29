@@ -123,11 +123,12 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   room entered, with `{exitPortal}`/`{exitDirection}`/`{entryPortal}`/
   `{entryDirection}` placeholders ("the cook exits through the wooden door to
   the south." / "the cook enters from the wooden door to the north.").
-- **Posture** — sitting, lying, and being carried are **containment in the
-  world tree**, derived by `Postures.Of` (Core/Actions): parent is a room →
-  `standing`; parent is an agent → `carried`; parent is furniture → the
-  `agent` module's `posture` field (`sitting`/`lying`, set by the sit/lie
-  handlers, cleared by stand/take/drop) so a bed can offer both. Getting
+- **Posture** — sitting, lying, prone, and being carried: `Postures.Of`
+  (Core/Actions) derives it — parent is an agent → `carried`; parent is
+  furniture → the `agent` module's `posture` field (`sitting`/`lying`, set
+  by the sit/lie handlers, cleared by stand/take/drop) so a bed can offer
+  both; in a room the field also applies (`standing`, or `prone` after
+  being shoved). Getting
   on/off furniture is ordinary affordances on composable modules —
   `sittable` (`sit`, and `stand` gated to `postures: ["sitting"]`) and
   `lyable` (`lie`, and `stand` gated to `["lying"]`), each with a
@@ -174,9 +175,19 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   object) sets `diceCount`/`diceSides` (default 1d20; 0d0 is diceless —
   used for deterministic tests); `Checks.Evaluate` returns the margin.
   The `pick` handler unlocks without a key once its check passes.
-  **Planned stages:** 2 — opposed checks (`check.opposed`), prone
-  posture (shove), pickpocketing (`steal` from other agents' inventories,
-  failSignals); 3 — `health` module, damage/incapacitation; 4 — combat:
+  **Stage 2 (done):** opposed checks (`check.opposed`: the defender — the
+  target agent, or the agent holding the target item — rolls their own
+  dice + stat/skill, actor must beat them; `check.failSignals` are emitted
+  on failure so a botched pickpocketing rattles the victim). `prone` is a
+  posture (stored on the agent even in a room; `Postures.Of` reads it) —
+  `shove` (opposed, `shoveable` module) knocks a victim prone, and a
+  self-targeted `stand` gated to `postures: ["prone"]` costs an action to
+  get up (`go` already requires standing; prone agents show "(prone)" in
+  room listings). `steal` (on the rpg scenario's portable module) takes an
+  item from another agent's inventory, opposed by the holder's perception;
+  the resolver scans other agents' pockets and restricts items held by
+  another agent to steal-only (worn items excluded).
+  **Planned stages:** 3 — `health` module, damage/incapacitation; 4 — combat:
   `attackable`/`attack`, weapons as `weapon` + wearable on `hand` (damage
   = N + n d m, e.g. greatsword 2d6), `armor.protection`; 5 — grappling
   (`grapple` = forced carrying, `escape` self-verb, `choke` on grappled

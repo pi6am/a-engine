@@ -76,12 +76,28 @@ public sealed class ActionResolver
             var child = _world.GetObject(childId);
             AddFromModules(actions, agent, child, stateFiltered, others);
 
+            // other agents' pockets are scan targets too (steal); Applies
+            // restricts items held by another agent to steal verbs only
+            if (child.HasModule("agent"))
+            {
+                foreach (var pocketId in child.Children)
+                    AddFromModules(actions, agent, _world.GetObject(pocketId), stateFiltered, others);
+            }
+
             // occupants of furniture are reachable (cuddle a bed-mate, talk
             // to a seated agent), as are contents of open containers
             if (child.HasModule("sittable") || child.HasModule("lyable"))
             {
                 foreach (var occupantId in child.Children)
-                    AddFromModules(actions, agent, _world.GetObject(occupantId), stateFiltered, others);
+                {
+                    var occupant = _world.GetObject(occupantId);
+                    AddFromModules(actions, agent, occupant, stateFiltered, others);
+                    if (occupant.HasModule("agent"))
+                    {
+                        foreach (var pocketId in occupant.Children)
+                            AddFromModules(actions, agent, _world.GetObject(pocketId), stateFiltered, others);
+                    }
+                }
             }
             if (child.HasModule("container") && IsOpenState(child))
             {
@@ -129,7 +145,7 @@ public sealed class ActionResolver
                     }
                     continue;
                 }
-                var label = LabelFor(affordance.Verb, target);
+                var label = LabelFor(affordance.Verb, agent, target);
                 actions.Add(new AvailableAction(
                     affordance.Verb, target.Id, label, affordance.Handler,
                     attachment.ModuleId, affordance.Prompt));
@@ -151,6 +167,14 @@ public sealed class ActionResolver
         Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target, bool stateFiltered)
     {
         bool held = target.Parent == agent.Id;
+        // items held by another agent are only reachable via steal —
+        // their take/drop/open/close affordances don't apply to you
+        bool heldByOther = target.Id != agent.Id &&
+                           target.Parent.Length > 0 && target.Parent != agent.Id &&
+                           _world.HasObject(target.Parent) &&
+                           _world.GetObject(target.Parent).HasModule("agent");
+        if (heldByOther && affordance.Verb != "steal")
+            return false;
         var applies = affordance.Verb switch
         {
             "look" => target.Id == agent.Id,
@@ -159,6 +183,8 @@ public sealed class ActionResolver
             "say" => target.Id == agent.Id, // speech comes from your own can_speak
             "take" => !held && target.Id != agent.Id, // can't pick up yourself
             "drop" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
+            "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
+            "shove" => target.HasModule("agent") && target.Id != agent.Id,
             "wear" => held && target.HasModule("wearable") &&
                       !Clothing.IsWorn(_modules, target) && agent.HasModule("body"),
             "remove" => target.HasModule("wearable") && Clothing.IsWorn(_modules, target),
@@ -169,7 +195,9 @@ public sealed class ActionResolver
             "pick" => HasLockState(target),
             "sit" => target.HasModule("sittable"),
             "lie" => target.HasModule("lyable"),
-            "stand" => target.Id == agent.Parent, // get up from what you're on
+            // stand: from furniture (target = what you're on) or from
+            // prone (target = yourself)
+            "stand" => target.Id == agent.Parent || target.Id == agent.Id,
             _ => true,
         };
         return applies && Postures.CanUse(_world, _modules, affordance, agent, target);
@@ -195,19 +223,23 @@ public sealed class ActionResolver
         return target.HasModule("openable") ? (target, "openable") : null;
     }
 
-    private string LabelFor(string verb, WorldObject target) => verb switch
+    private string LabelFor(string verb, WorldObject agent, WorldObject target) => verb switch
     {
         "look" => "Look around",
         "inventory" => "Check inventory",
         "wait" => "Wait",
         "go" => $"Go {_modules.ResolveString(target, "portal", "direction") ?? target.Name}",
-        "sit" => $"Sit on the {target.Name}",
-        "lie" => $"Lie down on the {target.Name}",
-        "stand" => $"Get off the {target.Name}",
-        "wear" => $"Wear the {target.Name}",
-        "remove" => $"Take off the {target.Name}",
-        _ => $"{Capitalize(verb)} the {target.Name}",
+        "sit" => $"Sit on {The(target)}",
+        "lie" => $"Lie down on {The(target)}",
+        // stand from prone targets yourself; stand from furniture targets it
+        "stand" => target.Id == agent.Id ? "Stand up" : $"Get off {The(target)}",
+        "wear" => $"Wear {The(target)}",
+        "remove" => $"Take off {The(target)}",
+        _ => $"{Capitalize(verb)} {The(target)}",
     };
+
+    /// <summary>The target's name with a definite article, unless it already carries one.</summary>
+    private static string The(WorldObject target) => Perception.WithDefiniteArticle(target.Name);
 
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

@@ -20,18 +20,23 @@ public static class Postures
     public const string Sitting = "sitting";
     public const string Lying = "lying";
     public const string Carried = "carried";
+    public const string Prone = "prone";
 
-    /// <summary>The agent's current posture, derived from the tree.</summary>
+    /// <summary>
+    /// The agent's current posture, derived from the tree. On the floor of
+    /// a room the stored posture field applies (standing or prone); on
+    /// furniture it records sitting/lying; under another agent the agent
+    /// is carried (and the stored field is ignored).
+    /// </summary>
     public static string Of(World.World world, ModuleRegistry modules, WorldObject agent)
     {
         if (agent.Parent.Length == 0 || !world.HasObject(agent.Parent))
             return Standing;
         var parent = world.GetObject(agent.Parent);
-        if (parent.HasModule("room"))
-            return Standing;
         if (parent.HasModule("agent"))
             return Carried;
-        return modules.ResolveString(agent, "agent", "posture") ?? Sitting;
+        return modules.ResolveString(agent, "agent", "posture") ??
+               (parent.HasModule("room") ? Standing : Sitting);
     }
 
     /// <summary>
