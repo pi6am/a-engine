@@ -1,0 +1,110 @@
+{
+  "name": "rpg",
+  "world": [
+    {
+      "id": "rules",
+      "name": "arena rules",
+      "description": "Scenario tuning: checks roll 1d20 + stat + skill vs difficulty.",
+      "modules": ["rules"]
+    },
+    {
+      "id": "arena",
+      "name": "Dueling Arena",
+      "description": "A sand-covered dueling ring surrounded by stone benches. An archway leads north to the armory.",
+      "modules": ["room"],
+      "children": [
+        {
+          "id": "player",
+          "name": "the challenger",
+          "description": "A hopeful duelist with quick fingers.",
+          "modules": [
+            "agent",
+            "can_speak",
+            { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
+            { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2 } } }
+          ]
+        },
+        {
+          "id": "duelist",
+          "name": "the arena duelist",
+          "description": "A lean veteran watching you with measured eyes.",
+          "modules": [
+            {
+              "module": "agent",
+              "overrides": {
+                "policy": "auto",
+                "character": "A calm, professional duelist who respects skill and despises thieves.",
+                "goals": "Keep watch over the arena. Spar with anyone willing. Guard the armory's strongbox."
+              }
+            },
+            "can_speak",
+            { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12 } } },
+            { "module": "skills", "overrides": { "values": { "brawling": 4 } } }
+          ]
+        },
+        {
+          "id": "archway_arena_side",
+          "name": "stone archway",
+          "description": "A wide stone archway leading north.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": { "stateRef": "archway_state", "direction": "north", "to": "armory" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "armory",
+      "name": "Armory",
+      "description": "Weapon racks line the walls. A heavy iron strongbox sits in the corner.",
+      "modules": ["room"],
+      "children": [
+        {
+          "id": "archway_armory_side",
+          "name": "stone archway",
+          "description": "A wide stone archway leading south.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": { "stateRef": "archway_state", "direction": "south", "to": "arena" }
+            }
+          ]
+        },
+        {
+          "id": "weapon_rack",
+          "name": "weapon rack",
+          "description": "A rack of well-used practice weapons.",
+          "modules": []
+        },
+        {
+          "id": "strongbox",
+          "name": "iron strongbox",
+          "description": "A heavy iron strongbox with a formidable lock.",
+          "modules": [
+            "container",
+            "lockable",
+            { "module": "openable", "overrides": { "open": false, "locked": true } }
+          ],
+          "children": [
+            {
+              "id": "rapier",
+              "name": "gleaming rapier",
+              "description": "A rare rapier with a silvered blade.",
+              "modules": ["portable"]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "archway_state",
+      "name": "archway state",
+      "description": "The archway stands permanently open.",
+      "modules": [
+        { "module": "doorstate", "overrides": { "open": true, "locked": false } }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,199 @@
+{
+  "name": "rpg-modules",
+  "modules": [
+    {
+      "id": "rules",
+      "name": "Rules",
+      "fields": [
+        { "name": "diceCount", "type": "int", "default": 1 },
+        { "name": "diceSides", "type": "int", "default": 20 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "stats",
+      "name": "Stats",
+      "fields": [
+        { "name": "values", "type": "map", "default": {} }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "skills",
+      "name": "Skills",
+      "fields": [
+        { "name": "values", "type": "map", "default": {} }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "room",
+      "name": "Room",
+      "fields": [],
+      "affordances": []
+    },
+    {
+      "id": "agent",
+      "name": "Agent",
+      "fields": [
+        { "name": "policy", "type": "string", "default": "player" },
+        { "name": "character", "type": "string", "default": "" },
+        { "name": "goals", "type": "string", "default": "" },
+        { "name": "memoryLength", "type": "int", "default": 25 },
+        { "name": "posture", "type": "string", "default": "standing" }
+      ],
+      "affordances": [
+        { "verb": "look", "handler": "look", "repeatBackoff": true },
+        { "verb": "inventory", "handler": "inventory" },
+        { "verb": "wait", "handler": "wait", "repeatBackoff": true }
+      ]
+    },
+    {
+      "id": "can_speak",
+      "name": "Can speak",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "say",
+          "handler": "say",
+          "prompt": "Say what?",
+          "signals": [
+            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
+            { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portal",
+      "name": "Portal (door side)",
+      "fields": [
+        { "name": "stateRef", "type": "ref", "default": null },
+        { "name": "direction", "type": "string", "default": "" },
+        { "name": "to", "type": "ref", "default": null },
+        { "name": "transmitVisual", "type": "string", "default": "whenOpen" },
+        { "name": "transmitAudio", "type": "string", "default": "always" }
+      ],
+      "affordances": [
+        {
+          "verb": "go",
+          "handler": "go",
+          "duration": 3,
+          "postures": ["standing"],
+          "signals": [
+            { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
+            { "sense": "audible", "priority": 5, "scope": "departure", "text": "{agent} leaving through the {exitPortal}." },
+            { "sense": "visual", "priority": 10, "scope": "arrival", "text": "{agent} enters from the {entryPortal} to the {entryDirection}." },
+            { "sense": "audible", "priority": 5, "scope": "arrival", "text": "footsteps approaching from the {entryPortal}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doorstate",
+      "name": "Shared door state",
+      "fields": [
+        { "name": "open", "type": "bool", "default": false },
+        { "name": "locked", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "openable",
+      "name": "Openable",
+      "fields": [
+        { "name": "open", "type": "bool", "default": false },
+        { "name": "locked", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "open",
+          "handler": "open",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
+            { "sense": "audible", "priority": 5, "text": "something creaking open." }
+          ]
+        },
+        {
+          "verb": "close",
+          "handler": "close",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+            { "sense": "audible", "priority": 5, "text": "something thudding shut." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "container",
+      "name": "Container",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 10 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "portable",
+      "name": "Portable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "take",
+          "handler": "take",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}." }
+          ]
+        },
+        {
+          "verb": "drop",
+          "handler": "drop",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
+            { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "lockable",
+      "name": "Lockable",
+      "fields": [
+        { "name": "keyRef", "type": "ref", "default": null }
+      ],
+      "affordances": [
+        {
+          "verb": "unlock",
+          "handler": "unlock",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 3, "text": "{agent} unlocks the {target}." },
+            { "sense": "audible", "priority": 5, "text": "a click." }
+          ]
+        },
+        {
+          "verb": "lock",
+          "handler": "lock",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 3, "text": "{agent} locks the {target}." },
+            { "sense": "audible", "priority": 5, "text": "a click." }
+          ]
+        },
+        {
+          "verb": "pick",
+          "handler": "pick",
+          "duration": 5,
+          "check": { "skill": "lockpicking", "stat": "agility", "difficulty": 20 },
+          "signals": [
+            { "sense": "visual", "priority": 3, "text": "{agent} picks the lock on the {target}." },
+            { "sense": "audible", "priority": 5, "text": "a click." }
+          ]
+        }
+      ]
+    }
+  ]
+}
