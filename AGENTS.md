@@ -32,6 +32,8 @@ client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-onl
 scenarios/mvp/            # MVP scenario: modules.json + world.json
 scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook, signals,
                           # sittable chairs, wearable clothing (apron, chef's hat)
+scenarios/rpg/            # RPG systems demo: dueling arena + armory, stats/skills,
+                          # check-gated lockpicking (strongbox with a rare rapier)
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 ```
 
@@ -159,6 +161,27 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   `look` (and the LLM context) adds a dressed line per agent ("the old cook
   is wearing an apron.") until an examine verb exists, and `inventory`
   splits "You are wearing: …" from "You are carrying: …".
+- **RPG systems (staged, opt-in)** — being built stage by stage in
+  `scenarios/rpg/` (dueling arena); simple scenarios never reference these
+  modules. **Stage 1 (done):** stats/skills are map fields
+  (`FieldType.Map`, string→int; `stats`/`skills` modules with a `values`
+  map; undeclared names read as 0; `Stats.Get/Set` helpers). Affordances
+  can declare a `check: { stat?, skill?, difficulty, failText? }` —
+  `TurnManager.PerformAction` evaluates it before running the handler, so
+  player plans, NPCs, and the debug API all respect it; a failed check
+  consumes the turn, runs no handler, emits no signals. The dice formula
+  is scenario data: a `rules` module (on the world root or a top-level
+  object) sets `diceCount`/`diceSides` (default 1d20; 0d0 is diceless —
+  used for deterministic tests); `Checks.Evaluate` returns the margin.
+  The `pick` handler unlocks without a key once its check passes.
+  **Planned stages:** 2 — opposed checks (`check.opposed`), prone
+  posture (shove), pickpocketing (`steal` from other agents' inventories,
+  failSignals); 3 — `health` module, damage/incapacitation; 4 — combat:
+  `attackable`/`attack`, weapons as `weapon` + wearable on `hand` (damage
+  = N + n d m, e.g. greatsword 2d6), `armor.protection`; 5 — grappling
+  (`grapple` = forced carrying, `escape` self-verb, `choke` on grappled
+  victims); 6 — granular body parts and targeted damage (per-part pools,
+  region-scoped armor).
 - **Policies & NPC turns** — agents with `agent.policy != "player"` are
   autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
   actions; policies resolve by string id through `PolicyRegistry` (replaceable
@@ -291,9 +314,10 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   pacing the player's own multi-step plans by action duration (steps
   currently execute back-to-back), multi-player (several players,
   different agents).
-- **Custom conflict/skill handlers** — e.g. lockpicking resolved by an RPG
-  stats+skills system, pickpocket/combat adjudication; handlers registered into
-  `HandlerRegistry` and wired from data.
+- **Custom conflict/skill handlers** — partially implemented via the RPG
+  stages (see the RPG systems bullet): lockpicking is check-gated now;
+  pickpocket/combat adjudication land in stages 2–5. Custom handlers still
+  register into `HandlerRegistry` and wire from data.
 - **Long-running actions** — `Scheduler` exists but nothing schedules multi-turn
   actions yet.
 - **Examine verb** — `examine {object}` for per-object detail (an agent's worn

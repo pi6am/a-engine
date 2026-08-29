@@ -114,4 +114,20 @@ public sealed class ModuleRegistry
                 .ToList();
         return null;
     }
+
+    /// <summary>
+    /// Resolve a string->int map field (a JSON object with numeric values).
+    /// Null when unset.
+    /// </summary>
+    public Dictionary<string, int>? ResolveIntMap(WorldObject obj, string moduleId, string field)
+    {
+        if (ResolveField(obj, moduleId, field) is not { } e ||
+            e.ValueKind != JsonValueKind.Object)
+            return null;
+        var map = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var prop in e.EnumerateObject())
+            if (prop.Value.ValueKind == JsonValueKind.Number)
+                map[prop.Name] = prop.Value.GetInt32();
+        return map;
+    }
 }

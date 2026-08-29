@@ -166,6 +166,7 @@ public sealed class ActionResolver
             "close" => HasOpenState(target) && (!stateFiltered || IsOpenState(target)),
             "unlock" => HasLockState(target),
             "lock" => HasLockState(target),
+            "pick" => HasLockState(target),
             "sit" => target.HasModule("sittable"),
             "lie" => target.HasModule("lyable"),
             "stand" => target.Id == agent.Parent, // get up from what you're on

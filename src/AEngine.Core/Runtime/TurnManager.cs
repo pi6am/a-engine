@@ -62,7 +62,8 @@ public sealed class TurnManager
         lock (_engine.SyncRoot)
         {
             var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
-            var result = Execute(agent, action.HandlerId, action.TargetId, text, action.Verb);
+            var result = EvaluateCheck(agent, action)
+                         ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb);
             // remember your own action and its outcome (a look result is too
             // verbose to store verbatim)
             _engine.Memory.Record(agent,
@@ -225,6 +226,27 @@ public sealed class TurnManager
     /// <summary>The turn until which the agent is busy with its current action (0 = free). For tooling/tests.</summary>
     public int BusyUntilTurn(string agentId) =>
         _busyUntil.TryGetValue(agentId, out var until) ? until : 0;
+
+    /// <summary>
+    /// Evaluate the affordance's stat/skill check, if any. Returns null
+    /// when there is no check or the check passes (the handler then runs);
+    /// a failed check returns a Failure result without running the handler
+    /// — it still consumes the turn and records memory via the caller.
+    /// </summary>
+    private ActionResult? EvaluateCheck(WorldObject agent, AvailableAction action)
+    {
+        if (LookupAffordance(action)?.Check is not { } check)
+            return null;
+        var margin = Checks.Evaluate(_engine.World, _engine.ModuleRegistry, _engine.Random, agent, check);
+        if (margin >= 0)
+            return null;
+        var targetName = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+            ? _engine.World.GetObject(action.TargetId).Name
+            : null;
+        return ActionResult.Fail(check.FailText ?? (targetName is not null
+            ? $"You try to {action.Verb} the {targetName}, but fail."
+            : $"You try to {action.Verb}, but fail."));
+    }
 
     private bool IsBusy(string agentId) =>
         _busyUntil.TryGetValue(agentId, out var until) && Turn < until;

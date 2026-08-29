@@ -17,6 +17,7 @@ public static class BuiltinHandlers
         new DropHandler(),
         new UnlockHandler(),
         new LockHandler(),
+        new PickLockHandler(),
         new InventoryHandler(),
         new SayHandler(),
         new WaitHandler(),
@@ -243,6 +244,24 @@ public static class BuiltinHandlers
         public string Id => "lock";
 
         public ActionResult Execute(ActionContext ctx) => UnlockHandler.SetLock(ctx, true);
+    }
+
+    // lockpicking: unlock without the key. The skill check gates this in
+    // PerformAction (affordance check spec); the handler just does the deed.
+    private sealed class PickLockHandler : IActionHandler
+    {
+        public string Id => "pick";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("pick requires a target.");
+            if (!target.HasModule("lockable"))
+                return ActionResult.Fail($"The {target.Name} has no lock to pick.");
+            if (!HandlerState.IsLocked(ctx, target))
+                return ActionResult.Noop($"The {target.Name} isn't locked.");
+            HandlerState.SetLocked(ctx, target, false);
+            return ActionResult.Ok($"You pick the lock on the {target.Name}.");
+        }
     }
 
     private sealed class InventoryHandler : IActionHandler

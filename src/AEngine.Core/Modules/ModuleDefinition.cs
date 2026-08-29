@@ -10,6 +10,7 @@ public enum FieldType
     Bool,
     Ref, // object-id reference
     List, // list of strings (e.g. body regions)
+    Map, // string -> int dictionary (e.g. stats, skills)
 }
 
 /// <summary>A field declared by a module: name, type, and default value.</summary>
@@ -47,6 +48,28 @@ public sealed class AffordanceDefinition
     public List<string>? Postures { get; init; }
     public bool SameSupport { get; init; }
     public List<Signals.SignalSpec> Signals { get; init; } = [];
+
+    /// <summary>
+    /// Optional stat/skill check gating the affordance: evaluated before
+    /// the handler runs (in TurnManager.PerformAction, so player plans,
+    /// NPCs, and the debug API all respect it). A failed check consumes the
+    /// turn, runs no handler, and emits no signals.
+    /// </summary>
+    public CheckSpec? Check { get; init; }
+}
+
+/// <summary>
+/// A stat/skill check declared on an affordance. The actor's bonus is
+/// their stat plus skill value; success when dice + bonus >= difficulty.
+/// The dice formula (n d m) comes from the scenario's rules module.
+/// </summary>
+public sealed class CheckSpec
+{
+    public string? Stat { get; init; }
+    public string? Skill { get; init; }
+    public int Difficulty { get; init; }
+    /// <summary>Failure message; defaults to "You try to {verb}..., but fail."</summary>
+    public string? FailText { get; init; }
 }
 
 /// <summary>
