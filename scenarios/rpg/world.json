@@ -20,8 +20,9 @@
           "modules": [
             "agent",
             "can_speak",
+            "shoveable",
             { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
-            { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2 } } }
+            { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3 } } }
           ]
         },
         {
@@ -38,8 +39,17 @@
               }
             },
             "can_speak",
-            { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12 } } },
+            "shoveable",
+            { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12, "perception": 10 } } },
             { "module": "skills", "overrides": { "values": { "brawling": 4 } } }
+          ],
+          "children": [
+            {
+              "id": "duelists_glove",
+              "name": "leather glove",
+              "description": "A dueling glove, tucked into the duelist's belt.",
+              "modules": ["portable"]
+            }
           ]
         },
         {

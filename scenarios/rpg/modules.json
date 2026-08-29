@@ -45,7 +45,16 @@
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },
         { "verb": "inventory", "handler": "inventory" },
-        { "verb": "wait", "handler": "wait", "repeatBackoff": true }
+        { "verb": "wait", "handler": "wait", "repeatBackoff": true },
+        {
+          "verb": "stand",
+          "handler": "stand",
+          "duration": 2,
+          "postures": ["prone"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} gets up." }
+          ]
+        }
       ]
     },
     {
@@ -135,6 +144,29 @@
       "affordances": []
     },
     {
+      "id": "shoveable",
+      "name": "Shoveable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "shove",
+          "handler": "shove",
+          "duration": 3,
+          "check": {
+            "stat": "strength",
+            "opposed": { "stat": "agility" },
+            "failSignals": [
+              { "sense": "visual", "priority": 10, "text": "{agent} tries to shove the {target}, who holds their ground." }
+            ]
+          },
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} shoves the {target} to the ground." },
+            { "sense": "audible", "priority": 5, "text": "a body hitting the ground." }
+          ]
+        }
+      ]
+    },
+    {
       "id": "portable",
       "name": "Portable",
       "fields": [],
@@ -154,6 +186,22 @@
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
             { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
+          ]
+        },
+        {
+          "verb": "steal",
+          "handler": "steal",
+          "duration": 3,
+          "check": {
+            "stat": "agility",
+            "skill": "pickpocket",
+            "opposed": { "stat": "perception" },
+            "failSignals": [
+              { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}!" }
+            ]
+          },
+          "signals": [
+            { "sense": "visual", "priority": 2, "text": "{agent} lifts the {target}." }
           ]
         }
       ]
