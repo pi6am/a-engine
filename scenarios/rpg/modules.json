@@ -301,6 +301,68 @@
       ]
     },
     {
+      "id": "grappleable",
+      "name": "Grappleable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "grapple",
+          "handler": "grapple",
+          "duration": 3,
+          "postures": ["standing"],
+          "check": { "stat": "strength", "skill": "brawling", "opposed": { "stat": "agility" } },
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} seizes the {target}!" }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} grabs at the {target}, who slips free." }
+          ]
+        },
+        {
+          "verb": "release",
+          "handler": "release",
+          "duration": 1,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} releases the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grappler",
+      "name": "Grappler",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "escape",
+          "handler": "escape",
+          "duration": 3,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} breaks free!" }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} struggles." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chokeable",
+      "name": "Chokeable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "choke",
+          "handler": "choke",
+          "duration": 3,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} chokes the {target}!" },
+            { "sense": "audible", "priority": 5, "text": "choking sounds." }
+          ]
+        }
+      ]
+    },
+    {
       "id": "lockable",
       "name": "Lockable",
       "fields": [

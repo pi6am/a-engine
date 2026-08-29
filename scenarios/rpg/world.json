@@ -24,6 +24,9 @@
             "body",
             "combatant",
             "attackable",
+            "grappleable",
+            "grappler",
+            "chokeable",
             { "module": "health", "overrides": { "maxHp": 20, "hp": 20 } },
             { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
             { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3, "swords": 3 } } }
@@ -47,6 +50,9 @@
             "body",
             "combatant",
             "attackable",
+            "grappleable",
+            "grappler",
+            "chokeable",
             { "module": "health", "overrides": { "maxHp": 24, "hp": 24 } },
             { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12, "perception": 10 } } },
             { "module": "skills", "overrides": { "values": { "brawling": 4, "swords": 4 } } }
