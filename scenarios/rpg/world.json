@@ -21,9 +21,12 @@
             "agent",
             "can_speak",
             "shoveable",
+            "body",
+            "combatant",
+            "attackable",
             { "module": "health", "overrides": { "maxHp": 20, "hp": 20 } },
             { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
-            { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3 } } }
+            { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3, "swords": 3 } } }
           ]
         },
         {
@@ -41,16 +44,22 @@
             },
             "can_speak",
             "shoveable",
+            "body",
+            "combatant",
+            "attackable",
             { "module": "health", "overrides": { "maxHp": 24, "hp": 24 } },
             { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12, "perception": 10 } } },
-            { "module": "skills", "overrides": { "values": { "brawling": 4 } } }
+            { "module": "skills", "overrides": { "values": { "brawling": 4, "swords": 4 } } }
           ],
           "children": [
             {
               "id": "duelists_glove",
               "name": "leather glove",
-              "description": "A dueling glove, tucked into the duelist's belt.",
-              "modules": ["portable"]
+              "description": "A supple leather dueling glove.",
+              "modules": [
+                "portable",
+                { "module": "wearable", "overrides": { "regions": ["hand"], "worn": true } }
+              ]
             }
           ]
         },
@@ -91,6 +100,36 @@
           "modules": []
         },
         {
+          "id": "dagger",
+          "name": "dagger",
+          "description": "A short, quick blade.",
+          "modules": [
+            "portable",
+            { "module": "wearable", "overrides": { "regions": ["held"] } },
+            { "module": "weapon", "overrides": { "damageDice": 1, "damageSides": 4, "skill": "swords", "stat": "agility" } }
+          ]
+        },
+        {
+          "id": "sword",
+          "name": "arming sword",
+          "description": "A plain, reliable arming sword.",
+          "modules": [
+            "portable",
+            { "module": "wearable", "overrides": { "regions": ["held"] } },
+            { "module": "weapon", "overrides": { "damageDice": 1, "damageSides": 8, "skill": "swords", "stat": "strength" } }
+          ]
+        },
+        {
+          "id": "padded_armor",
+          "name": "padded armor",
+          "description": "A quilted gambeson, scuffed from many bouts.",
+          "modules": [
+            "portable",
+            { "module": "wearable", "overrides": { "regions": ["top"] } },
+            { "module": "armor", "overrides": { "protection": 2 } }
+          ]
+        },
+        {
           "id": "strongbox",
           "name": "iron strongbox",
           "description": "A heavy iron strongbox with a formidable lock.",
@@ -104,7 +143,11 @@
               "id": "rapier",
               "name": "gleaming rapier",
               "description": "A rare rapier with a silvered blade.",
-              "modules": ["portable"]
+              "modules": [
+                "portable",
+                { "module": "wearable", "overrides": { "regions": ["held"] } },
+                { "module": "weapon", "overrides": { "damageBonus": 1, "damageDice": 1, "damageSides": 8, "skill": "swords", "stat": "agility" } }
+              ]
             }
           ]
         }

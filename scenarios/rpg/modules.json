@@ -37,6 +37,97 @@
       "affordances": []
     },
     {
+      "id": "body",
+      "name": "Body",
+      "fields": [
+        { "name": "regions", "type": "list", "default": ["head", "top", "bottom", "feet", "hand", "held"] }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "wearable",
+      "name": "Wearable",
+      "fields": [
+        { "name": "regions", "type": "list", "default": [] },
+        { "name": "worn", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "wear",
+          "handler": "wear",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} puts on the {target}." }
+          ]
+        },
+        {
+          "verb": "remove",
+          "handler": "remove",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} takes off the {target}." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} grabs at the {target}!" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "weapon",
+      "name": "Weapon",
+      "fields": [
+        { "name": "damageBonus", "type": "int", "default": 0 },
+        { "name": "damageDice", "type": "int", "default": 1 },
+        { "name": "damageSides", "type": "int", "default": 4 },
+        { "name": "skill", "type": "string", "default": "" },
+        { "name": "stat", "type": "string", "default": "" }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "armor",
+      "name": "Armor",
+      "fields": [
+        { "name": "protection", "type": "int", "default": 1 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "combatant",
+      "name": "Combatant",
+      "fields": [
+        { "name": "attackStat", "type": "string", "default": "strength" },
+        { "name": "attackSkill", "type": "string", "default": "brawling" },
+        { "name": "defenseStat", "type": "string", "default": "agility" },
+        { "name": "defenseSkill", "type": "string", "default": "" },
+        { "name": "damageBonus", "type": "int", "default": 0 },
+        { "name": "damageDice", "type": "int", "default": 1 },
+        { "name": "damageSides", "type": "int", "default": 2 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "attackable",
+      "name": "Attackable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "attack",
+          "handler": "attack",
+          "duration": 3,
+          "postures": ["standing"],
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} hits the {target}!" },
+            { "sense": "audible", "priority": 5, "text": "the crack of a blow landing." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} swings at the {target} and misses." }
+          ]
+        }
+      ]
+    },
+    {
       "id": "room",
       "name": "Room",
       "fields": [],
@@ -162,16 +253,13 @@
           "verb": "shove",
           "handler": "shove",
           "duration": 3,
-          "check": {
-            "stat": "strength",
-            "opposed": { "stat": "agility" },
-            "failSignals": [
-              { "sense": "visual", "priority": 10, "text": "{agent} tries to shove the {target}, who holds their ground." }
-            ]
-          },
+          "check": { "stat": "strength", "opposed": { "stat": "agility" } },
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} shoves the {target} to the ground." },
             { "sense": "audible", "priority": 5, "text": "a body hitting the ground." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} tries to shove the {target}, who holds their ground." }
           ]
         }
       ]
@@ -202,16 +290,12 @@
           "verb": "steal",
           "handler": "steal",
           "duration": 3,
-          "check": {
-            "stat": "agility",
-            "skill": "pickpocket",
-            "opposed": { "stat": "perception" },
-            "failSignals": [
-              { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}!" }
-            ]
-          },
+          "check": { "stat": "agility", "skill": "pickpocket", "opposed": { "stat": "perception" } },
           "signals": [
             { "sense": "visual", "priority": 2, "text": "{agent} lifts the {target}." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}!" }
           ]
         }
       ]
