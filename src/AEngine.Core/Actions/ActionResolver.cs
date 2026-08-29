@@ -64,6 +64,13 @@ public sealed class ActionResolver
         var examinable = new List<WorldObject>();
         AddFromModules(actions, agent, agent, stateFiltered, others, examinable);
 
+        // an incapacitated agent can only look
+        if (Health.IsIncapacitated(_modules, agent))
+        {
+            actions.RemoveAll(a => a.Verb != "look");
+            return actions;
+        }
+
         // a carried agent can only use its own verbs (look/say/wait/...) —
         // no escape until the carrier puts it down
         if (posture == Postures.Carried)

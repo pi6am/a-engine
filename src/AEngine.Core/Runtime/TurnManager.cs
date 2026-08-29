@@ -129,6 +129,8 @@ public sealed class TurnManager
                     continue;
                 }
                 var agent = _engine.World.GetObject(agentId);
+                if (Actions.Health.IsIncapacitated(_engine.ModuleRegistry, agent))
+                    continue; // unconscious agents get no turn
                 var policyId = _engine.ModuleRegistry.ResolveString(agent, "agent", "policy")!;
                 if (!_engine.PolicyRegistry.Has(policyId))
                     continue;

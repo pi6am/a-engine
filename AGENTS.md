@@ -195,7 +195,12 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   item from another agent's inventory, opposed by the holder's perception;
   the resolver scans other agents' pockets and restricts items held by
   another agent to steal-only (worn items excluded).
-  **Planned stages:** 3 — `health` module, damage/incapacitation; 4 — combat:
+  **Stage 3 (done):** `health` module (`hp`/`maxHp`/`incapacitatedAt`,
+  default threshold 0); `Damage.Apply` clamps hp at 0 and reports
+  incapacitation once. An incapacitated agent can only `look` (resolver),
+  gets no NPC turns, and shows "(incapacitated)" in listings/examine. No
+  in-game damage source yet — combat lands next.
+  **Planned stages:** 4 — combat:
   `attackable`/`attack`, weapons as `weapon` + wearable on `hand` (damage
   = N + n d m, e.g. greatsword 2d6), `armor.protection`; 5 — grappling
   (`grapple` = forced carrying, `escape` self-verb, `choke` on grappled

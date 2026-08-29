@@ -330,6 +330,8 @@ public static class BuiltinHandlers
 
             if (target.HasModule("agent"))
             {
+                if (Health.IsIncapacitated(ctx.Modules, target))
+                    sb.AppendLine($"{target.Name} is incapacitated.");
                 var posture = Postures.Of(ctx.World, ctx.Modules, target);
                 if (posture == Postures.Prone)
                     sb.AppendLine($"{target.Name} is prone on the ground.");

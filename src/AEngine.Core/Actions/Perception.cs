@@ -72,6 +72,8 @@ public static class Perception
             if (child.HasModule("agent") &&
                 Postures.Of(world, modules, child) == Postures.Prone)
                 entry += " (prone)";
+            if (Health.IsIncapacitated(modules, child))
+                entry += " (incapacitated)";
             items.Add(entry);
             if (child.HasModule("container") && IsOpen(world, modules, child))
             {
