@@ -69,11 +69,16 @@ public static class Perception
             if (child.Id == agentId || child.HasModule("portal"))
                 continue;
             var entry = NameFor(observer, child) + Annotate(world, modules, child);
+            // agent conditions gather into one parenthetical list:
+            // "the arena duelist (prone, incapacitated)"
+            var conditions = new List<string>();
             if (child.HasModule("agent") &&
                 Postures.Of(world, modules, child) == Postures.Prone)
-                entry += " (prone)";
+                conditions.Add("prone");
             if (Health.IsIncapacitated(modules, child))
-                entry += " (incapacitated)";
+                conditions.Add("incapacitated");
+            if (conditions.Count > 0)
+                entry += $" ({string.Join(", ", conditions)})";
             items.Add(entry);
             if (child.HasModule("container") && IsOpen(world, modules, child))
             {

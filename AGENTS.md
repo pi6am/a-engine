@@ -166,7 +166,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   garment per region (conflict = region-set intersection, so layering is
   the author's choice of region names — shirt `["top"]`, coat `["outer"]`,
   armor `["top","bottom"]`; sizes are expressible the same way, e.g.
-  `giant_top`). `drop` refuses worn items. Room listings stay compact;
+  `giant_top`). `drop` refuses worn items. `remove` on a garment worn by
+  *another* agent is an opposed pull (see RPG stage 2). Room listings stay compact;
   `look` (and the LLM context) adds a dressed line per agent ("the old cook
   is wearing an apron.") until an examine verb exists, and `inventory`
   splits "You are wearing: …" from "You are carrying: …".
@@ -194,18 +195,45 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   room listings). `steal` (on the rpg scenario's portable module) takes an
   item from another agent's inventory, opposed by the holder's perception;
   the resolver scans other agents' pockets and restricts items held by
-  another agent to steal-only (worn items excluded).
+  another agent to steal-only — worn garments offer `remove` instead, an
+  opposed pull rolled in the handler (combatant stats: strength/brawling
+  vs agility) that lands the garment in the puller's inventory.
   **Stage 3 (done):** `health` module (`hp`/`maxHp`/`incapacitatedAt`,
   default threshold 0); `Damage.Apply` clamps hp at 0 and reports
-  incapacitation once. An incapacitated agent can only `look` (resolver),
-  gets no NPC turns, and shows "(incapacitated)" in listings/examine. No
+  incapacitation once — a standing agent is knocked prone at the same
+  moment (they crumple; seated/lying/carried agents stay where they are).
+  An incapacitated agent can only `look` (resolver),
+  gets no NPC turns, shows "(incapacitated)" in listings/examine, and
+  offers no resistance to opposed checks (`Checks.EvaluateOpposed` treats
+  their defense as 0 — robbing or stripping a downed foe auto-succeeds
+  unless the check has a difficulty). No
   in-game damage source yet — combat lands next.
-  **Planned stages:** 4 — combat:
-  `attackable`/`attack`, weapons as `weapon` + wearable on `hand` (damage
-  = N + n d m, e.g. greatsword 2d6), `armor.protection`; 5 — grappling
+  **Stage 4 (done):** combat. `attackable` exposes `attack` (postures
+  `["standing"]`); the attack handler rolls opposed in-code (the attacker's
+  bonus depends on the wielded weapon — any worn `weapon`-module item;
+  scenario data puts weapons on the `held` region so they stack with a
+  glove on `hand` — else the `combatant` module's unarmed defaults); the
+  defender's guard is their combatant `defenseStat`/`defenseSkill`
+  (default agility). Damage is N + n d m (weapon `damageBonus`/
+  `damageDice`/`damageSides`, e.g. greatsword 2d6) minus the defender's
+  worn `armor.protection` total, floored at 0; non-agent targets (training
+  dummies) are auto-hit. Handlers roll on `ActionContext.Random` (the
+  engine's seedable source). `failSignals` moved to the **affordance**
+  level: any Failure result (gate or handler) emits them — a missed attack
+  is observable ("{agent} swings at the {target} and misses."). The arena
+  armory has a dagger (1d4), an arming sword (1d8), padded armor
+  (protection 2), and the strongbox rapier (1d8+1).
+  **Planned stages:** 5 — grappling
   (`grapple` = forced carrying, `escape` self-verb, `choke` on grappled
   victims); 6 — granular body parts and targeted damage (per-part pools,
-  region-scoped armor).
+  region-scoped armor). Stage 6 should also make damage/health reporting
+  crunch-level configurable via scenario data (e.g. a `rules` module
+  field): in "numeric" mode attacks report damage numbers and
+  look/examine/inventory show health as an hp fraction; in "descriptive"
+  mode blows are categorized (glancing/solid/severe) and agents show a
+  relative condition (unhurt, slightly wounded, wounded, severely
+  wounded, incapacitated) — damage reports and status reports must use
+  the same crunch level.
 - **Policies & NPC turns** — agents with `agent.policy != "player"` are
   autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
   actions; policies resolve by string id through `PolicyRegistry` (replaceable

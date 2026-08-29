@@ -48,6 +48,12 @@ public sealed class AffordanceDefinition
     public List<string>? Postures { get; init; }
     public bool SameSupport { get; init; }
     public List<Signals.SignalSpec> Signals { get; init; } = [];
+    /// <summary>
+    /// Signals emitted when the action FAILS (a failed check or a failed
+    /// handler — e.g. a missed attack or a botched pickpocketing rattling
+    /// the victim). Failures are otherwise silent to observers.
+    /// </summary>
+    public List<Signals.SignalSpec> FailSignals { get; init; } = [];
 
     /// <summary>
     /// Optional stat/skill check gating the affordance: evaluated before
@@ -64,8 +70,7 @@ public sealed class AffordanceDefinition
 /// The dice formula (n d m) comes from the scenario's rules module.
 /// When Opposed is set, a defender (the target agent, or the agent
 /// holding the target item) rolls their own dice + opposed stat/skill and
-/// the actor must beat them. FailSignals are emitted on a failed check —
-/// e.g. a botched pickpocketing rattles the victim.
+/// the actor must beat them.
 /// </summary>
 public sealed class CheckSpec
 {
@@ -76,8 +81,6 @@ public sealed class CheckSpec
     public OpposedSpec? Opposed { get; init; }
     /// <summary>Failure message; defaults to "You try to {verb}..., but fail."</summary>
     public string? FailText { get; init; }
-    /// <summary>Signals emitted on a failed check (failed actions are otherwise silent).</summary>
-    public List<Signals.SignalSpec> FailSignals { get; init; } = [];
 }
 
 /// <summary>The defender's side of an opposed check: their stat/skill.</summary>

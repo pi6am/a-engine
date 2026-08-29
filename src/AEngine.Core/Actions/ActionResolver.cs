@@ -84,8 +84,9 @@ public sealed class ActionResolver
             var child = _world.GetObject(childId);
             AddFromModules(actions, agent, child, stateFiltered, others, examinable);
 
-            // other agents' pockets are scan targets too (steal); Applies
-            // restricts items held by another agent to steal verbs only
+            // other agents' pockets are scan targets too (steal), as are
+            // their worn garments (remove); Applies restricts items held by
+            // another agent to those verbs only
             if (child.HasModule("agent"))
             {
                 foreach (var pocketId in child.Children)
@@ -188,13 +189,14 @@ public sealed class ActionResolver
         Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target, bool stateFiltered)
     {
         bool held = target.Parent == agent.Id;
-        // items held by another agent are only reachable via steal —
-        // their take/drop/open/close affordances don't apply to you
+        // items held by another agent are only reachable via steal (their
+        // pockets) or remove (a garment they're wearing) — their
+        // take/drop/open/close affordances don't apply to you
         bool heldByOther = target.Id != agent.Id &&
                            target.Parent.Length > 0 && target.Parent != agent.Id &&
                            _world.HasObject(target.Parent) &&
                            _world.GetObject(target.Parent).HasModule("agent");
-        if (heldByOther && affordance.Verb != "steal")
+        if (heldByOther && affordance.Verb is not ("steal" or "remove"))
             return false;
         var applies = affordance.Verb switch
         {
@@ -206,6 +208,7 @@ public sealed class ActionResolver
             "drop" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
             "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
             "shove" => target.HasModule("agent") && target.Id != agent.Id,
+            "attack" => target.HasModule("attackable") && target.Id != agent.Id,
             "wear" => held && target.HasModule("wearable") &&
                       !Clothing.IsWorn(_modules, target) && agent.HasModule("body"),
             "remove" => target.HasModule("wearable") && Clothing.IsWorn(_modules, target),

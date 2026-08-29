@@ -62,7 +62,8 @@ public static class Checks
     /// <summary>
     /// Evaluate an opposed check: both sides roll dice + bonus; the actor
     /// must beat the defender by the difficulty (default 0, ties win).
-    /// Margin >= 0 is a success for the actor.
+    /// Margin >= 0 is a success for the actor. An incapacitated defender
+    /// can't resist: they contribute nothing (no roll, no bonus).
     /// </summary>
     public static int EvaluateOpposed(
         World.World world, ModuleRegistry modules, Random random,
@@ -70,8 +71,10 @@ public static class Checks
     {
         var (count, sides) = DiceFormula(world, modules);
         var attack = RollDice(random, count, sides) + Bonus(modules, actor, spec.Stat, spec.Skill);
-        var defend = RollDice(random, count, sides) +
-                     Bonus(modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill);
+        var defend = Health.IsIncapacitated(modules, defender)
+            ? 0
+            : RollDice(random, count, sides) +
+              Bonus(modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill);
         return attack - defend - spec.Difficulty;
     }
 

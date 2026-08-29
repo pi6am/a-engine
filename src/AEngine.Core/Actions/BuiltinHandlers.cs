@@ -28,8 +28,18 @@ public static class BuiltinHandlers
         new RemoveHandler(),
         new ShoveHandler(),
         new StealHandler(),
+        new AttackHandler(),
         new ExamineHandler(),
     ];
+
+    /// <summary>A module's string field, or null when the module is absent or the field is empty.</summary>
+    private static string? Field(ActionContext ctx, WorldObject obj, string module, string field)
+    {
+        if (!obj.HasModule(module))
+            return null;
+        var value = ctx.Modules.ResolveString(obj, module, field);
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
 
     // flavor verbs that don't change the world ("Touch the red flower") —
     // the message interpolates the affordance's verb
@@ -312,6 +322,76 @@ public static class BuiltinHandlers
         public ActionResult Execute(ActionContext ctx) => ActionResult.Ok("You wait.");
     }
 
+    // attack: the opposed roll lives here (not in the affordance's check
+    // spec) because the attacker's bonus depends on the wielded weapon.
+    // A wielded weapon is a worn item with the weapon module; without one
+    // the attacker's combatant module supplies unarmed defaults. Armor is
+    // the sum of armor.protection over the defender's worn garments.
+    private sealed class AttackHandler : IActionHandler
+    {
+        public string Id => "attack";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("attack requires a target.");
+            if (!target.HasModule("attackable"))
+                return ActionResult.Fail($"There's no point attacking {Perception.WithDefiniteArticle(target.Name)}.");
+            var random = ctx.Random ?? new Random();
+            var targetName = Perception.WithDefiniteArticle(target.Name);
+
+            // the wielded weapon (a worn weapon-module item), if any
+            var weapon = Clothing.WornItems(ctx.World, ctx.Modules, ctx.Agent)
+                .FirstOrDefault(w => w.HasModule("weapon"));
+            var combatant = ctx.Agent.HasModule("combatant");
+
+            var attackStat = (weapon is not null ? Field(ctx, weapon, "weapon", "stat") : null)
+                ?? (combatant ? Field(ctx, ctx.Agent, "combatant", "attackStat") : null)
+                ?? "strength";
+            var attackSkill = (weapon is not null ? Field(ctx, weapon, "weapon", "skill") : null)
+                ?? (combatant ? Field(ctx, ctx.Agent, "combatant", "attackSkill") : null)
+                ?? "brawling";
+
+            // the defender's guard: their combatant defense stat/skill
+            var defStat = Field(ctx, target, "combatant", "defenseStat") ?? "agility";
+            var defSkill = Field(ctx, target, "combatant", "defenseSkill");
+
+            var spec = new Modules.CheckSpec
+            {
+                Stat = attackStat,
+                Skill = attackSkill,
+                Opposed = new Modules.OpposedSpec { Stat = defStat, Skill = defSkill },
+            };
+            // non-agent targets (a training dummy) don't defend themselves
+            var margin = target.HasModule("agent")
+                ? Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, target)
+                : 1;
+            if (margin < 0)
+                return ActionResult.Fail($"You swing at {targetName} and miss.");
+
+            var damageBonus = weapon is not null
+                ? ctx.Modules.ResolveInt(weapon, "weapon", "damageBonus")
+                : combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageBonus") : 0;
+            var damageDice = weapon is not null
+                ? ctx.Modules.ResolveInt(weapon, "weapon", "damageDice", 1)
+                : combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageDice", 1) : 1;
+            var damageSides = weapon is not null
+                ? ctx.Modules.ResolveInt(weapon, "weapon", "damageSides", 4)
+                : combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageSides", 2) : 2;
+            var armor = Clothing.WornItems(ctx.World, ctx.Modules, target)
+                .Where(w => w.HasModule("armor"))
+                .Sum(w => ctx.Modules.ResolveInt(w, "armor", "protection"));
+
+            var damage = Math.Max(
+                damageBonus + Checks.RollDice(random, damageDice, damageSides) - armor, 0);
+            var message = $"You hit {targetName}" +
+                          (weapon is not null ? $" with the {weapon.Name}" : "") +
+                          $" for {damage} damage.";
+            if (Damage.Apply(ctx.World, ctx.Modules, target, damage) is { } fragment)
+                message += " " + fragment;
+            return ActionResult.Ok(message);
+        }
+    }
+
     // examine: per-object detail. Universal (the resolver offers it for
     // every visible object); agents show what they're wearing and carrying,
     // open containers their contents, openables/portal sides their state.
@@ -473,6 +553,33 @@ public static class BuiltinHandlers
             var target = ctx.Target ?? throw new InvalidOperationException("remove requires a target.");
             if (!Clothing.IsWorn(ctx.Modules, target))
                 return ActionResult.Noop($"You're not wearing the {target.Name}.");
+
+            // pulling a garment off another agent is an opposed check, rolled
+            // here (like attack) so self-removal stays check-free; the stats
+            // come from the combatant modules (strength/brawling vs agility)
+            if (target.Parent != ctx.Agent.Id && ctx.World.HasObject(target.Parent) &&
+                ctx.World.GetObject(target.Parent) is { } wearer && wearer.HasModule("agent"))
+            {
+                var random = ctx.Random ?? new Random();
+                var spec = new Modules.CheckSpec
+                {
+                    Stat = Field(ctx, ctx.Agent, "combatant", "attackStat") ?? "strength",
+                    Skill = Field(ctx, ctx.Agent, "combatant", "attackSkill") ?? "brawling",
+                    Opposed = new Modules.OpposedSpec
+                    {
+                        Stat = Field(ctx, wearer, "combatant", "defenseStat") ?? "agility",
+                        Skill = Field(ctx, wearer, "combatant", "defenseSkill"),
+                    },
+                };
+                if (Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, wearer) < 0)
+                    return ActionResult.Fail(
+                        $"You grab at the {target.Name}, but {wearer.Name} keeps it on.");
+                ctx.World.SetFieldOverride(
+                    target.Id, "wearable", "worn", World.World.ToJson(false));
+                ctx.World.MoveObject(target.Id, ctx.Agent.Id);
+                return ActionResult.Ok($"You pull the {target.Name} off {wearer.Name}.");
+            }
+
             ctx.World.SetFieldOverride(
                 target.Id, "wearable", "worn", World.World.ToJson(false));
             return ActionResult.Ok($"You take off the {target.Name}.");

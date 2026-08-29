@@ -51,14 +51,12 @@ public class OpposedCheckTests
         "affordances": [
           {
             "verb": "shove", "handler": "shove",
-            "check": {
-              "stat": "strength", "opposed": { "stat": "agility" },
-              "failSignals": [
-                { "sense": "visual", "priority": 10, "text": "{agent} tries to shove the {target}, who holds their ground." }
-              ]
-            },
+            "check": { "stat": "strength", "opposed": { "stat": "agility" } },
             "signals": [
               { "sense": "visual", "priority": 10, "text": "{agent} shoves the {target} to the ground." }
+            ],
+            "failSignals": [
+              { "sense": "visual", "priority": 10, "text": "{agent} tries to shove the {target}, who holds their ground." }
             ]
           }
         ]
@@ -74,14 +72,12 @@ public class OpposedCheckTests
           { "verb": "drop", "handler": "drop" },
           {
             "verb": "steal", "handler": "steal",
-            "check": {
-              "stat": "agility", "skill": "pickpocket", "opposed": { "stat": "perception" },
-              "failSignals": [
-                { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}!" }
-              ]
-            },
+            "check": { "stat": "agility", "skill": "pickpocket", "opposed": { "stat": "perception" } },
             "signals": [
               { "sense": "visual", "priority": 2, "text": "{agent} lifts the {target}." }
+            ],
+            "failSignals": [
+              { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}!" }
             ]
           }
         ]
@@ -223,5 +219,34 @@ public class OpposedCheckTests
         var actions = engine.ActionResolver.Resolve(engine.World.GetObject("alice"));
         Assert.DoesNotContain(actions,
             a => (a.Verb == "steal" || a.Verb == "take") && a.TargetId == "apple");
+    }
+
+    [Fact]
+    public void OpposedCheck_IncapacitatedDefender_OffersNoResistance()
+    {
+        var engine = NewEngine();
+        engine.ModuleRegistry.LoadJson("""
+        [
+          {
+            "id": "health", "name": "Health",
+            "fields": [
+              { "name": "maxHp", "type": "int", "default": 10 },
+              { "name": "hp", "type": "int", "default": 10 },
+              { "name": "incapacitatedAt", "type": "int", "default": 0 }
+            ],
+            "affordances": []
+          }
+        ]
+        """);
+        engine.World.MoveObject("apple", "bob");
+        engine.World.AddModule("bob", "health");
+        engine.World.SetFieldOverride("bob", "health", "hp", Core.World.World.ToJson(0));
+        SetStat(engine, "alice", "agility", 8);
+        SetStat(engine, "bob", "perception", 20); // would easily resist if conscious
+
+        var result = engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "steal", "apple"));
+        Assert.True(result.Success);
+        Assert.Equal("alice", engine.World.GetObject("apple").Parent);
     }
 }

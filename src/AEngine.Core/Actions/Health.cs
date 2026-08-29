@@ -28,7 +28,9 @@ public static class Damage
     /// <summary>
     /// Apply damage to the target's health pool (clamped at 0). Returns a
     /// message fragment when the target is incapacitated by the blow
-    /// ("The goblin is incapacitated!"), null otherwise. Targets without a
+    /// ("The goblin collapses, incapacitated!"), null otherwise. A standing
+    /// agent is knocked prone — they crumple where they stood; seated,
+    /// lying, or carried agents stay where they are. Targets without a
     /// health module are unaffected and return null.
     /// </summary>
     public static string? Apply(
@@ -42,7 +44,12 @@ public static class Damage
         world.SetFieldOverride(target.Id, "health", "hp", World.World.ToJson(hp));
         if (wasIncapacitated || !Health.IsIncapacitated(modules, target))
             return null;
+        var collapses = target.HasModule("agent") &&
+                        Postures.Of(world, modules, target) == Postures.Standing;
+        if (collapses)
+            world.SetFieldOverride(target.Id, "agent", "posture", World.World.ToJson(Postures.Prone));
         var name = target.Name;
-        return $"{char.ToUpperInvariant(name[0])}{name[1..]} is incapacitated!";
+        var capitalized = $"{char.ToUpperInvariant(name[0])}{name[1..]}";
+        return collapses ? $"{capitalized} collapses, incapacitated!" : $"{capitalized} is incapacitated!";
     }
 }

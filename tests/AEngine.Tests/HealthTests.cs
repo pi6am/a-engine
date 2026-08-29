@@ -44,9 +44,11 @@ public class HealthTests
         Assert.False(Health.IsIncapacitated(engine.ModuleRegistry, bob));
 
         var fragment = Damage.Apply(engine.World, engine.ModuleRegistry, bob, 50);
-        Assert.Equal("Bob is incapacitated!", fragment);
+        Assert.Equal("Bob collapses, incapacitated!", fragment);
         Assert.Equal(0, engine.ModuleRegistry.ResolveInt(bob, "health", "hp"));
         Assert.True(Health.IsIncapacitated(engine.ModuleRegistry, bob));
+        // a standing agent crumples
+        Assert.Equal(Postures.Prone, Postures.Of(engine.World, engine.ModuleRegistry, bob));
 
         // further damage to a downed agent reports nothing new
         Assert.Null(Damage.Apply(engine.World, engine.ModuleRegistry, bob, 3));
@@ -83,10 +85,10 @@ public class HealthTests
         engine.TurnManager.RunNpcTurns();
         Assert.Empty(engine.Memory.Recall("bob")); // Bob never acted
 
-        // he still shows in the room, marked
+        // he still shows in the room, marked — and prone, having crumpled
         var look = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "look"));
-        Assert.Contains("Bob (incapacitated)", look.Message);
+        Assert.Contains("Bob (prone, incapacitated)", look.Message);
     }
 
     [Fact]

@@ -72,6 +72,8 @@ public sealed class TurnManager
                 return result;
             if (result.Success)
                 EmitSignals(agent, action, text, departureRoomId);
+            else
+                EmitFailSignals(agent, action);
             _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, result);
             if (_engine.TimeMode == TimeMode.TurnBased)
                 AdvanceTurn();
@@ -94,6 +96,7 @@ public sealed class TurnManager
                 Agent = agent,
                 Target = targetId is null ? null : _engine.World.GetObject(targetId),
                 Verb = verb,
+                Random = _engine.Random,
                 Args = text is null
                     ? new Dictionary<string, string>()
                     : new Dictionary<string, string> { ["text"] = text },
@@ -225,6 +228,22 @@ public sealed class TurnManager
         return new Signals.TraversalContext(departureRoomId, arrivalRoomId, target, entrySide);
     }
 
+    /// <summary>
+    /// Emit the affordance's failSignals for a failed action (a failed
+    /// check or a failed handler — e.g. a missed attack, a botched
+    /// pickpocketing). Failures are otherwise silent to observers.
+    /// </summary>
+    private void EmitFailSignals(WorldObject agent, AvailableAction action)
+    {
+        var affordance = LookupAffordance(action);
+        if (affordance is null || affordance.FailSignals.Count == 0)
+            return;
+        var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+            ? _engine.World.GetObject(action.TargetId)
+            : null;
+        _engine.SignalBus.Emit(agent, target, affordance.FailSignals, null, null);
+    }
+
     /// <summary>The turn until which the agent is busy with its current action (0 = free). For tooling/tests.</summary>
     public int BusyUntilTurn(string agentId) =>
         _busyUntil.TryGetValue(agentId, out var until) ? until : 0;
@@ -235,9 +254,7 @@ public sealed class TurnManager
     /// a failed check returns a Failure result without running the handler
     /// — it still consumes the turn and records memory via the caller.
     /// Opposed checks roll the defender (the target agent, or the agent
-    /// holding the target item) against the actor. A failed check emits
-    /// the spec's failSignals, if any (a botched pickpocketing rattles
-    /// the victim).
+    /// holding the target item) against the actor.
     /// </summary>
     private ActionResult? EvaluateCheck(WorldObject agent, AvailableAction action)
     {
@@ -261,8 +278,6 @@ public sealed class TurnManager
         }
         if (margin >= 0)
             return null;
-        if (check.FailSignals.Count > 0)
-            _engine.SignalBus.Emit(agent, target, check.FailSignals, null, null);
         return ActionResult.Fail(check.FailText ?? (target is not null
             ? $"You try to {action.Verb} {Perception.WithDefiniteArticle(target.Name)}, but fail."
             : $"You try to {action.Verb}, but fail."));

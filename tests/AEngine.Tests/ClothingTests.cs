@@ -203,4 +203,112 @@ public class ClothingTests
         Assert.Contains("You are wearing: an apron, a chef's hat", inventory);
         Assert.Contains("You are carrying: an apple", inventory);
     }
+
+    // remove-other support: diceless rules (0d0) + stat/skill/health pools
+    private static void LoadOpposedSupport(GameEngine engine)
+    {
+        engine.ModuleRegistry.LoadJson("""
+        [
+          {
+            "id": "rules", "name": "Rules",
+            "fields": [
+              { "name": "diceCount", "type": "int", "default": 0 },
+              { "name": "diceSides", "type": "int", "default": 0 }
+            ],
+            "affordances": []
+          },
+          {
+            "id": "stats", "name": "Stats",
+            "fields": [ { "name": "values", "type": "map", "default": {} } ],
+            "affordances": []
+          },
+          {
+            "id": "health", "name": "Health",
+            "fields": [
+              { "name": "maxHp", "type": "int", "default": 10 },
+              { "name": "hp", "type": "int", "default": 10 },
+              { "name": "incapacitatedAt", "type": "int", "default": 0 }
+            ],
+            "affordances": []
+          }
+        ]
+        """);
+        engine.World.CreateObject("rules", Core.World.World.RootId, "rules");
+        engine.World.AddModule("rules", "rules");
+        engine.World.AddModule("alice", "stats");
+        engine.World.AddModule("bob", "stats");
+    }
+
+    private static void SetStat(GameEngine engine, string id, string stat, int value) =>
+        Stats.Set(engine.World, engine.ModuleRegistry, engine.World.GetObject(id), "stats", stat, value);
+
+    private static void AddWornGarment(GameEngine engine, string id, string name, string wearerId, params string[] regions)
+    {
+        AddGarment(engine, id, name, wearerId, regions);
+        engine.World.SetFieldOverride(id, "wearable", "worn", Core.World.World.ToJson(true));
+    }
+
+    [Fact]
+    public void Remove_FromAnotherAgent_IsAnOpposedPull()
+    {
+        var engine = NewEngine();
+        LoadOpposedSupport(engine);
+        engine.World.MoveObject("bob", "room_a");
+        AddWornGarment(engine, "glove", "leather glove", "bob", "top");
+        SetStat(engine, "alice", "strength", 10);
+        SetStat(engine, "bob", "agility", 5); // 10 vs 5: the pull succeeds
+        var alice = engine.World.GetObject("alice");
+
+        // a garment worn by another agent offers remove (an opposed
+        // pull), never steal or take
+        var actions = engine.ActionResolver.Resolve(alice);
+        var remove = Assert.Single(actions, a => a.Verb == "remove" && a.TargetId == "glove");
+        Assert.Equal("Take off the leather glove", remove.Label);
+        Assert.DoesNotContain(actions,
+            a => (a.Verb == "steal" || a.Verb == "take") && a.TargetId == "glove");
+
+        var result = engine.TurnManager.PerformAction(alice, remove);
+        Assert.True(result.Success);
+        Assert.Equal("You pull the leather glove off Bob.", result.Message);
+        var glove = engine.World.GetObject("glove");
+        Assert.Equal("alice", glove.Parent);
+        Assert.False(Clothing.IsWorn(engine.ModuleRegistry, glove));
+    }
+
+    [Fact]
+    public void Remove_FromAnotherAgent_CanFail()
+    {
+        var engine = NewEngine();
+        LoadOpposedSupport(engine);
+        engine.World.MoveObject("bob", "room_a");
+        AddWornGarment(engine, "glove", "leather glove", "bob", "top");
+        SetStat(engine, "alice", "strength", 3);
+        SetStat(engine, "bob", "agility", 20); // 3 vs 20: Bob keeps it on
+
+        var result = engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "remove", "glove"));
+        Assert.False(result.Success);
+        Assert.Equal("You grab at the leather glove, but Bob keeps it on.", result.Message);
+        var glove = engine.World.GetObject("glove");
+        Assert.Equal("bob", glove.Parent);
+        Assert.True(Clothing.IsWorn(engine.ModuleRegistry, glove));
+    }
+
+    [Fact]
+    public void Remove_FromAnIncapacitatedAgent_CannotBeResisted()
+    {
+        var engine = NewEngine();
+        LoadOpposedSupport(engine);
+        engine.World.MoveObject("bob", "room_a");
+        AddWornGarment(engine, "glove", "leather glove", "bob", "top");
+        engine.World.AddModule("bob", "health");
+        engine.World.SetFieldOverride("bob", "health", "hp", Core.World.World.ToJson(0));
+        SetStat(engine, "alice", "strength", 3);
+        SetStat(engine, "bob", "agility", 20); // incapacitated: no resistance
+
+        var result = engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "remove", "glove"));
+        Assert.True(result.Success);
+        Assert.Equal("alice", engine.World.GetObject("glove").Parent);
+    }
 }
