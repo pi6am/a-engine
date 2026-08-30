@@ -115,10 +115,10 @@ public static class Perception
 
     /// <summary>
     /// One line per visibly dressed agent in the room (top-level agents and
-    /// furniture occupants, the observer included):
-    /// "the old cook is wearing an apron, a chef's hat." /
-    /// "You are wearing an apron." Placeholder for per-agent detail until an
-    /// examine verb exists; the "You see:" listing stays compact.
+    /// furniture occupants, the observer excluded — what you're wearing is
+    /// on the inventory screen): "the old cook is wearing an apron, a
+    /// chef's hat." Placeholder for per-agent detail until an examine verb
+    /// exists; the "You see:" listing stays compact.
     /// </summary>
     public static List<string> DressedLines(
         World.World world, ModuleRegistry modules, WorldObject room, string observerId)
@@ -136,15 +136,13 @@ public static class Perception
 
         void AddLine(WorldObject obj)
         {
-            if (!obj.HasModule("agent"))
+            if (obj.Id == observerId || !obj.HasModule("agent"))
                 return;
             var worn = Clothing.WornItems(world, modules, obj);
             if (worn.Count == 0)
                 return;
             var list = string.Join(", ", worn.Select(w => WithArticle(w.Name)));
-            lines.Add(obj.Id == observerId
-                ? $"You are wearing {list}."
-                : $"{obj.Name} is wearing {list}.");
+            lines.Add($"{obj.Name} is wearing {list}.");
         }
     }
 

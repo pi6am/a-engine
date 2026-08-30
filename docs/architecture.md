@@ -162,9 +162,10 @@ choice of region names — shirt `["top"]`, coat `["outer"]`, armor
 `["top","bottom"]`; sizes are expressible the same way, e.g. `giant_top`).
 `drop` refuses worn items. `remove` on a garment worn by *another* agent is
 an opposed pull (see `docs/rpg-systems.md` stage 2). Room listings stay
-compact; `look` (and the LLM context) adds a dressed line per agent ("the
-old cook is wearing an apron."), and `inventory` splits "You are wearing:
-…" from "You are carrying: …".
+compact; `look` (and the LLM context) adds a dressed line per *other*
+agent ("the old cook is wearing an apron." — your own outfit stays off
+the room description), and `inventory` splits "You are wearing: …" from
+"You are carrying: …".
 
 ## Reactions (quick-time events)
 

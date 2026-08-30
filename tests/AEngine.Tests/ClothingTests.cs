@@ -189,9 +189,10 @@ public class ClothingTests
         Assert.DoesNotContain("Alice (wearing", bobLook);
         Assert.Contains("Alice is wearing an apron, a chef's hat.", bobLook);
 
-        // Alice sees herself dressed, observer-relative
+        // the observer's own outfit stays off the room description (it's on
+        // the inventory screen)
         var aliceLook = engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "look")).Message;
-        Assert.Contains("You are wearing an apron, a chef's hat.", aliceLook);
+        Assert.DoesNotContain("You are wearing", aliceLook);
 
         // the LLM context mirrors look
         var context = new AgentContextBuilder(engine).BuildContext(bob, npc: true);
