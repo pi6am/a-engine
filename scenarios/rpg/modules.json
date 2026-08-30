@@ -307,7 +307,7 @@
           "handler": "take",
           "duration": 2,
           "signals": [
-            { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}." }
+            { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}{container}." }
           ]
         },
         {
