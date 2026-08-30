@@ -62,6 +62,58 @@ public sealed class AffordanceDefinition
     /// turn, runs no handler, and emits no signals.
     /// </summary>
     public CheckSpec? Check { get; init; }
+
+    /// <summary>
+    /// Optional quick-time reaction: when the action targets another agent,
+    /// the attempt telegraphs (observers see it, the actor is committed)
+    /// and the target gets a window to choose a response before the check
+    /// and handler resolve. Null = no reaction possible.
+    /// </summary>
+    public ReactionSpec? Reaction { get; init; }
+}
+
+/// <summary>
+/// A quick-time reaction declared on an affordance. When the action
+/// targets a (non-incapacitated) agent and at least two options survive
+/// availability filtering, the defender gets Window game seconds to pick
+/// an option; the Default option applies at the deadline. Options with a
+/// RequiresWornModule are only available when the defender wears an item
+/// with that module (block needs a shield, parry a weapon). Window 0 =
+/// too fast to react; the action resolves immediately.
+/// </summary>
+public sealed class ReactionSpec
+{
+    /// <summary>Game seconds the defender has to decide; 0 = no reaction.</summary>
+    public int Window { get; init; }
+    /// <summary>Signal text telegraphing the attempt ("{agent} swings at the {target}!").</summary>
+    public string? Telegraph { get; init; }
+    /// <summary>Message for the actor on committing; defaults to "You {verb} {target}."</summary>
+    public string? ActorText { get; init; }
+    public List<ReactionOptionSpec> Options { get; init; } = [];
+}
+
+/// <summary>
+/// One reaction choice. Stat/Skill/Bonus replace the defender's side of
+/// the opposed check (Bonus is flat, e.g. a shield); NoResist accepts the
+/// action (defender contributes 0 — the default for positive actions).
+/// Text is the defender-side memory line ("You dodge the blow.").
+/// Report is the actor-facing line for the choice ("{agent} attempts to
+/// dodge." — {agent} is the reacting defender, {target} the actor, "you");
+/// it's written because the choice itself is invisible to the actor
+/// otherwise (signals never reach the actor). Unset = quiet.
+/// </summary>
+public sealed class ReactionOptionSpec
+{
+    public required string Id { get; init; }
+    public required string Label { get; init; }
+    public string? Stat { get; init; }
+    public string? Skill { get; init; }
+    public int Bonus { get; init; }
+    public string? RequiresWornModule { get; init; }
+    public bool NoResist { get; init; }
+    public bool Default { get; init; }
+    public string? Text { get; init; }
+    public string? Report { get; init; }
 }
 
 /// <summary>

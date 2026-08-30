@@ -244,6 +244,42 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   relative condition (unhurt, slightly wounded, wounded, severely
   wounded, incapacitated) — damage reports and status reports must use
   the same crunch level.
+- **Reactions (quick-time events)** — an affordance can declare a
+  `reaction` spec (`window` in game seconds, `telegraph` signal text,
+  `options`): when the action targets a non-incapacitated agent and ≥2
+  options survive availability filtering (`requiresWornModule` — block
+  needs a worn `shield`, parry a worn `weapon`), `PerformAction` parks
+  it: the telegraph is observable, the actor is committed (busy, turn
+  spent), and the defender picks a response before the check/handler
+  resolve (`ReactionManager` on `GameEngine`). At resolution the actor's
+  eligibility is re-validated (`ResolvePotential`) — an actor
+  incapacitated, knocked prone, or grabbed during the window fizzles
+  ("The moment passes."), mirroring how stale NPC policy choices are
+  discarded. An option's
+  `stat`/`skill`/`bonus` replace the defender's side of the opposed check
+  (gate and handler-rolled alike, via `Checks.EvaluateOpposed`'s reaction
+  parameter and `ActionContext.Reaction`); `noResist` accepts the action.
+  An option's `report` is the actor-facing line for the choice ("{agent}
+  attempts to dodge." — {agent} is the reacting defender, {target} the
+  actor rendered "you"; sentence-capitalized): it's recorded to the
+  actor's memory and shown ahead of the outcome message, since signals
+  never reach the actor and the choice would otherwise be invisible to
+  them. Unset = quiet.
+  The `default` option applies at the deadline (`AdvanceTurn` →
+  `ExpireDue`); resist-by-default for attacks, accept-by-default for
+  positive actions (hug). A defender's last explicit choice per
+  (verb, actor) is remembered (`EffectiveDefault`) and becomes the
+  effective default while it's still available — pick parry once and it
+  stays your default until it's impossible. NPC defenders choose through
+  their policy
+  (`IAgentPolicy.ChooseReactionAsync` — random picks uniformly, LLM picks
+  in character; synchronous policies resolve at park time). Player UX in
+  the CLI: real-time mode shows a status line above the input
+  ("… — F2 to react (default: Dodge, 2s)") and F2 opens a modal popup;
+  turn-based mode prompts inline after NPC turns. The rpg scenario wires
+  reactions for attack (dodge/block/parry/accept), grapple and remove
+  (resist/accept), and hug (push away/accept); a `wooden shield` on the
+  `held_off_hand` body region enables block next to a `held` weapon.
 - **Policies & NPC turns** — agents with `agent.policy != "player"` are
   autonomous. `IAgentPolicy.ChooseActionAsync` picks one of the resolved
   actions; policies resolve by string id through `PolicyRegistry` (replaceable

@@ -367,7 +367,8 @@ public static class BuiltinHandlers
             };
             // non-agent targets (a training dummy) don't defend themselves
             var margin = target.HasModule("agent")
-                ? Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, target)
+                ? Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, target,
+                    ctx.Reaction)
                 : 1;
             if (margin < 0)
                 return ActionResult.Fail($"You swing at {targetName} and miss.");
@@ -575,7 +576,8 @@ public static class BuiltinHandlers
                         Skill = Field(ctx, wearer, "combatant", "defenseSkill"),
                     },
                 };
-                if (Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, wearer) < 0)
+                if (Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, wearer,
+                        ctx.Reaction) < 0)
                     return ActionResult.Fail(
                         $"You grab at the {target.Name}, but {wearer.Name} keeps it on.");
                 ctx.World.SetFieldOverride(

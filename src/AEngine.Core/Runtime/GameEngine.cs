@@ -19,6 +19,7 @@ public sealed class GameEngine
     public SignalBus SignalBus { get; }
     public AgentMemory Memory { get; }
     public Scheduler Scheduler { get; }
+    public ReactionManager Reactions { get; }
     public TurnManager TurnManager { get; }
     public ActionResolver ActionResolver { get; }
 
@@ -44,6 +45,7 @@ public sealed class GameEngine
         Memory = new AgentMemory(ModuleRegistry);
         SignalBus = new SignalBus(World, ModuleRegistry, Memory);
         Scheduler = new Scheduler();
+        Reactions = new ReactionManager(this);
         ActionResolver = new ActionResolver(World, ModuleRegistry);
         TurnManager = new TurnManager(this);
     }

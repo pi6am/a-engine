@@ -2,6 +2,10 @@ using System.Text;
 
 namespace AEngine.Cli;
 
+/// <summary>A reaction choice menu for the F2 popup (quick-time events).</summary>
+public sealed record ReactionMenu(
+    string Title, IReadOnlyList<string> Options, int DefaultIndex, int SecondsLeft);
+
 /// <summary>
 /// Minimal MUD-style console prompt. The main thread reads input one key
 /// at a time, keeping the in-progress line in a buffer; background output
@@ -15,8 +19,11 @@ namespace AEngine.Cli;
 /// lists matching commands with their help summaries; up/down then cycle
 /// the popup's selection instead of the history, tab completes the
 /// selected command, and ESC dismisses the popup until the next edit.
-/// Falls back to plain Console.ReadLine when input is
-/// redirected (pipes, tests).
+/// A transient status line (SetStatus) renders between the log and the
+/// input line — used to announce pending quick-time reactions; F2 then
+/// opens a modal popup over the input line to pick a reaction (up/down,
+/// Enter to confirm, ESC to close). Falls back to plain Console.ReadLine
+/// when input is redirected (pipes, tests).
 /// </summary>
 public sealed class ConsolePrompt
 {
@@ -31,9 +38,18 @@ public sealed class ConsolePrompt
     private int _selected; // the highlighted completion
     private bool _completionsEnabled = true;
     private bool _popupDismissed; // ESC closes the popup until the next edit
+    private string? _status; // the status line above the input line, when set
+    private ReactionMenu? _modalMenu; // the open F2 reaction popup
+    private int _modalSel;
 
     /// <summary>Slash commands (with leading '/') and their summaries, for tab completion.</summary>
     public IReadOnlyList<(string Name, string Description)>? Completions { get; set; }
+
+    /// <summary>The pending reaction to show when F2 is pressed, if any (quick-time events).</summary>
+    public Func<ReactionMenu?>? ReactionMenuProvider { get; set; }
+
+    /// <summary>Called with the chosen option index when the F2 popup is confirmed.</summary>
+    public Action<int>? ReactionChosen { get; set; }
 
     /// <summary>Prompt and read one line of input. Null on EOF (redirected input only).</summary>
     public string? ReadLine(string prompt = "> ", bool completions = true)
@@ -63,10 +79,51 @@ public sealed class ConsolePrompt
             {
                 // ReadKey blocks; do NOT hold the lock while waiting
                 var key = Console.ReadKey(intercept: true);
+                // menu provider/callback invocations happen outside the lock
+                // (they take engine locks; the timer thread calls SetStatus
+                // holding them — avoid a lock-ordering deadlock)
+                var openMenu = false;
+                int? reactionChoice = null;
                 lock (_writeLock)
                 {
-                    if (key.Key == ConsoleKey.Enter)
+                    if (_modalMenu is { } menu)
                     {
+                        // modal reaction popup: only navigation keys apply
+                        if (key.Key == ConsoleKey.UpArrow && menu.Options.Count > 0)
+                        {
+                            _modalSel = (_modalSel - 1 + menu.Options.Count) % menu.Options.Count;
+                            Redraw();
+                        }
+                        else if (key.Key == ConsoleKey.DownArrow && menu.Options.Count > 0)
+                        {
+                            _modalSel = (_modalSel + 1) % menu.Options.Count;
+                            Redraw();
+                        }
+                        else if (key.Key == ConsoleKey.Enter)
+                        {
+                            reactionChoice = _modalSel;
+                            _modalMenu = null;
+                            Redraw();
+                        }
+                        else if (key.Key == ConsoleKey.Escape)
+                        {
+                            _modalMenu = null;
+                            Redraw();
+                        }
+                    }
+                    else if (key.Key == ConsoleKey.F2)
+                    {
+                        openMenu = true; // provider invoked below, outside the lock
+                    }
+                    else if (key.Key == ConsoleKey.Enter)
+                    {
+                        // the status line (if any) detaches into the log —
+                        // the caller re-sets it if the reaction is still open
+                        if (_status is not null)
+                        {
+                            _status = null;
+                            Console.Write("\x1b[1A\r\x1b[2K\x1b[M");
+                        }
                         // settle at the end of the line and erase the popup
                         // below it before moving on
                         Console.Write('\r');
@@ -191,6 +248,17 @@ public sealed class ConsolePrompt
                     }
                     // other control keys are ignored
                 }
+                if (openMenu && ReactionMenuProvider?.Invoke() is { } m && m.Options.Count > 0)
+                {
+                    lock (_writeLock)
+                    {
+                        _modalMenu = m;
+                        _modalSel = m.DefaultIndex;
+                        Redraw();
+                    }
+                }
+                if (reactionChoice is { } choice)
+                    ReactionChosen?.Invoke(choice);
             }
         }
         finally
@@ -210,14 +278,51 @@ public sealed class ConsolePrompt
         {
             if (_reading && !Console.IsInputRedirected)
             {
+                if (_status is not null)
+                    Console.Write("\x1b[1A"); // the status line is the topmost managed row
                 Console.Write("\r\x1b[2K"); // carriage return + erase line
-                Console.Write("\x1b[J"); // and any completion popup below
+                Console.Write("\x1b[J"); // and everything below (input line, popups)
                 Console.WriteLine(text);
+                if (_status is not null)
+                    Console.Write(_status + "\n");
                 Redraw();
             }
             else
             {
                 Console.WriteLine(text);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Set or clear the transient status line between the log and the
+    /// input line (e.g. "the duelist swings at you! — F2 to react").
+    /// Appearing/disappearing inserts/deletes a terminal row so the log
+    /// is never repainted; text updates redraw in place.
+    /// </summary>
+    public void SetStatus(string? text)
+    {
+        lock (_writeLock)
+        {
+            var had = _status is not null;
+            _status = text;
+            if (!_reading || Console.IsInputRedirected)
+                return;
+            if (!had && text is not null)
+            {
+                Console.Write("\x1b[L"); // open a row at the input line; the input moves down
+                Console.Write("\r\x1b[2K" + text + "\n");
+                Redraw();
+            }
+            else if (had && text is null)
+            {
+                Console.Write("\x1b[1A\r\x1b[2K\x1b[M"); // delete the status row
+                Redraw();
+            }
+            else if (had && text is not null)
+            {
+                Console.Write("\x1b[1A\r\x1b[2K" + text + "\n"); // update in place
+                Redraw();
             }
         }
     }
@@ -265,26 +370,46 @@ public sealed class ConsolePrompt
             _savedLine = _buffer.ToString();
     }
 
-    // rewrite the input line (and the completion popup below it), leaving
-    // the cursor at its position on the input line
+    // rewrite the input line (and the popup below it — the F2 reaction
+    // menu when open, else slash-command completions), leaving the cursor
+    // at its position on the input line. The status line above is managed
+    // separately (SetStatus/WriteAbove/Enter).
     private void Redraw()
     {
         Console.Write("\r\x1b[2K");
         Console.Write(_prompt);
         Console.Write(_buffer.ToString());
         Console.Write("\x1b[J"); // erase any stale popup below
-        var matches = CurrentMatches();
-        if (matches.Count > 0)
+        List<string>? popupLines = null;
+        var popupSel = 0;
+        if (_modalMenu is { } menu)
         {
-            var width = SafeWindowWidth();
-            var popup = new StringBuilder();
-            for (var i = 0; i < matches.Count; i++)
+            popupLines = menu.Options
+                .Select((o, i) => $"  {i + 1}. {o}{(i == menu.DefaultIndex ? " (default)" : "")}")
+                .ToList();
+            popupSel = _modalSel;
+        }
+        else
+        {
+            var matches = CurrentMatches();
+            if (matches.Count > 0)
             {
-                var line = Truncate($"  {matches[i].Name} — {matches[i].Description}", width);
-                popup.Append('\n');
-                popup.Append(i == _selected ? $"\x1b[7m{line}\x1b[0m" : line);
+                var width = SafeWindowWidth();
+                popupLines = matches
+                    .Select(m => Truncate($"  {m.Name} — {m.Description}", width))
+                    .ToList();
+                popupSel = _selected;
             }
-            popup.Append($"\x1b[{matches.Count}A"); // back up to the input line
+        }
+        if (popupLines is not null)
+        {
+            var popup = new StringBuilder();
+            for (var i = 0; i < popupLines.Count; i++)
+            {
+                popup.Append('\n');
+                popup.Append(i == popupSel ? $"\x1b[7m{popupLines[i]}\x1b[0m" : popupLines[i]);
+            }
+            popup.Append($"\x1b[{popupLines.Count}A"); // back up to the input line
             Console.Write(popup.ToString());
         }
         Console.Write('\r');

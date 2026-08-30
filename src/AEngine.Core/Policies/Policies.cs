@@ -22,6 +22,16 @@ public interface IAgentPolicy
     Task<AvailableAction?> ChooseActionAsync(
         GameEngine engine, WorldObject agent,
         IReadOnlyList<AvailableAction> actions, CancellationToken ct);
+
+    /// <summary>
+    /// Pick a reaction (option id) to a telegraphed action targeting this
+    /// agent — a quick-time event. Null (the default implementation) = the
+    /// reaction spec's default option.
+    /// </summary>
+    Task<string?> ChooseReactionAsync(
+        GameEngine engine, WorldObject defender,
+        PendingReaction reaction, CancellationToken ct) =>
+        Task.FromResult<string?>(null);
 }
 
 /// <summary>
@@ -81,6 +91,15 @@ public sealed class RandomPolicy : IAgentPolicy
             pick = pick with { Text = Phrases[engine.Random.Next(Phrases.Length)] };
         return Task.FromResult<AvailableAction?>(pick);
     }
+
+    /// <summary>Uniform pick among the reaction options.</summary>
+    public Task<string?> ChooseReactionAsync(
+        GameEngine engine, WorldObject defender,
+        PendingReaction reaction, CancellationToken ct)
+    {
+        var option = reaction.Options[engine.Random.Next(reaction.Options.Count)];
+        return Task.FromResult<string?>(option.Id);
+    }
 }
 
 /// <summary>
@@ -100,6 +119,15 @@ public sealed class AutoPolicy : IAgentPolicy
         var inner = engine.PolicyRegistry.Get(
             engine.PolicyRegistry.Has("llm") ? "llm" : "random");
         return inner.ChooseActionAsync(engine, agent, actions, ct);
+    }
+
+    public Task<string?> ChooseReactionAsync(
+        GameEngine engine, WorldObject defender,
+        PendingReaction reaction, CancellationToken ct)
+    {
+        var inner = engine.PolicyRegistry.Get(
+            engine.PolicyRegistry.Has("llm") ? "llm" : "random");
+        return inner.ChooseReactionAsync(engine, defender, reaction, ct);
     }
 }
 

@@ -56,4 +56,41 @@ public sealed class LlmPlanner
             labels = _engine.ActionResolver.Resolve(agent).Select(a => a.Label).ToArray();
         return PlanParser.Parse(reply, knownLabels: labels);
     }
+
+    private const string ReactionSystemPrompt = """
+        You are playing a character in a text adventure. Something is about
+        to happen to your character. You receive a description of your
+        current situation, what is happening, and a list of ways to react.
+        Reply with EXACTLY ONE option, copied as listed. No explanations,
+        nothing else. Choose in character, based on your goals and nature.
+        """;
+
+    /// <summary>
+    /// Ask the LLM how the agent reacts to a telegraphed action; returns
+    /// the chosen option id, or null (the default) when the reply matches
+    /// nothing.
+    /// </summary>
+    public async Task<string?> ChooseReactionAsync(
+        WorldObject agent, PendingReaction reaction, CancellationToken ct = default)
+    {
+        var context = new AgentContextBuilder(_engine).BuildContext(agent, npc: true);
+        var options = string.Join("\n", reaction.Options.Select(o => "- " + o.Label));
+        var messages = new[]
+        {
+            LlmMessage.System(ReactionSystemPrompt),
+            LlmMessage.User(
+                $"{context}\n\n{reaction.Announcement}\nHow do you react? Options:\n{options}"),
+        };
+        var reply = (await _client.CompleteAsync(messages, ct).ConfigureAwait(false)).Trim();
+        if (reply.Length == 0)
+            return null;
+        // tolerant match: exact id/label first, then containment either way
+        var option = reaction.Options.FirstOrDefault(o =>
+                         o.Label.Equals(reply, StringComparison.OrdinalIgnoreCase) ||
+                         o.Id.Equals(reply, StringComparison.OrdinalIgnoreCase))
+                     ?? reaction.Options.FirstOrDefault(o =>
+                         reply.Contains(o.Label, StringComparison.OrdinalIgnoreCase) ||
+                         o.Label.Contains(reply, StringComparison.OrdinalIgnoreCase));
+        return option?.Id;
+    }
 }

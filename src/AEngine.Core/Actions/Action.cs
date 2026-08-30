@@ -18,6 +18,12 @@ public sealed class ActionContext
     public string? Verb { get; init; }
     /// <summary>The engine's randomness source (checks, damage rolls).</summary>
     public Random? Random { get; init; }
+    /// <summary>
+    /// The reaction the target chose to this action (quick-time events),
+    /// when the action was telegraphed and answered. Handler-rolled opposed
+    /// checks (attack, remove) pass it to Checks.EvaluateOpposed.
+    /// </summary>
+    public ReactionOptionSpec? Reaction { get; init; }
     public IReadOnlyDictionary<string, string> Args { get; init; } =
         new Dictionary<string, string>();
 }

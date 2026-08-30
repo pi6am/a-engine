@@ -63,18 +63,27 @@ public static class Checks
     /// Evaluate an opposed check: both sides roll dice + bonus; the actor
     /// must beat the defender by the difficulty (default 0, ties win).
     /// Margin >= 0 is a success for the actor. An incapacitated defender
-    /// can't resist: they contribute nothing (no roll, no bonus).
+    /// can't resist: they contribute nothing (no roll, no bonus). When the
+    /// defender chose a quick-time reaction, it replaces their side: the
+    /// reaction's stat/skill plus its flat bonus, or nothing at all when
+    /// the reaction accepts the action (NoResist).
     /// </summary>
     public static int EvaluateOpposed(
         World.World world, ModuleRegistry modules, Random random,
-        WorldObject actor, CheckSpec spec, WorldObject defender)
+        WorldObject actor, CheckSpec spec, WorldObject defender,
+        ReactionOptionSpec? reaction = null)
     {
         var (count, sides) = DiceFormula(world, modules);
         var attack = RollDice(random, count, sides) + Bonus(modules, actor, spec.Stat, spec.Skill);
-        var defend = Health.IsIncapacitated(modules, defender)
-            ? 0
-            : RollDice(random, count, sides) +
-              Bonus(modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill);
+        var defend = reaction switch
+        {
+            { NoResist: true } => 0,
+            not null => RollDice(random, count, sides) +
+                        Bonus(modules, defender, reaction.Stat, reaction.Skill) + reaction.Bonus,
+            _ when Health.IsIncapacitated(modules, defender) => 0,
+            _ => RollDice(random, count, sides) +
+                 Bonus(modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill),
+        };
         return attack - defend - spec.Difficulty;
     }
 

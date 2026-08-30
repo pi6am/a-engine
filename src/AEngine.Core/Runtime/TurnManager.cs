@@ -61,6 +61,23 @@ public sealed class TurnManager
     {
         lock (_engine.SyncRoot)
         {
+            var affordance = LookupAffordance(action);
+            // quick-time reactions: an action targeting another agent with a
+            // reaction spec telegraphs and parks until the defender responds
+            if (affordance?.Reaction is { Window: > 0 } reaction &&
+                action.TargetId is not null && _engine.World.HasObject(action.TargetId) &&
+                _engine.World.GetObject(action.TargetId) is { } defender &&
+                defender.HasModule("agent") && defender.Id != agent.Id &&
+                !Actions.Health.IsIncapacitated(_engine.ModuleRegistry, defender))
+            {
+                var options = reaction.Options.Where(o =>
+                    o.RequiresWornModule is null ||
+                    Actions.Clothing.WornItems(_engine.World, _engine.ModuleRegistry, defender)
+                        .Any(w => w.HasModule(o.RequiresWornModule))).ToList();
+                // no real choice (fewer than two options) → resolve normally
+                if (options.Count >= 2)
+                    return ParkReaction(agent, action, text, reaction, defender, options);
+            }
             var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
             var result = EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb);
@@ -81,10 +98,132 @@ public sealed class TurnManager
         }
     }
 
+    /// <summary>
+    /// Telegraph a reaction-eligible action: the attempt is observable and
+    /// the actor is committed (busy, turn spent), but the check and handler
+    /// wait for the defender's reaction — chosen via the UI (player), the
+    /// defender's policy (NPC), or the deadline default. Resolution lands
+    /// in <see cref="ResolveParked"/>.
+    /// </summary>
+    private ActionResult ParkReaction(
+        WorldObject agent, AvailableAction action, string? text,
+        Modules.ReactionSpec spec, WorldObject defender, List<Modules.ReactionOptionSpec> options)
+    {
+        var telegraph = spec.Telegraph ?? $"{{agent}} tries to {action.Verb} {{target}}.";
+        _engine.SignalBus.Emit(agent, defender,
+            [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 10, Text = telegraph }],
+            text);
+        var announcement = telegraph
+            .Replace("{agent}", agent.Name, StringComparison.Ordinal)
+            .Replace("the {target}", "you", StringComparison.Ordinal)
+            .Replace("{target}", "you", StringComparison.Ordinal);
+        var pending = _engine.Reactions.Add(
+            agent.Id, defender.Id, action, text, announcement, options, Turn + spec.Window);
+        // an NPC defender's policy picks the reaction; synchronous policies
+        // (random/auto without LLM) resolve immediately in PollPolicies
+        var policyId = _engine.ModuleRegistry.ResolveString(defender, "agent", "policy") ?? "player";
+        if (policyId != "player" && _engine.PolicyRegistry.Has(policyId))
+            pending.PolicySelection = _engine.PolicyRegistry.Get(policyId)
+                .ChooseReactionAsync(_engine, defender, pending, CancellationToken.None);
+        _engine.Reactions.PollPolicies();
+
+        var actorText = (spec.ActorText ?? "You {verb} {target}.")
+            .Replace("{verb}", action.Verb, StringComparison.Ordinal)
+            .Replace("{agent}", agent.Name, StringComparison.Ordinal)
+            .Replace("{target}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal);
+        _engine.Memory.Record(agent, actorText);
+        _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, ActionResult.Ok(actorText));
+        if (_engine.TimeMode == TimeMode.TurnBased)
+            AdvanceTurn();
+        return ActionResult.Ok(actorText);
+    }
+
+    /// <summary>
+    /// Resolve a parked action with the defender's chosen reaction: the
+    /// reaction replaces the defender's side of any opposed check (gate or
+    /// handler-rolled), then the normal tail runs — handler, signals,
+    /// memory for both sides. The actor's eligibility is re-validated
+    /// first — a parked action whose actor was incapacitated, knocked
+    /// prone, or grabbed during the window fizzles ("The moment passes."),
+    /// mirroring how stale NPC policy choices are discarded. No turn
+    /// advance (resolution happens inside the parker's turn flow or a
+    /// Tick); the actor was busied at park time.
+    /// </summary>
+    internal void ResolveParked(PendingReaction pending, Modules.ReactionOptionSpec option)
+    {
+        lock (_engine.SyncRoot)
+        {
+            if (!_engine.World.HasObject(pending.ActorId) ||
+                !_engine.World.HasObject(pending.DefenderId) ||
+                (pending.Action.TargetId is not null && !_engine.World.HasObject(pending.Action.TargetId)))
+                return; // a participant is gone — the moment passes
+            var agent = _engine.World.GetObject(pending.ActorId);
+            // stale: the defender slipped out of reach during the window
+            if (_engine.World.RoomOf(agent.Id).Id != _engine.World.RoomOf(pending.DefenderId).Id)
+            {
+                _engine.Memory.Record(agent, "The moment passes.");
+                _engine.Reactions.RecordResolved(pending.ActorId, "The moment passes.");
+                return;
+            }
+            // re-validate the actor's eligibility: the world moved on while
+            // the reaction was pending — the actor may have been knocked
+            // out, shoved prone, grabbed, or disarmed. ResolvePotential
+            // enforces posture/carried/incapacitation rules; a parked
+            // action that is no longer available fizzles.
+            if (!_engine.ActionResolver.ResolvePotential(agent).Any(a =>
+                    a.Verb == pending.Action.Verb && a.TargetId == pending.Action.TargetId))
+            {
+                _engine.Memory.Record(agent, "The moment passes.");
+                _engine.Reactions.RecordResolved(pending.ActorId, "The moment passes.");
+                return;
+            }
+            var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
+            var defender = _engine.World.GetObject(pending.DefenderId);
+            // the choice itself is otherwise invisible to the actor (their
+            // own signals never reach them): report it ahead of the outcome
+            if (option.Report is not null)
+            {
+                var report = FormatReactionReport(option.Report, defender);
+                _engine.Memory.Record(agent, report);
+                _engine.Reactions.RecordResolved(pending.ActorId, report);
+            }
+            var result = EvaluateCheck(agent, pending.Action, option)
+                         ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
+                             pending.Text, pending.Action.Verb, option);
+            _engine.Memory.Record(agent,
+                pending.Action.Verb == "look" ? "You look around." : result.Message);
+            // the actor isn't an observer of their own signals — record
+            // the outcome separately so the UI can show it to them
+            _engine.Reactions.RecordResolved(pending.ActorId, result.Message);
+            if (option.Text is not null)
+                _engine.Memory.Record(defender, option.Text);
+            if (result.Outcome == ActionOutcome.Noop)
+                return;
+            if (result.Success)
+                EmitSignals(agent, pending.Action, pending.Text, departureRoomId);
+            else
+                EmitFailSignals(agent, pending.Action);
+        }
+    }
+
+    /// <summary>
+    /// Render an option's actor-facing report: {agent} is the reacting
+    /// defender ("the arena duelist"), {target} is the actor — "you", since
+    /// the report is shown to (and remembered by) the actor. The result is
+    /// sentence-capitalized ("The arena duelist attempts to dodge.").
+    /// </summary>
+    private static string FormatReactionReport(string template, WorldObject defender)
+    {
+        var text = template
+            .Replace("{agent}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal)
+            .Replace("{target}", "you", StringComparison.Ordinal);
+        return string.Concat(text[..1].ToUpperInvariant(), text.AsSpan(1));
+    }
+
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(
         WorldObject agent, string handlerId, string? targetId = null, string? text = null,
-        string? verb = null)
+        string? verb = null, Modules.ReactionOptionSpec? reaction = null)
     {
         lock (_engine.SyncRoot)
         {
@@ -97,6 +236,7 @@ public sealed class TurnManager
                 Target = targetId is null ? null : _engine.World.GetObject(targetId),
                 Verb = verb,
                 Random = _engine.Random,
+                Reaction = reaction,
                 Args = text is null
                     ? new Dictionary<string, string>()
                     : new Dictionary<string, string> { ["text"] = text },
@@ -124,6 +264,7 @@ public sealed class TurnManager
     {
         lock (_engine.SyncRoot)
         {
+            _engine.Reactions.PollPolicies(); // NPC defenders' reaction choices land here
             foreach (var agentId in NpcAgentIds())
             {
                 if (!_engine.World.HasObject(agentId))
@@ -256,7 +397,8 @@ public sealed class TurnManager
     /// Opposed checks roll the defender (the target agent, or the agent
     /// holding the target item) against the actor.
     /// </summary>
-    private ActionResult? EvaluateCheck(WorldObject agent, AvailableAction action)
+    private ActionResult? EvaluateCheck(
+        WorldObject agent, AvailableAction action, Modules.ReactionOptionSpec? reaction = null)
     {
         if (LookupAffordance(action)?.Check is not { } check)
             return null;
@@ -270,7 +412,8 @@ public sealed class TurnManager
             if (defender is null)
                 return ActionResult.Fail("Nothing opposes your attempt.");
             margin = Checks.EvaluateOpposed(
-                _engine.World, _engine.ModuleRegistry, _engine.Random, agent, check, defender);
+                _engine.World, _engine.ModuleRegistry, _engine.Random, agent, check, defender,
+                reaction);
         }
         else
         {
@@ -331,6 +474,7 @@ public sealed class TurnManager
     private void AdvanceTurn()
     {
         Turn++;
+        _engine.Reactions.ExpireDue(Turn); // reaction deadlines pick the default
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))
         {
             if (!_engine.World.HasObject(scheduled.AgentId))

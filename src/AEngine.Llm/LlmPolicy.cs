@@ -61,4 +61,10 @@ public sealed class LlmPolicy : IAgentPolicy
             _cachedPlans[agent.Id] = new Queue<string>(plan.Skip(1));
         return PlanExecutor.MatchAvailableOrPotential(engine, agent, plan[0]);
     }
+
+    /// <summary>Ask the LLM for an in-character reaction to a telegraphed action.</summary>
+    public Task<string?> ChooseReactionAsync(
+        GameEngine engine, WorldObject defender,
+        PendingReaction reaction, CancellationToken ct) =>
+        _planner.ChooseReactionAsync(defender, reaction, ct);
 }

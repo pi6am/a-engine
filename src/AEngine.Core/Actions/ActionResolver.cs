@@ -218,6 +218,7 @@ public sealed class ActionResolver
             "escape" => target.Id == agent.Id &&
                         Postures.Of(_world, _modules, agent) == Postures.Carried,
             "choke" => target.HasModule("agent") && target.Parent == agent.Id,
+            "hug" => target.HasModule("agent") && target.Id != agent.Id,
             "wear" => held && target.HasModule("wearable") &&
                       !Clothing.IsWorn(_modules, target) && agent.HasModule("body"),
             "remove" => target.HasModule("wearable") && Clothing.IsWorn(_modules, target),

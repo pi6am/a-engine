@@ -1,6 +1,7 @@
 using System.Text;
 using AEngine.Cli;
 using AEngine.Core.Actions;
+using AEngine.Core.Modules;
 using AEngine.Core.Runtime;
 using AEngine.Core.Scenarios;
 using AEngine.Core.Signals;
@@ -184,6 +185,34 @@ slash.Register("timescale", ["ts"], "Set the real-time clock speed (1.0 = normal
 slash.Register("quit", ["exit"], "Leave the game", _ => true);
 console.Completions = slash.CompletionItems();
 
+// quick-time reactions: F2 opens a modal popup for a pending reaction
+// (the status line announces it in real-time mode; turn-based prompts
+// inline — see ResolvePendingReactions)
+console.ReactionMenuProvider = () =>
+{
+    lock (engine.SyncRoot)
+    {
+        var pr = engine.Reactions.PendingFor(player.Id);
+        if (pr is null)
+            return null;
+        var effectiveDefault = engine.Reactions.EffectiveDefault(pr);
+        return new ReactionMenu(
+            pr.Announcement,
+            pr.Options.Select(o => o.Label).ToList(),
+            pr.Options.TakeWhile(o => !ReferenceEquals(o, effectiveDefault)).Count(),
+            Math.Max(0, pr.DeadlineTurn - engine.TurnManager.Turn));
+    }
+};
+console.ReactionChosen = index =>
+{
+    lock (engine.SyncRoot)
+    {
+        var pr = engine.Reactions.PendingFor(player.Id);
+        if (pr is not null && index < pr.Options.Count)
+            engine.Reactions.Choose(pr.Id, pr.Options[index].Id);
+    }
+};
+
 Console.WriteLine(planner is null
     ? "Type /actions to see what you can do, /help for commands."
     : "Describe what you want to do; /actions lists commands, /help for meta commands.");
@@ -247,7 +276,7 @@ while (true)
             var directResult = engine.TurnManager.PerformAction(player, direct);
             Console.WriteLine(directResult.Message);
             if (engine.TimeMode == TimeMode.TurnBased)
-                engine.TurnManager.RunNpcTurns(); // real-time: the timer drives NPCs
+                RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
             continue;
         }
         if (planner is null)
@@ -279,7 +308,7 @@ while (true)
         {
             Console.WriteLine(step.Result!.Message);
             if (step.Result.Success && engine.TimeMode == TimeMode.TurnBased)
-                engine.TurnManager.RunNpcTurns(); // real-time: the timer drives NPCs
+                RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
         });
         var lastStep = steps[^1];
         if (lastStep.Note is not null)
@@ -314,7 +343,7 @@ while (true)
     var result = engine.TurnManager.PerformAction(player, action, text);
     Console.WriteLine(result.Message);
     if (engine.TimeMode == TimeMode.TurnBased)
-        engine.TurnManager.RunNpcTurns(); // real-time: the timer drives NPCs
+        RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
 }
 
 static string? FindScenarioDir(string relative)
@@ -330,6 +359,75 @@ static string? FindScenarioDir(string relative)
     // fall back to the current working directory
     var cwdCandidate = Path.GetFullPath(relative);
     return File.Exists(Path.Combine(cwdCandidate, "world.json")) ? cwdCandidate : null;
+}
+
+// NPC turns in turn-based mode, then resolve any reactions they
+// telegraphed: the player is prompted inline; NPC defenders get a brief
+// wall-clock grace period for their (possibly LLM) policy before the
+// default reaction applies.
+void RunNpcTurnsAndResolve()
+{
+    engine.TurnManager.RunNpcTurns();
+    ResolvePendingReactions();
+}
+
+void ResolvePendingReactions()
+{
+    while (true)
+    {
+        PendingReaction? playerPending;
+        PendingReaction? npcPending;
+        lock (engine.SyncRoot)
+        {
+            engine.Reactions.PollPolicies();
+            playerPending = engine.Reactions.PendingFor(player.Id);
+            npcPending = engine.Reactions.Pending
+                .FirstOrDefault(p => p.PolicySelection is { IsCompleted: false });
+        }
+        if (playerPending is not null)
+        {
+            PromptReactionInline(playerPending);
+            continue;
+        }
+        if (npcPending is null)
+        {
+            PrintResolvedOutcomes();
+            return;
+        }
+        if (!npcPending.PolicySelection!.Wait(TimeSpan.FromSeconds(15)))
+        {
+            lock (engine.SyncRoot)
+                engine.Reactions.ForceDefault(npcPending.Id);
+        }
+    }
+}
+
+// resolution results of the player's own telegraphed actions ("You hit
+// the arena duelist for 6 damage.") — signals never reach the actor
+void PrintResolvedOutcomes()
+{
+    foreach (var (actorId, message) in engine.Reactions.DrainResolved())
+        if (actorId == player.Id)
+            Console.WriteLine(message);
+}
+
+void PromptReactionInline(PendingReaction pr)
+{
+    ReactionOptionSpec effectiveDefault;
+    lock (engine.SyncRoot)
+        effectiveDefault = engine.Reactions.EffectiveDefault(pr);
+    Console.WriteLine();
+    Console.WriteLine(pr.Announcement + " How do you react?");
+    for (var i = 0; i < pr.Options.Count; i++)
+        Console.WriteLine($"  {i + 1}. {pr.Options[i].Label}" +
+            (ReferenceEquals(pr.Options[i], effectiveDefault) ? " (default)" : ""));
+    var answer = console.ReadLine("> ")?.Trim() ?? "";
+    var chosen = int.TryParse(answer, out var n) && n >= 1 && n <= pr.Options.Count
+        ? pr.Options[n - 1]
+        : pr.Options.FirstOrDefault(o => o.Label.Equals(answer, StringComparison.OrdinalIgnoreCase))
+          ?? effectiveDefault;
+    lock (engine.SyncRoot)
+        engine.Reactions.Choose(pr.Id, chosen.Id);
 }
 
 // Switch between turn-based and real-time mode on the fly. Real-time runs
@@ -367,6 +465,8 @@ async Task RealTimeLoop(CancellationToken ct)
             try
             {
                 IReadOnlyList<Signal> signals;
+                IReadOnlyList<(string ActorId, string Message)> resolved;
+                string? status;
                 lock (engine.SyncRoot)
                 {
                     pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
@@ -377,14 +477,27 @@ async Task RealTimeLoop(CancellationToken ct)
                     }
                     engine.TurnManager.RunNpcTurns();
                     signals = engine.SignalBus.Drain(player.Id);
+                    resolved = engine.Reactions.DrainResolved();
+                    // announce a pending quick-time reaction on the status line
+                    status = engine.Reactions.PendingFor(player.Id) is { } pr
+                        ? $"{pr.Announcement} F2 to react " +
+                          $"(default: {engine.Reactions.EffectiveDefault(pr).Label}, " +
+                          $"{Math.Max(0, pr.DeadlineTurn - engine.TurnManager.Turn)}s)"
+                        : null;
                 }
-                if (signals.Count == 0)
+                console.SetStatus(status);
+                if (signals.Count == 0 && resolved.Count == 0)
                     continue;
                 var sb = new StringBuilder();
                 foreach (var signal in signals)
                     sb.AppendLine(signal.Sense == SignalSense.Visual
                         ? $"You see: {signal.Text}"
                         : $"You hear: {signal.Text}");
+                // the player's own telegraphed actions resolve here —
+                // signals never reach the actor, so print their outcomes
+                foreach (var (actorId, message) in resolved)
+                    if (actorId == player.Id)
+                        sb.AppendLine(message);
                 // prints above the input line; the prompt and partial input
                 // are redrawn underneath
                 console.WriteAbove(sb.ToString().TrimEnd());
