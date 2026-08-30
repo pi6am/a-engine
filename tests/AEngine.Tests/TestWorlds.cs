@@ -102,7 +102,7 @@ internal static class TestWorlds
         "affordances": [
           {
             "verb": "take", "handler": "take",
-            "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}." } ]
+            "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}{container}." } ]
           },
           { "verb": "drop", "handler": "drop" }
         ]

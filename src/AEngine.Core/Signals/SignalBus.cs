@@ -48,10 +48,16 @@ public sealed class SignalBus
         _memory = memory;
     }
 
-    /// <summary>Format and deliver the given specs for an action performed by <paramref name="actor"/>.</summary>
+    /// <summary>
+    /// Format and deliver the given specs for an action performed by
+    /// <paramref name="actor"/>. <paramref name="extra"/> supplies
+    /// additional template placeholders (e.g. {container} naming the holder
+    /// the target was taken from).
+    /// </summary>
     public void Emit(
         WorldObject actor, WorldObject? target, IReadOnlyList<SignalSpec> specs,
-        string? arg = null, TraversalContext? traversal = null)
+        string? arg = null, TraversalContext? traversal = null,
+        IReadOnlyDictionary<string, string>? extra = null)
     {
         if (specs.Count == 0)
             return;
@@ -71,7 +77,7 @@ public sealed class SignalBus
             if (observer.Id == actor.Id || !observer.HasModule("agent"))
                 continue;
             var best = BestReceivable(
-                observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg);
+                observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg, extra);
             if (best is null)
                 continue;
             Enqueue(observer, best);
@@ -159,7 +165,8 @@ public sealed class SignalBus
     private Signal? BestReceivable(
         WorldObject observer, string originRoomId, string? otherSideRoomId,
         WorldObject actor, WorldObject? target,
-        IReadOnlyList<SignalSpec> specs, string? arg)
+        IReadOnlyList<SignalSpec> specs, string? arg,
+        IReadOnlyDictionary<string, string>? extra = null)
     {
         var observerRoomId = _world.RoomOf(observer.Id).Id;
         WorldObject? portalSide = null;
@@ -189,7 +196,7 @@ public sealed class SignalBus
                 continue;
             if (best is null || spec.Priority > best.Priority)
             {
-                var text = Format(spec.Text, actor, target, arg);
+                var text = Format(spec.Text, actor, target, arg, extra);
                 if (observerSide is not null && !SameDoor(target, observerSide))
                     text = text.TrimEnd('.') + Suffix(observerSide);
                 best = new Signal(
@@ -270,6 +277,8 @@ public sealed class SignalBus
         if (extra is not null)
             foreach (var (placeholder, value) in extra)
                 text = text.Replace(placeholder, value, StringComparison.Ordinal);
+        // {container} defaults to empty when the target wasn't in a holder
+        text = text.Replace("{container}", "", StringComparison.Ordinal);
         return CollapseDoubledArticles(text);
     }
 

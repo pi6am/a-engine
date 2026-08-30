@@ -181,6 +181,7 @@ public static class BuiltinHandlers
                 return ActionResult.Noop($"You already have the {target.Name}.");
 
             var room = HandlerState.RoomOf(ctx);
+            WorldObject? holder = null;
             if (target.Parent == room.Id)
             {
                 // directly in the room — fine
@@ -189,7 +190,7 @@ public static class BuiltinHandlers
             {
                 // on furniture the target is reachable; inside a container
                 // in the room, the container must be open
-                var holder = ctx.World.GetObject(target.Parent);
+                holder = ctx.World.GetObject(target.Parent);
                 if (holder.Parent != room.Id)
                     return ActionResult.Fail($"You don't see the {target.Name} here.");
                 if (!holder.HasModule("sittable") && !holder.HasModule("lyable") &&
@@ -207,7 +208,11 @@ public static class BuiltinHandlers
                 // clear any stored sit/lie so it can't go stale
                 ctx.World.SetFieldOverride(
                     target.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
-            return ActionResult.Ok($"You take the {target.Name}.");
+            // name the holder the item came out of ("from the cupboard")
+            var from = holder is null || holder.HasModule("agent")
+                ? ""
+                : $" from the {holder.Name}";
+            return ActionResult.Ok($"You take the {target.Name}{from}.");
         }
     }
 

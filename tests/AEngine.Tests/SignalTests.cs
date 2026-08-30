@@ -118,6 +118,38 @@ public class SignalTests
     }
 
     [Fact]
+    public void Take_FromContainer_NamesTheContainer()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a"); // same room as alice
+        engine.World.CreateObject("coin", "chest", "coin");
+        engine.World.AddModule("coin", "portable");
+
+        engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "open", "chest"));
+        engine.SignalBus.Drain("bob"); // ignore the open
+
+        var take = TestWorlds.Find(engine, "alice", "take", "coin");
+        var result = engine.TurnManager.PerformAction(engine.World.GetObject("alice"), take);
+        Assert.Equal("You take the coin from the chest.", result.Message);
+        var signal = Assert.Single(engine.SignalBus.Drain("bob"));
+        Assert.Equal("Alice picks up the coin from the chest.", signal.Text);
+    }
+
+    [Fact]
+    public void Take_FromTheFloor_NoContainerPhrase()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a");
+
+        var take = TestWorlds.Find(engine, "alice", "take", "apple");
+        var result = engine.TurnManager.PerformAction(engine.World.GetObject("alice"), take);
+        Assert.Equal("You take the apple.", result.Message);
+        var signal = Assert.Single(engine.SignalBus.Drain("bob"));
+        Assert.Equal("Alice picks up the apple.", signal.Text);
+    }
+
+    [Fact]
     public void Say_ObserverHearsWordsNotLips()
     {
         var engine = TestWorlds.NewTwoRoomEngine();

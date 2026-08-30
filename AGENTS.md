@@ -123,7 +123,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   looks up the affordance's signal specs and each observing agent (any object
   with the `agent` module except the actor) receives the single highest-priority
   receivable signal (ties: first listed); texts format `{agent}`/`{target}`/
-  `{arg}` placeholders, collapsing doubled articles when a template's own
+  `{arg}` placeholders plus `{container}` (" from the cupboard" when the
+  target was taken out of a non-room, non-agent holder, empty otherwise),
+  collapsing doubled articles when a template's own
   "the" meets a name that already carries one ("opens the the strongbox" →
   "opens the strongbox"). Propagation: same room → all senses; one portal away →
   a sense passes only if the portal **side in the origin room** transmits it

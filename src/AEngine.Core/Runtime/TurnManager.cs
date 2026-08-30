@@ -79,6 +79,12 @@ public sealed class TurnManager
                     return ParkReaction(agent, action, text, reaction, defender, options);
             }
             var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
+            // capture the target's holder before the handler moves it, so
+            // signal templates can name it via {container} ("picks up the
+            // carving knife from the cupboard")
+            var holderBefore = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+                ? _engine.World.GetObject(action.TargetId).Parent
+                : null;
             var result = EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb);
             // remember your own action and its outcome (a look result is too
@@ -88,7 +94,7 @@ public sealed class TurnManager
             if (result.Outcome == ActionOutcome.Noop)
                 return result;
             if (result.Success)
-                EmitSignals(agent, action, text, departureRoomId);
+                EmitSignals(agent, action, text, departureRoomId, holderBefore);
             else
                 EmitFailSignals(agent, action);
             _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, result);
@@ -329,7 +335,9 @@ public sealed class TurnManager
     }
 
     /// <summary>Emit the affordance's signal specs for a successful action.</summary>
-    private void EmitSignals(WorldObject agent, AvailableAction action, string? text, string departureRoomId)
+    private void EmitSignals(
+        WorldObject agent, AvailableAction action, string? text,
+        string departureRoomId, string? holderBefore = null)
     {
         if (!_engine.ModuleRegistry.Has(action.ModuleId))
             return;
@@ -341,7 +349,26 @@ public sealed class TurnManager
             ? _engine.World.GetObject(action.TargetId)
             : null;
         var traversal = BuildTraversal(agent, action, target, departureRoomId);
-        _engine.SignalBus.Emit(agent, target, affordance.Signals, text, traversal);
+        _engine.SignalBus.Emit(agent, target, affordance.Signals, text, traversal, HolderExtra(holderBefore));
+    }
+
+    /// <summary>
+    /// The {container} template placeholder: " from the cupboard" when the
+    /// action's target came out of a thing (container, furniture) — not off
+    /// the floor (a room) or out of somebody (an agent). Null otherwise, so
+    /// the placeholder formats to empty.
+    /// </summary>
+    private IReadOnlyDictionary<string, string>? HolderExtra(string? holderId)
+    {
+        if (holderId is null || !_engine.World.HasObject(holderId))
+            return null;
+        var holder = _engine.World.GetObject(holderId);
+        if (holder.HasModule("room") || holder.HasModule("agent"))
+            return null;
+        return new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["{container}"] = $" from the {holder.Name}",
+        };
     }
 
     /// <summary>
