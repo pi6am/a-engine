@@ -28,9 +28,52 @@
             "grappler",
             "chokeable",
             "huggable",
-            { "module": "health", "overrides": { "maxHp": 20, "hp": 20 } },
             { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
             { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3, "swords": 3 } } }
+          ],
+          "children": [
+            {
+              "id": "player_head", "name": "head", "description": "Your head.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "head", "vital": true, "aimedPenalty": 6 } },
+                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+              ]
+            },
+            {
+              "id": "player_torso", "name": "torso", "description": "Your torso.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "top", "vital": true, "aimedPenalty": 0 } },
+                { "module": "health", "overrides": { "maxHp": 10, "hp": 10 } }
+              ]
+            },
+            {
+              "id": "player_left_arm", "name": "left arm", "description": "Your left arm.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm_offhand"], "aimedPenalty": 3 } },
+                { "module": "health", "overrides": { "maxHp": 5, "hp": 5 } }
+              ]
+            },
+            {
+              "id": "player_right_arm", "name": "right arm", "description": "Your right arm.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm"], "aimedPenalty": 3 } },
+                { "module": "health", "overrides": { "maxHp": 5, "hp": 5 } }
+              ]
+            },
+            {
+              "id": "player_left_leg", "name": "left leg", "description": "Your left leg.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
+                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+              ]
+            },
+            {
+              "id": "player_right_leg", "name": "right leg", "description": "Your right leg.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
+                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+              ]
+            }
           ]
         },
         {
@@ -55,7 +98,6 @@
             "grappler",
             "chokeable",
             "huggable",
-            { "module": "health", "overrides": { "maxHp": 24, "hp": 24 } },
             { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12, "perception": 10 } } },
             { "module": "skills", "overrides": { "values": { "brawling": 4, "swords": 4 } } }
           ],
@@ -68,7 +110,58 @@
                 "portable",
                 { "module": "wearable", "overrides": { "regions": ["hand"], "worn": true } }
               ]
+            },
+            {
+              "id": "duelist_head", "name": "head", "description": "His head.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "head", "vital": true, "aimedPenalty": 6 } },
+                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+              ]
+            },
+            {
+              "id": "duelist_torso", "name": "torso", "description": "His torso.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "top", "vital": true, "aimedPenalty": 0 } },
+                { "module": "health", "overrides": { "maxHp": 12, "hp": 12 } }
+              ]
+            },
+            {
+              "id": "duelist_left_arm", "name": "left arm", "description": "His left arm.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm_offhand"], "aimedPenalty": 3 } },
+                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+              ]
+            },
+            {
+              "id": "duelist_right_arm", "name": "right arm", "description": "His right arm.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm"], "aimedPenalty": 3 } },
+                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+              ]
+            },
+            {
+              "id": "duelist_left_leg", "name": "left leg", "description": "His left leg.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
+                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+              ]
+            },
+            {
+              "id": "duelist_right_leg", "name": "right leg", "description": "His right leg.",
+              "modules": [
+                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
+                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+              ]
             }
+          ]
+        },
+        {
+          "id": "dummy",
+          "name": "training dummy",
+          "description": "A straw-stuffed practice dummy on a wooden post. It has seen better days.",
+          "modules": [
+            "attackable",
+            { "module": "health", "overrides": { "maxHp": 15, "hp": 15 } }
           ]
         },
         {

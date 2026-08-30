@@ -6,7 +6,11 @@
       "name": "Rules",
       "fields": [
         { "name": "diceCount", "type": "int", "default": 1 },
-        { "name": "diceSides", "type": "int", "default": 20 }
+        { "name": "diceSides", "type": "int", "default": 20 },
+        { "name": "crunch", "type": "string", "default": "numeric" },
+        { "name": "blowBands", "type": "map", "default": {} },
+        { "name": "conditionBands", "type": "map", "default": {} },
+        { "name": "shockThreshold", "type": "int", "default": 0 }
       ],
       "affordances": []
     },
@@ -33,6 +37,17 @@
         { "name": "maxHp", "type": "int", "default": 10 },
         { "name": "hp", "type": "int", "default": 10 },
         { "name": "incapacitatedAt", "type": "int", "default": 0 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "bodypart",
+      "name": "Body Part",
+      "fields": [
+        { "name": "region", "type": "string", "default": "" },
+        { "name": "vital", "type": "bool", "default": false },
+        { "name": "crippleEffects", "type": "list", "default": [] },
+        { "name": "aimedPenalty", "type": "int", "default": 4 }
       ],
       "affordances": []
     },
@@ -375,7 +390,9 @@
     {
       "id": "chokeable",
       "name": "Chokeable",
-      "fields": [],
+      "fields": [
+        { "name": "part", "type": "string", "default": "head" }
+      ],
       "affordances": [
         {
           "verb": "choke",
