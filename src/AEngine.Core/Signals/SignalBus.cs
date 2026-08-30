@@ -133,7 +133,8 @@ public sealed class SignalBus
                         scope == SignalScope.Departure
                             ? traversal.DepartureRoomId
                             : traversal.ArrivalRoomId,
-                        traversal.ExitSide.Id);
+                        traversal.ExitSide.Id,
+                        ThroughPortal: true);
                 }
             }
             if (best is not null)
@@ -191,7 +192,9 @@ public sealed class SignalBus
                 var text = Format(spec.Text, actor, target, arg);
                 if (observerSide is not null && !SameDoor(target, observerSide))
                     text = text.TrimEnd('.') + Suffix(observerSide);
-                best = new Signal(spec.Sense, spec.Priority, text, originRoomId, target?.Id);
+                best = new Signal(
+                    spec.Sense, spec.Priority, text, originRoomId, target?.Id,
+                    ThroughPortal: observerSide is not null);
             }
         }
         return best;

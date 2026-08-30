@@ -130,10 +130,12 @@ public class SignalTests
         Assert.True(result.Success);
         Assert.Equal("You say: \"dinner is ready\"", result.Message);
 
-        // audible p=10 beats visual p=1 (lips)
+        // audible p=10 beats visual p=1 (lips); same-room, so no
+        // "You hear:" framing when rendered
         var signal = Assert.Single(engine.SignalBus.Drain("bob"));
         Assert.Equal(SignalSense.Audible, signal.Sense);
         Assert.Equal("Alice says: \"dinner is ready\"", signal.Text);
+        Assert.False(signal.ThroughPortal);
     }
 
     [Fact]
@@ -236,6 +238,7 @@ public class SignalTests
         // audible passes through the closed door, naming bob's side of it
         var signal = Assert.Single(engine.SignalBus.Drain("bob"));
         Assert.Equal(SignalSense.Audible, signal.Sense);
+        Assert.True(signal.ThroughPortal); // keeps the "You hear:" framing
         Assert.Equal(
             "Alice says: \"one moment\" through the wooden door to the south.",
             signal.Text);

@@ -133,7 +133,11 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   a one-way mirror) is pure data on the two sides. Signals delivered through a
   portal get a directional suffix naming the side in the observer's room
   ("… through the wooden door to the south."), suppressed when the signal's
-  target is that same door ("the cook opens the wooden door."). An action
+  target is that same door ("the cook opens the wooden door."), and are
+  flagged `ThroughPortal` (traversal reports too): the CLI keeps the
+  "You see: …"/"You hear: …" framing only for signals that crossed a
+  portal — same-room events print bare and capitalized ("The cook opens
+  the cupboard."). An action
   targeting a portal manifests on both sides of the door: observers in the
   other side's room perceive it as a same-room event (visual included),
   transmission rules notwithstanding. Signal specs have a `scope`:

@@ -282,11 +282,7 @@ while (true)
 
     // sensory signals from other agents' actions (e.g. NPCs)
     foreach (var signal in engine.SignalBus.Drain(player.Id))
-    {
-        Console.WriteLine(signal.Sense == SignalSense.Visual
-            ? $"You see: {signal.Text}"
-            : $"You hear: {signal.Text}");
-    }
+        Console.WriteLine(RenderSignal(signal));
 
     var input = console.ReadLine("> ");
     if (input is null) // EOF (e.g. piped input exhausted) — exit cleanly
@@ -394,6 +390,20 @@ while (true)
     if (engine.TimeMode == TimeMode.TurnBased)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
 }
+
+// Same-room events print bare ("The old cook opens the cupboard.");
+// the "You see:"/"You hear:" framing is reserved for signals that
+// crossed a portal — you were not simply present for those. Bare lines
+// start the sentence, so capitalize.
+static string RenderSignal(Signal signal) =>
+    signal.ThroughPortal
+        ? signal.Sense == SignalSense.Visual
+            ? $"You see: {signal.Text}"
+            : $"You hear: {signal.Text}"
+        : Capitalize(signal.Text);
+
+static string Capitalize(string s) =>
+    s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
 static string? FindScenarioDir(string relative)
 {
@@ -550,9 +560,7 @@ async Task RealTimeLoop(CancellationToken ct)
                 if (arrival is not null)
                     sb.AppendLine(arrival);
                 foreach (var signal in signals)
-                    sb.AppendLine(signal.Sense == SignalSense.Visual
-                        ? $"You see: {signal.Text}"
-                        : $"You hear: {signal.Text}");
+                    sb.AppendLine(RenderSignal(signal));
                 // the player's own telegraphed actions resolve here —
                 // signals never reach the actor, so print their outcomes
                 foreach (var (actorId, message) in resolved)

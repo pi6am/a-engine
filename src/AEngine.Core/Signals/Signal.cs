@@ -44,6 +44,13 @@ public sealed class SignalSpec
     public required string Text { get; init; }
 }
 
-/// <summary>A formatted signal delivered to an observer's queue.</summary>
+/// <summary>
+/// A formatted signal delivered to an observer's queue. ThroughPortal is
+/// true when the signal crossed a portal to reach the observer (or is a
+/// traversal departure/arrival report) — renderers use it to keep the
+/// "You hear:" framing for remote sounds while printing same-room speech
+/// bare.
+/// </summary>
 public sealed record Signal(
-    SignalSense Sense, int Priority, string Text, string OriginRoomId, string? TargetId = null);
+    SignalSense Sense, int Priority, string Text, string OriginRoomId,
+    string? TargetId = null, bool ThroughPortal = false);
