@@ -25,7 +25,10 @@ not retarget to net8.0 without installing its runtime.
 ```
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
 src/AEngine.Cli/          # text-first console REPL (slash commands, optional LLM free-text
-                          # planning, --real-time mode; ConsolePrompt does per-key line
+                          # planning, --real-time mode; the full room description prints
+                          # only on arrival — tracked across the main loop and the
+                          # real-time timer — while action results and observations print
+                          # as they happen; ConsolePrompt does per-key line
                           # editing — cursor movement, mid-line insert, up/down history,
                           # slash-command completion popup with tab — and redraws the
                           # input line around background output)

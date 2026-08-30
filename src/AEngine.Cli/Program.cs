@@ -115,6 +115,11 @@ catch (Exception ex)
 }
 
 var player = engine.World.GetObject("player");
+// The full room description prints on arrival (the player's room changed
+// since the last render) — while you stay put, only action results and
+// observations print. Tracked across the main loop and the real-time
+// timer (an NPC could carry you elsewhere while you're idle).
+string? lastRoomId = null;
 Console.WriteLine($"=== {scenarioName} ===");
 
 LlmPlanner? planner = null;
@@ -229,10 +234,22 @@ if (realTime)
 
 while (true)
 {
-    var look = engine.TurnManager.Execute(player, "look", player.Id);
-    Console.WriteLine();
-    Console.WriteLine(look.Message);
-    Console.WriteLine();
+    string? arrivalLook = null;
+    lock (engine.SyncRoot)
+    {
+        var roomId = engine.World.RoomOf(player.Id).Id;
+        if (roomId != lastRoomId)
+        {
+            lastRoomId = roomId;
+            arrivalLook = engine.TurnManager.Execute(player, "look", player.Id).Message;
+        }
+    }
+    if (arrivalLook is not null)
+    {
+        Console.WriteLine();
+        Console.WriteLine(arrivalLook);
+        Console.WriteLine();
+    }
 
     // sensory signals from other agents' actions (e.g. NPCs)
     foreach (var signal in engine.SignalBus.Drain(player.Id))
@@ -467,6 +484,7 @@ async Task RealTimeLoop(CancellationToken ct)
                 IReadOnlyList<Signal> signals;
                 IReadOnlyList<(string ActorId, string Message)> resolved;
                 string? status;
+                string? arrival = null;
                 lock (engine.SyncRoot)
                 {
                     pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
@@ -478,6 +496,14 @@ async Task RealTimeLoop(CancellationToken ct)
                     engine.TurnManager.RunNpcTurns();
                     signals = engine.SignalBus.Drain(player.Id);
                     resolved = engine.Reactions.DrainResolved();
+                    // the player arrived somewhere new without acting
+                    // (e.g. carried): print the room description
+                    var roomId = engine.World.RoomOf(player.Id).Id;
+                    if (roomId != lastRoomId)
+                    {
+                        lastRoomId = roomId;
+                        arrival = engine.TurnManager.Execute(player, "look", player.Id).Message;
+                    }
                     // announce a pending quick-time reaction on the status line
                     status = engine.Reactions.PendingFor(player.Id) is { } pr
                         ? $"{pr.Announcement} F2 to react " +
@@ -486,9 +512,11 @@ async Task RealTimeLoop(CancellationToken ct)
                         : null;
                 }
                 console.SetStatus(status);
-                if (signals.Count == 0 && resolved.Count == 0)
+                if (arrival is null && signals.Count == 0 && resolved.Count == 0)
                     continue;
                 var sb = new StringBuilder();
+                if (arrival is not null)
+                    sb.AppendLine(arrival);
                 foreach (var signal in signals)
                     sb.AppendLine(signal.Sense == SignalSense.Visual
                         ? $"You see: {signal.Text}"
