@@ -245,6 +245,13 @@ JSON files defining modules and an initial world tree; `ScenarioLoader`
 composes multiple documents in order (later overrides by id). Packaging is
 pluggable via `IScenarioSource` (registered in `ScenarioSources`): a source
 turns a path into the raw JSON documents, and the loader merges them.
-Built-in sources: a directory holding `modules.json`/`world.json`, and a
-zip archive (recognized by the "PK" magic bytes, so any extension —
-`.zip`, `.scen` — works) holding those files at any depth.
+Built-in sources: a directory holding `modules.json`/`world.json`; a zip
+archive (recognized by the "PK" magic bytes, so any extension — `.zip`,
+`.scen` — works) holding those files at any depth; and an image card —
+PNG (zlib-compressed zTXt chunk; the scenario title rides in a standard
+tEXt "Title" chunk) or JPEG (COM segments, chunked under the 64KB limit)
+carrying the documents in its metadata (`ImageCard`). Cards are packed and
+unpacked with AEngine.Util (`card pack`/`card unpack`), which copies the
+image bytes verbatim — no recompression — and writes the folder's
+`card.png`/`card.jpeg` metadata-stripped so the JSON files stay the source
+of truth (`ScenarioCard`).

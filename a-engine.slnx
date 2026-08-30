@@ -4,6 +4,7 @@
     <Project Path="src/AEngine.Core/AEngine.Core.csproj" />
     <Project Path="src/AEngine.DebugServer/AEngine.DebugServer.csproj" />
     <Project Path="src/AEngine.Llm/AEngine.Llm.csproj" />
+    <Project Path="src/AEngine.Util/AEngine.Util.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/AEngine.Tests/AEngine.Tests.csproj" />

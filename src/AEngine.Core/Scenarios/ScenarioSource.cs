@@ -23,7 +23,7 @@ public interface IScenarioSource
 public static class ScenarioSources
 {
     public static IReadOnlyList<IScenarioSource> All { get; } =
-        [new DirectoryScenarioSource(), new ZipScenarioSource()];
+        [new DirectoryScenarioSource(), new ZipScenarioSource(), new ImageCardScenarioSource()];
 
     /// <summary>Find the source that recognizes the path, or throw.</summary>
     public static IScenarioSource Resolve(string path) =>

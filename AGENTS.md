@@ -14,6 +14,9 @@ dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (text-first REPL)
 dotnet run --project src/AEngine.Cli -- scenarios/npc   # play the NPC demo scenario
 dotnet run --project src/AEngine.Cli -- adventure.scen  # or a zip-packaged scenario (any extension)
+dotnet run --project src/AEngine.Cli -- rpg.png         # or an image card (png/jpeg metadata)
+dotnet run --project src/AEngine.Util -- card pack scenarios/rpg rpg.png   # pack a scenario into an image
+dotnet run --project src/AEngine.Util -- card unpack rpg.png scenarios/rpg # ... and back
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
 dotnet run --project src/AEngine.Cli -- --llm-endpoint http://127.0.0.1:5001 --llm-model NAME   # LLM planning
 cd client && npm install && npm run dev   # debug web client (needs the CLI with --debug-api)
@@ -28,6 +31,7 @@ not retarget to net8.0 without installing its runtime.
 src/AEngine.Core/         # engine: World/, Modules/, Actions/, Signals/, Policies/, Runtime/, Scenarios/
 src/AEngine.Cli/          # text-first console REPL (slash commands, LLM planning, real-time mode)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
+src/AEngine.Util/         # developer utilities (card pack/unpack for image scenarios)
 src/AEngine.Llm/          # LLM harness: client, planner, parser, executor, LlmPolicy, Narrator
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: two rooms, locked door, key in a drawer
