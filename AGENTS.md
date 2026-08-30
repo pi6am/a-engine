@@ -34,9 +34,10 @@ src/AEngine.Cli/          # text-first console REPL (slash commands, optional LL
                           # input line around background output). Output toggles live in
                           # OutputSettings, driven by slash commands: /showplan on|off
                           # (log the extracted LLM plan, default off), /narrate
-                          # all|room|actions|off (placeholder for LLM narration)
+                          # all|room|actions|off (room narration live; actions reserved)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
-src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
+src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy,
+                          # Narrator (room narration)
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: modules.json + world.json
 scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook, signals,
@@ -362,6 +363,21 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   drained into the context whenever a plan is made) interrupt the cached
   plan and trigger an immediate re-plan, so agents respond to being spoken
   to instead of carrying out a stale plan.
+- **LLM narration** (`Narrator` in `src/AEngine.Llm`, driven by the CLI's
+  `/narrate` scope: `room`|`all` narrate rooms; `actions` is reserved) —
+  rewrites the raw look render into prose, both on arrival and on an
+  explicit `look` (room name printed as a
+  title, then the paragraph; the prompt demands factual fidelity — exits,
+  open/closed states, contents, who is present and wearing what — in a
+  concise second-person paragraph). Per-room cache: an unchanged raw render
+  replays the cached narration with no LLM call; a changed one is
+  re-narrated with the previous raw text and narration in the prompt, so
+  the prose stays consistent and calls out what changed ("the loaf of
+  bread is gone"). Purely presentational (the engine and agent memory keep
+  the raw text); empty reply or transport error falls back to the raw
+  render silently. Turn-based arrival awaits the narration; the real-time
+  timer narrates in the background (never blocking the world clock) and
+  prints above the prompt when ready.
 - **Runtime** — `GameEngine` ties everything together; `TurnManager` runs both
   time modes: turn-based (each action advances the turn) and real-time (the
   CLI's per-second timer calls `TurnManager.Tick()`, and NPC turns are driven
@@ -431,9 +447,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   endpoint configured, non-numeric input is planned and executed stepwise
   (menu numbers still work; input exactly matching an action label, e.g.
   "wait", runs directly without an LLM call). Live verification against a real server (e.g.
-  KoboldCPP) is manual. Still planned: narration (LLM translating outcomes
-  into prose — the CLI already has the /narrate all|room|actions|off
-  setting, unwired), guided world expansion for *open* scenarios, speech variants
+  KoboldCPP) is manual. Still planned: action narration (room narration is
+  done — see "LLM narration"; /narrate actions|all covers it once wired),
+  guided world expansion for *open* scenarios, speech variants
   (Shout/Whisper — need per-spec propagation overrides; say already carries
   free-text speech), provider config files, streaming, retries/backoff.
 - **Autonomous agents** — partially implemented: NPCs with

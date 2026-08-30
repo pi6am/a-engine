@@ -123,6 +123,7 @@ string? lastRoomId = null;
 Console.WriteLine($"=== {scenarioName} ===");
 
 LlmPlanner? planner = null;
+Narrator? narrator = null;
 if (!string.IsNullOrWhiteSpace(llmEndpoint))
 {
     var llmOptions = new LlmOptions
@@ -133,6 +134,7 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
     };
     var llmClient = new OpenAiCompatibleClient(llmOptions);
     planner = new LlmPlanner(llmClient, engine);
+    narrator = new Narrator(llmClient);
     engine.PolicyRegistry.Register(new LlmPolicy(planner));
     Console.WriteLine($"LLM planning enabled ({llmOptions.BaseUrl}, model '{llmOptions.Model}').");
 }
@@ -168,7 +170,11 @@ slash.Register("narrate", [], "Expand narration via LLM (/narrate all|room|actio
         Console.WriteLine($"Narration: {args[0].ToLowerInvariant()}." +
             (scope != NarrateScope.Off && planner is null
                 ? " (No LLM endpoint configured — no effect.)"
-                : scope != NarrateScope.Off ? " (Narration is not implemented yet.)" : ""));
+                : scope == NarrateScope.Actions
+                    ? " (Action narration is not implemented yet — rooms stay raw.)"
+                    : scope == NarrateScope.All
+                        ? " (Rooms narrated; action narration is not implemented yet.)"
+                        : ""));
         return false;
     }
     Console.WriteLine($"Narration is {output.Narrate.ToString().ToLowerInvariant()}. Usage: /narrate all|room|actions|off");
@@ -264,21 +270,21 @@ if (realTime)
 while (true)
 {
     string? arrivalLook = null;
+    string? arrivalRoomId = null;
+    string? arrivalRoomName = null;
     lock (engine.SyncRoot)
     {
-        var roomId = engine.World.RoomOf(player.Id).Id;
-        if (roomId != lastRoomId)
+        var room = engine.World.RoomOf(player.Id);
+        if (room.Id != lastRoomId)
         {
-            lastRoomId = roomId;
+            lastRoomId = room.Id;
+            arrivalRoomId = room.Id;
+            arrivalRoomName = room.Name;
             arrivalLook = engine.TurnManager.Execute(player, "look", player.Id).Message;
         }
     }
     if (arrivalLook is not null)
-    {
-        Console.WriteLine();
-        Console.WriteLine(arrivalLook);
-        Console.WriteLine();
-    }
+        await PrintRoomAsync(arrivalRoomId!, arrivalRoomName!, arrivalLook);
 
     // sensory signals from other agents' actions (e.g. NPCs)
     foreach (var signal in engine.SignalBus.Drain(player.Id))
@@ -316,7 +322,7 @@ while (true)
         if (direct is not null)
         {
             var directResult = engine.TurnManager.PerformAction(player, direct);
-            Console.WriteLine(directResult.Message);
+            await PrintResultAsync(direct.Verb, directResult.Message);
             if (engine.TimeMode == TimeMode.TurnBased)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
             continue;
@@ -351,7 +357,9 @@ while (true)
         var executor = new PlanExecutor(engine, player);
         var steps = executor.Execute(plan, step =>
         {
-            Console.WriteLine(step.Result!.Message);
+            // sync-over-async is safe here: no synchronization context in a
+            // console app, and the plan executor's callback is synchronous
+            PrintResultAsync(step.Action!.Verb, step.Result!.Message).GetAwaiter().GetResult();
             if (step.Result.Success && engine.TimeMode == TimeMode.TurnBased)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
         });
@@ -386,7 +394,7 @@ while (true)
     }
 
     var result = engine.TurnManager.PerformAction(player, action, text);
-    Console.WriteLine(result.Message);
+    await PrintResultAsync(action.Verb, result.Message);
     if (engine.TimeMode == TimeMode.TurnBased)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
 }
@@ -395,6 +403,70 @@ while (true)
 // the "You see:"/"You hear:" framing is reserved for signals that
 // crossed a portal — you were not simply present for those. Bare lines
 // start the sentence, so capitalize.
+// Room narration (/narrate room|all) is on when the narrator exists and
+// the scope covers rooms.
+bool NarrateRooms() =>
+    narrator is not null && output.Narrate is NarrateScope.Room or NarrateScope.All;
+
+// Narrate a raw look render, or null when narration is off or failed —
+// the caller then prints the raw text. Silent fallback by design: the raw
+// render is always a correct description.
+async Task<string?> TryNarrateAsync(string roomId, string raw)
+{
+    if (!NarrateRooms())
+        return null;
+    try
+    {
+        var narrated = await narrator!.NarrateRoomAsync(roomId, raw);
+        return narrated == raw ? null : narrated;
+    }
+    catch
+    {
+        return null;
+    }
+}
+
+// Print the room on arrival: the raw look render, or the room's name
+// followed by narrated prose when room narration is on.
+async Task PrintRoomAsync(string roomId, string roomName, string raw)
+{
+    var narrated = await TryNarrateAsync(roomId, raw);
+    Console.WriteLine();
+    if (narrated is not null)
+    {
+        Console.WriteLine(roomName);
+        Console.WriteLine();
+    }
+    Console.WriteLine(narrated ?? raw);
+    Console.WriteLine();
+}
+
+// Print an action result. An explicit look is a room description, so it
+// routes through the narrator too (the cache makes repeat looks free).
+async Task PrintResultAsync(string verb, string message)
+{
+    if (verb == "look" && NarrateRooms())
+    {
+        string roomId;
+        string roomName;
+        lock (engine.SyncRoot)
+        {
+            var room = engine.World.RoomOf(player.Id);
+            roomId = room.Id;
+            roomName = room.Name;
+        }
+        var narrated = await TryNarrateAsync(roomId, message);
+        if (narrated is not null)
+        {
+            Console.WriteLine(roomName);
+            Console.WriteLine();
+            Console.WriteLine(narrated);
+            return;
+        }
+    }
+    Console.WriteLine(message);
+}
+
 static string RenderSignal(Signal signal) =>
     signal.ThroughPortal
         ? signal.Sense == SignalSense.Visual
@@ -527,6 +599,8 @@ async Task RealTimeLoop(CancellationToken ct)
                 IReadOnlyList<(string ActorId, string Message)> resolved;
                 string? status;
                 string? arrival = null;
+                string? arrivalRoomId = null;
+                string? arrivalRoomName = null;
                 lock (engine.SyncRoot)
                 {
                     pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
@@ -540,10 +614,12 @@ async Task RealTimeLoop(CancellationToken ct)
                     resolved = engine.Reactions.DrainResolved();
                     // the player arrived somewhere new without acting
                     // (e.g. carried): print the room description
-                    var roomId = engine.World.RoomOf(player.Id).Id;
-                    if (roomId != lastRoomId)
+                    var room = engine.World.RoomOf(player.Id);
+                    if (room.Id != lastRoomId)
                     {
-                        lastRoomId = roomId;
+                        lastRoomId = room.Id;
+                        arrivalRoomId = room.Id;
+                        arrivalRoomName = room.Name;
                         arrival = engine.TurnManager.Execute(player, "look", player.Id).Message;
                     }
                     // announce a pending quick-time reaction on the status line
@@ -558,7 +634,26 @@ async Task RealTimeLoop(CancellationToken ct)
                     continue;
                 var sb = new StringBuilder();
                 if (arrival is not null)
-                    sb.AppendLine(arrival);
+                {
+                    if (NarrateRooms())
+                    {
+                        // never block the world clock on the LLM: narrate in
+                        // the background and print above the prompt when ready
+                        var (narrateRoomId, narrateRoomName, narrateRaw) =
+                            (arrivalRoomId!, arrivalRoomName!, arrival);
+                        _ = Task.Run(async () =>
+                        {
+                            var narrated = await TryNarrateAsync(narrateRoomId, narrateRaw);
+                            console.WriteAbove(narrated is not null
+                                ? $"{narrateRoomName}\n\n{narrated}"
+                                : narrateRaw);
+                        });
+                    }
+                    else
+                    {
+                        sb.AppendLine(arrival);
+                    }
+                }
                 foreach (var signal in signals)
                     sb.AppendLine(RenderSignal(signal));
                 // the player's own telegraphed actions resolve here —
@@ -568,7 +663,9 @@ async Task RealTimeLoop(CancellationToken ct)
                         sb.AppendLine(message);
                 // prints above the input line; the prompt and partial input
                 // are redrawn underneath
-                console.WriteAbove(sb.ToString().TrimEnd());
+                var text = sb.ToString().TrimEnd();
+                if (text.Length > 0)
+                    console.WriteAbove(text);
             }
             catch (OperationCanceledException)
             {
