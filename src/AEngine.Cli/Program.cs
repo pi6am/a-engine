@@ -399,6 +399,38 @@ while (true)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
 }
 
+// Word-wrap narrated prose to the console width, capped at 80 columns,
+// breaking at spaces (hard break only when a word exceeds the width).
+static string Wrap(string text)
+{
+    var width = 80;
+    try
+    {
+        width = Math.Min(Console.WindowWidth, 80);
+    }
+    catch
+    {
+        // output redirected — keep the cap
+    }
+    if (width < 20)
+        width = 80; // degenerate console
+    var sb = new StringBuilder();
+    foreach (var rawLine in text.Split('\n'))
+    {
+        var line = rawLine.TrimEnd();
+        while (line.Length > width)
+        {
+            var cut = line.LastIndexOf(' ', width);
+            if (cut <= 0)
+                cut = width;
+            sb.AppendLine(line[..cut]);
+            line = line[(cut + 1)..].TrimStart();
+        }
+        sb.AppendLine(line);
+    }
+    return sb.ToString().TrimEnd();
+}
+
 // Same-room events print bare ("The old cook opens the cupboard.");
 // the "You see:"/"You hear:" framing is reserved for signals that
 // crossed a portal — you were not simply present for those. Bare lines
@@ -437,7 +469,7 @@ async Task PrintRoomAsync(string roomId, string roomName, string raw)
         Console.WriteLine(roomName);
         Console.WriteLine();
     }
-    Console.WriteLine(narrated ?? raw);
+    Console.WriteLine(narrated is not null ? Wrap(narrated) : raw);
     Console.WriteLine();
 }
 
@@ -460,7 +492,7 @@ async Task PrintResultAsync(string verb, string message)
         {
             Console.WriteLine(roomName);
             Console.WriteLine();
-            Console.WriteLine(narrated);
+            Console.WriteLine(Wrap(narrated));
             return;
         }
     }
@@ -645,7 +677,7 @@ async Task RealTimeLoop(CancellationToken ct)
                         {
                             var narrated = await TryNarrateAsync(narrateRoomId, narrateRaw);
                             console.WriteAbove(narrated is not null
-                                ? $"{narrateRoomName}\n\n{narrated}"
+                                ? $"{narrateRoomName}\n\n{Wrap(narrated)}"
                                 : narrateRaw);
                         });
                     }

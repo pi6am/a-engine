@@ -17,6 +17,10 @@ capitalized ("The old cook opens the cupboard."); the "You see: …"/
 "You hear: …" framing is reserved for signals that crossed a portal
 (`Signal.ThroughPortal`).
 
+Narrated prose (LLM narration, when enabled) is word-wrapped to
+`min(Console.WindowWidth, 80)` columns at print time; raw template
+output is left alone.
+
 ## ConsolePrompt
 
 Per-key line editing — cursor movement, mid-line insert, up/down history,
