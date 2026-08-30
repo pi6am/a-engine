@@ -107,4 +107,28 @@ public class ScenarioCardTests : IDisposable
 
         Assert.Throws<InvalidDataException>(() => ScenarioCard.Unpack(bare, Path.Combine(_dir, "nope")));
     }
+
+    [Fact]
+    public void Info_ReadsTitleAndDocuments_WithoutUnpacking()
+    {
+        var scenario = WriteScenario("rpg");
+        var card = Path.Combine(_dir, "rpg.png");
+        ScenarioCard.Pack(scenario, card);
+
+        var info = ScenarioCard.Info(card);
+
+        Assert.Equal(ImageCard.Format.Png, info.Format);
+        Assert.Equal("card test", info.Title); // from world.json's name
+        Assert.Equal(Docs, info.Documents);
+        Assert.False(Directory.Exists(Path.Combine(_dir, "info-should-not-write"))); // no side effects
+    }
+
+    [Fact]
+    public void Info_ImageWithoutCardData_Throws()
+    {
+        var bare = Path.Combine(_dir, "bare.jpg");
+        File.WriteAllBytes(bare, ImageCardTests.MinimalJpeg());
+
+        Assert.Throws<InvalidDataException>(() => ScenarioCard.Info(bare));
+    }
 }

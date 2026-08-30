@@ -7,6 +7,8 @@
 //   card unpack <cardImage> <scenarioDir>
 //       Extract the card's scenario documents into the folder and write a
 //       metadata-stripped card image (same format as the input) beside them.
+//   card info <cardImage>
+//       Print the card's format, title, and embedded documents.
 
 using AEngine.Core.Scenarios;
 
@@ -34,6 +36,16 @@ try
             Console.WriteLine($"Unpacked '{cardImage}' into '{scenarioDir}'.");
             return 0;
         }
+        case ["card", "info", var cardImage]:
+        {
+            var info = ScenarioCard.Info(cardImage);
+            Console.WriteLine($"{cardImage} ({info.Format})");
+            Console.WriteLine($"Title: {info.Title ?? "(none)"}");
+            Console.WriteLine("Documents:");
+            foreach (var (name, text) in info.Documents)
+                Console.WriteLine($"  {name} ({text.Length:N0} chars)");
+            return 0;
+        }
         default:
             return Usage(null);
     }
@@ -52,6 +64,7 @@ static int Usage(string? error)
         Usage:
           card pack <scenarioDir> <outputImage> [-i <inputImage>]
           card unpack <cardImage> <scenarioDir>
+          card info <cardImage>
         """);
     return 1;
 }

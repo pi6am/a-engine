@@ -83,6 +83,11 @@ public static class ImageCard
     public static IReadOnlyDictionary<string, string>? Extract(byte[] image, Format format) =>
         format == Format.Png ? ExtractPng(image) : ExtractJpeg(image);
 
+    /// <summary>Extract the scenario title (the PNG tEXt "Title" chunk or
+    /// the JPEG title COM segment), or null when the image carries none.</summary>
+    public static string? ExtractTitle(byte[] image, Format format) =>
+        format == Format.Png ? ExtractPngTitle(image) : ExtractJpegTitle(image);
+
     /// <summary>Return the image with all card metadata removed.</summary>
     public static byte[] Strip(byte[] image, Format format) =>
         format == Format.Png ? StripPng(image) : StripJpeg(image);
@@ -167,6 +172,18 @@ public static class ImageCard
             if (start >= data.Length || data[start] != 0)
                 throw new InvalidDataException("Card zTXt chunk uses an unsupported compression method.");
             return DecodePayload(data[(start + 1)..]);
+        }
+        return null;
+    }
+
+    private static string? ExtractPngTitle(byte[] png)
+    {
+        foreach (var (type, data) in ParsePng(png))
+        {
+            if (type != "tEXt" || TextKeyword(data) != TitleKeyword)
+                continue;
+            return Encoding.Latin1.GetString(data, TitleKeyword.Length + 1,
+                data.Length - TitleKeyword.Length - 1);
         }
         return null;
     }
@@ -286,6 +303,17 @@ public static class ImageCard
             throw new InvalidDataException("JPEG card segments are incomplete or inconsistent.");
         var payload = chunks.OrderBy(c => c.Index).SelectMany(c => c.Data).ToArray();
         return DecodePayload(payload);
+    }
+
+    private static string? ExtractJpegTitle(byte[] jpeg)
+    {
+        var (segments, _) = ParseJpeg(jpeg);
+        foreach (var (marker, data) in segments)
+        {
+            if (IsCardSegment(marker, data, out var header) && header == JpegTitleHeader)
+                return Encoding.UTF8.GetString(data![JpegTitleHeader.Length..]);
+        }
+        return null;
     }
 
     private static byte[] StripJpeg(byte[] jpeg)

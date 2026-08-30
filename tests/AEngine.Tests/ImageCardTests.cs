@@ -141,6 +141,21 @@ public class ImageCardTests : IDisposable
     }
 
     [Fact]
+    public void Title_RoundTrips_AndStrips()
+    {
+        var png = ImageCard.Embed(MinimalPng(), ImageCard.Format.Png, Docs, "My Scenario");
+        Assert.Equal("My Scenario", ImageCard.ExtractTitle(png, ImageCard.Format.Png));
+        Assert.Null(ImageCard.ExtractTitle(ImageCard.Strip(png, ImageCard.Format.Png), ImageCard.Format.Png));
+
+        var jpeg = ImageCard.Embed(MinimalJpeg(), ImageCard.Format.Jpeg, Docs, "My Scenario");
+        Assert.Equal("My Scenario", ImageCard.ExtractTitle(jpeg, ImageCard.Format.Jpeg));
+        Assert.Null(ImageCard.ExtractTitle(ImageCard.Strip(jpeg, ImageCard.Format.Jpeg), ImageCard.Format.Jpeg));
+
+        Assert.Null(ImageCard.ExtractTitle(MinimalPng(), ImageCard.Format.Png));
+        Assert.Null(ImageCard.ExtractTitle(MinimalJpeg(), ImageCard.Format.Jpeg));
+    }
+
+    [Fact]
     public void LoadFrom_ImageCard_LoadsTheScenario()
     {
         var card = Path.Combine(_dir, "card-scenario.jpeg");

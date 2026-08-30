@@ -17,6 +17,7 @@ dotnet run --project src/AEngine.Cli -- adventure.scen  # or a zip-packaged scen
 dotnet run --project src/AEngine.Cli -- rpg.png         # or an image card (png/jpeg metadata)
 dotnet run --project src/AEngine.Util -- card pack scenarios/rpg rpg.png   # pack a scenario into an image
 dotnet run --project src/AEngine.Util -- card unpack rpg.png scenarios/rpg # ... and back
+dotnet run --project src/AEngine.Util -- card info rpg.png                # inspect a card without unpacking
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
 dotnet run --project src/AEngine.Cli -- --llm-endpoint http://127.0.0.1:5001 --llm-model NAME   # LLM planning
 cd client && npm install && npm run dev   # debug web client (needs the CLI with --debug-api)

@@ -48,6 +48,22 @@ public static class ScenarioCard
             ImageCard.Embed(image, format, documents, ReadScenarioName(documents["world.json"])));
     }
 
+    /// <summary>What a card image carries: format, title, and the embedded
+    /// scenario documents.</summary>
+    public sealed record CardInfo(
+        ImageCard.Format Format, string? Title, IReadOnlyDictionary<string, string> Documents);
+
+    /// <summary>Read a card image's metadata without unpacking it.</summary>
+    public static CardInfo Info(string cardImagePath)
+    {
+        var image = File.ReadAllBytes(cardImagePath);
+        var format = ImageCard.Detect(image)
+            ?? throw new InvalidDataException($"'{cardImagePath}' is not a PNG or JPEG card image.");
+        var documents = ImageCard.Extract(image, format)
+            ?? throw new InvalidDataException($"'{cardImagePath}' carries no embedded scenario data.");
+        return new CardInfo(format, ImageCard.ExtractTitle(image, format), documents);
+    }
+
     /// <summary>Extract a card image's scenario documents into a folder and
     /// write the folder's card image (same format as the input, metadata
     /// stripped — the JSON files are the source of truth).</summary>
