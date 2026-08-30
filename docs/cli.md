@@ -1,8 +1,10 @@
 # CLI (AEngine.Cli)
 
-Text-first console REPL. `AEngine.Cli [scenarioDir] [--debug-api[=PORT]]
+Text-first console REPL. `AEngine.Cli [scenarioDirOrZip] [--debug-api[=PORT]]
 [--debug-port N] [--llm-endpoint URL] [--llm-model NAME] [--llm-api-key
-KEY] [--real-time]`.
+KEY] [--real-time]`. The scenario argument is a directory holding
+`modules.json`/`world.json` or a zip archive containing them (any
+extension; recognized by content).
 
 ## Rendering model
 

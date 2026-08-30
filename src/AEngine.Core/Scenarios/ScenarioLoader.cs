@@ -45,21 +45,37 @@ public static class ScenarioLoader
 
     private sealed record FlatNode(NodeDto Node, string ParentId);
 
+    /// <summary>Load a scenario from a path, dispatching on packaging:
+    /// a scenario directory, a zip archive (any extension), or whatever
+    /// sources are registered in <see cref="ScenarioSources"/>.</summary>
+    public static string LoadFrom(GameEngine engine, string path) =>
+        LoadDocumentsInto(engine, ScenarioSources.Resolve(path).Load(path));
+
     /// <summary>Load one or more scenario files into the engine, in order.</summary>
     public static string LoadInto(GameEngine engine, params string[] paths)
     {
         ArgumentNullException.ThrowIfNull(engine);
         if (paths.Length == 0)
             throw new ArgumentException("At least one scenario file is required.", nameof(paths));
+        return LoadDocumentsInto(engine,
+            paths.Select(p => new ScenarioDocument(p, File.ReadAllText(p))).ToList());
+    }
+
+    /// <summary>Merge raw scenario JSON documents into the engine, in order.</summary>
+    public static string LoadDocumentsInto(GameEngine engine, IReadOnlyList<ScenarioDocument> documents)
+    {
+        ArgumentNullException.ThrowIfNull(engine);
+        if (documents.Count == 0)
+            throw new ArgumentException("At least one scenario document is required.", nameof(documents));
 
         var name = "";
         var flat = new Dictionary<string, FlatNode>(StringComparer.Ordinal);
         var order = new List<string>();
 
-        foreach (var path in paths)
+        foreach (var document in documents)
         {
-            var dto = JsonSerializer.Deserialize<ScenarioDto>(File.ReadAllText(path), JsonOptions)
-                ?? throw new InvalidDataException($"Scenario file '{path}' parsed to null.");
+            var dto = JsonSerializer.Deserialize<ScenarioDto>(document.Json, JsonOptions)
+                ?? throw new InvalidDataException($"Scenario document '{document.Label}' parsed to null.");
             if (dto.Name is not null)
                 name = dto.Name;
             if (dto.Modules is not null)

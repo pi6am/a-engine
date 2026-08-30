@@ -13,6 +13,7 @@ dotnet build          # build the solution (a-engine.slnx, .NET 10 XML format)
 dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (text-first REPL)
 dotnet run --project src/AEngine.Cli -- scenarios/npc   # play the NPC demo scenario
+dotnet run --project src/AEngine.Cli -- adventure.scen  # or a zip-packaged scenario (any extension)
 dotnet run --project src/AEngine.Cli -- --debug-api   # also serve the debug REST API
 dotnet run --project src/AEngine.Cli -- --llm-endpoint http://127.0.0.1:5001 --llm-model NAME   # LLM planning
 cd client && npm install && npm run dev   # debug web client (needs the CLI with --debug-api)

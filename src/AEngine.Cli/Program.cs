@@ -10,7 +10,7 @@ using AEngine.Llm;
 
 // CLI entry point: loads a scenario (scenarios/mvp by default, or e.g.
 // scenarios/npc for the NPC demo) and runs a text-first REPL.
-// Usage: AEngine.Cli [scenarioDir] [--debug-api[=PORT]] [--debug-port N]
+// Usage: AEngine.Cli [scenarioDirOrFile] [--debug-api[=PORT]] [--debug-port N]
 //        [--llm-endpoint URL] [--llm-model NAME] [--llm-api-key KEY]
 //        [--real-time]
 // The action list is shown on demand via the /actions slash command;
@@ -32,7 +32,7 @@ const int defaultDebugPort = 5050;
 var debugApi = false;
 var debugPort = defaultDebugPort;
 var realTime = false;
-string? scenarioDirArg = null;
+string? scenarioArg = null;
 string? llmEndpoint = Environment.GetEnvironmentVariable("AENGINE_LLM_ENDPOINT");
 string? llmModel = Environment.GetEnvironmentVariable("AENGINE_LLM_MODEL");
 string? llmApiKey = Environment.GetEnvironmentVariable("AENGINE_LLM_API_KEY");
@@ -88,14 +88,15 @@ for (var i = 0; i < args.Length; i++)
     }
     else
     {
-        scenarioDirArg = arg;
+        scenarioArg = arg;
     }
 }
 
-var scenarioDir = scenarioDirArg ?? FindScenarioDir("scenarios/mvp");
-if (scenarioDir is null)
+// a scenario is a directory of JSON files or a packaged file (zip, any extension)
+var scenarioPath = scenarioArg ?? FindScenarioDir("scenarios/mvp");
+if (scenarioPath is null)
 {
-    Console.Error.WriteLine("Could not find the scenario directory 'scenarios/mvp'.");
+    Console.Error.WriteLine("Could not find the scenario 'scenarios/mvp'.");
     return 1;
 }
 
@@ -103,10 +104,7 @@ var engine = GameEngine.CreateWithBuiltinHandlers();
 string scenarioName;
 try
 {
-    scenarioName = ScenarioLoader.LoadInto(
-        engine,
-        Path.Combine(scenarioDir, "modules.json"),
-        Path.Combine(scenarioDir, "world.json"));
+    scenarioName = ScenarioLoader.LoadFrom(engine, scenarioPath);
 }
 catch (Exception ex)
 {

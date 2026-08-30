@@ -107,4 +107,77 @@ public class ScenarioLoaderTests : IDisposable
         ScenarioLoader.LoadInto(engine, dup);
         Assert.Equal("X again", engine.World.GetObject("x").Name);
     }
+
+    private string WriteZip(string fileName, params (string Entry, string Content)[] entries)
+    {
+        var path = Path.Combine(_dir, fileName);
+        using var archive = System.IO.Compression.ZipFile.Open(path, System.IO.Compression.ZipArchiveMode.Create);
+        foreach (var (entry, content) in entries)
+        {
+            using var writer = new StreamWriter(archive.CreateEntry(entry).Open());
+            writer.Write(content);
+        }
+        return path;
+    }
+
+    [Fact]
+    public void LoadFrom_ZipWithArbitraryExtension_LoadsModulesAndWorld()
+    {
+        // shared as ".scen"; the entries sit in a nested folder — recognized
+        // by magic bytes and entry file names, not the extension or layout
+        var zip = WriteZip("packed.scen",
+            ("bundle/modules.json", """
+            { "name": "packed", "modules": [
+              { "id": "openable", "name": "Openable",
+                "fields": [ { "name": "open", "type": "bool", "default": false } ] }
+            ] }
+            """),
+            ("bundle/world.json", """
+            { "name": "packed", "world": [
+              { "id": "room", "name": "Room", "children": [
+                { "id": "box", "name": "Box", "modules": [ "openable" ] }
+              ] }
+            ] }
+            """));
+
+        var engine = new GameEngine();
+        var name = ScenarioLoader.LoadFrom(engine, zip);
+
+        Assert.Equal("packed", name);
+        Assert.True(engine.ModuleRegistry.Has("openable"));
+        Assert.Equal("room", engine.World.GetObject("box").Parent);
+    }
+
+    [Fact]
+    public void LoadFrom_Directory_StillWorks()
+    {
+        var dir = Path.Combine(_dir, "loose");
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, "world.json"), """
+        { "name": "loose", "world": [ { "id": "room", "name": "Room" } ] }
+        """);
+
+        var engine = new GameEngine();
+        Assert.Equal("loose", ScenarioLoader.LoadFrom(engine, dir));
+        Assert.True(engine.World.HasObject("room"));
+    }
+
+    [Fact]
+    public void LoadFrom_ZipWithoutWorld_Throws()
+    {
+        var zip = WriteZip("modules-only.zip", ("modules.json", """{ "modules": [] }"""));
+
+        var ex = Assert.Throws<InvalidDataException>(
+            () => ScenarioLoader.LoadFrom(new GameEngine(), zip));
+        Assert.Contains("world.json", ex.Message);
+    }
+
+    [Fact]
+    public void LoadFrom_UnrecognizedFile_Throws()
+    {
+        var notAScenario = WriteFile("notes.txt", "just some notes");
+
+        Assert.Throws<InvalidDataException>(
+            () => ScenarioLoader.LoadFrom(new GameEngine(), notAScenario));
+    }
 }

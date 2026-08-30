@@ -242,4 +242,9 @@ long-running actions (nothing schedules multi-turn actions yet).
 ## Scenarios
 
 JSON files defining modules and an initial world tree; `ScenarioLoader`
-composes multiple files in order (later overrides by id).
+composes multiple documents in order (later overrides by id). Packaging is
+pluggable via `IScenarioSource` (registered in `ScenarioSources`): a source
+turns a path into the raw JSON documents, and the loader merges them.
+Built-in sources: a directory holding `modules.json`/`world.json`, and a
+zip archive (recognized by the "PK" magic bytes, so any extension —
+`.zip`, `.scen` — works) holding those files at any depth.
