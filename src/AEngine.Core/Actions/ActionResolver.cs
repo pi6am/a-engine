@@ -171,6 +171,35 @@ public sealed class ActionResolver
                     }
                     continue;
                 }
+                // give is a two-object verb on the held item: one entry per
+                // recipient, the item riding as AuxTargetId (the recipient
+                // stays TargetId so the accept/decline reaction finds them)
+                if (affordance.Verb == "give")
+                {
+                    foreach (var other in others)
+                        actions.Add(new AvailableAction(
+                            "give", other.Id, $"Give {The(target)} to {other.Name}",
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt)
+                        { AuxTargetId = target.Id });
+                    continue;
+                }
+                // put is a two-object verb on the container: one entry per
+                // held item, the item riding as AuxTargetId
+                if (affordance.Verb == "put")
+                {
+                    foreach (var itemId in agent.Children)
+                    {
+                        var item = _world.GetObject(itemId);
+                        if (!item.HasModule("portable") || item.HasModule("bodypart") ||
+                            Clothing.IsWorn(_modules, item))
+                            continue;
+                        actions.Add(new AvailableAction(
+                            "put", target.Id, $"Put {The(item)} into {The(target)}",
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt)
+                        { AuxTargetId = item.Id });
+                    }
+                    continue;
+                }
                 var label = LabelFor(affordance.Verb, agent, target);
                 actions.Add(new AvailableAction(
                     affordance.Verb, target.Id, label, affordance.Handler,
@@ -210,6 +239,12 @@ public sealed class ActionResolver
             "say" => target.Id == agent.Id, // speech comes from your own can_speak
             "take" => !held && target.Id != agent.Id, // can't pick up yourself
             "drop" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
+            // give: a held, unworn item (entries are emitted per recipient)
+            "give" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
+            // put: the open state of a container is observable — closed
+            // containers are listed only in the potential set, like "open"
+            "put" => target.HasModule("container") &&
+                     (!stateFiltered || !HasOpenState(target) || IsOpenState(target)),
             "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
             "shove" => target.HasModule("agent") && target.Id != agent.Id,
             "attack" => target.HasModule("attackable") && target.Id != agent.Id,
@@ -273,7 +308,17 @@ public sealed class ActionResolver
         "stand" => target.Id == agent.Id ? "Stand up" : $"Get off {The(target)}",
         "escape" => "Break free",
         "wear" => $"Wear {The(target)}",
+        // taking off (or stealing) another agent's property names the
+        // holder — the label must say whose jeans they are
+        "remove" when target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
+                      _world.GetObject(target.Parent) is { } wearer &&
+                      wearer.HasModule("agent") && wearer.Id != agent.Id =>
+            $"Take off {The(target)} from {wearer.Name}",
         "remove" => $"Take off {The(target)}",
+        "steal" when target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
+                     _world.GetObject(target.Parent) is { } holder &&
+                     holder.HasModule("agent") && holder.Id != agent.Id =>
+            $"Steal {The(target)} from {holder.Name}",
         // a part-ful target advertises the optional aimed syntax (parsed
         // like Say's [to X]): "Attack the arena duelist [in the {part}]"
         "attack" when BodyParts.Of(_world, target).Count > 0 =>

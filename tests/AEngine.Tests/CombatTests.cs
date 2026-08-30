@@ -161,7 +161,7 @@ public class CombatTests
         Assert.False(result.Success);
         Assert.Equal("You swing at the Bob and miss.", result.Message);
         Assert.Equal(10, engine.ModuleRegistry.ResolveInt(engine.World.GetObject("bob"), "health", "hp"));
-        Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice swings at the Bob and misses.");
+        Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice swings at you and misses.");
     }
 
     [Fact]

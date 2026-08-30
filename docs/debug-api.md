@@ -23,9 +23,10 @@ Endpoints (JSON in/out, camelCase):
 - `PUT /api/objects/{id}/modules/{moduleId}/fields/{field}` (raw JSON value body)
 - `GET /api/modules`
 - `GET /api/actions?agentId=`
-- `POST /api/actions/execute` `{agentId, verb, targetId}` → runs the resolved
-  menu action through `TurnManager.PerformAction` (advances the turn), 200 →
-  `{success, message, turn}`, unknown agent or unavailable action → 404
+- `POST /api/actions/execute` `{agentId, verb, targetId, auxTargetId?}` → runs
+  the resolved menu action through `TurnManager.PerformAction` (advances the
+  turn), 200 → `{success, message, turn}`, unknown agent or unavailable
+  action → 404 (`auxTargetId` disambiguates two-object verbs: give/put)
 
 Errors: unknown id → 404, cycle/duplicate/root-guard → 409, bad JSON → 400,
 wrong method → 405. Permissive CORS (any origin, OPTIONS preflight) for the

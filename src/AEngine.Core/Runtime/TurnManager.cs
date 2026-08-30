@@ -86,7 +86,8 @@ public sealed class TurnManager
                 ? _engine.World.GetObject(action.TargetId).Parent
                 : null;
             var result = EvaluateCheck(agent, action)
-                         ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb);
+                         ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb,
+                             auxTargetId: action.AuxTargetId);
             // remember your own action and its outcome (a look result is too
             // verbose to store verbatim)
             _engine.Memory.Record(agent,
@@ -118,11 +119,12 @@ public sealed class TurnManager
         var telegraph = spec.Telegraph ?? $"{{agent}} tries to {action.Verb} {{target}}.";
         _engine.SignalBus.Emit(agent, defender,
             [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 10, Text = telegraph }],
-            text);
+            text, extra: Extras(null, action.AuxTargetId));
         var announcement = telegraph
             .Replace("{agent}", agent.Name, StringComparison.Ordinal)
             .Replace("the {target}", "you", StringComparison.Ordinal)
-            .Replace("{target}", "you", StringComparison.Ordinal);
+            .Replace("{target}", "you", StringComparison.Ordinal)
+            .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         var pending = _engine.Reactions.Add(
             agent.Id, defender.Id, action, text, announcement, options, Turn + spec.Window);
         // an NPC defender's policy picks the reaction; synchronous policies
@@ -136,7 +138,8 @@ public sealed class TurnManager
         var actorText = (spec.ActorText ?? "You {verb} {target}.")
             .Replace("{verb}", action.Verb, StringComparison.Ordinal)
             .Replace("{agent}", agent.Name, StringComparison.Ordinal)
-            .Replace("{target}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal);
+            .Replace("{target}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal)
+            .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         _engine.Memory.Record(agent, actorText);
         _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, ActionResult.Ok(actorText));
         if (_engine.TimeMode == TimeMode.TurnBased)
@@ -161,7 +164,8 @@ public sealed class TurnManager
         {
             if (!_engine.World.HasObject(pending.ActorId) ||
                 !_engine.World.HasObject(pending.DefenderId) ||
-                (pending.Action.TargetId is not null && !_engine.World.HasObject(pending.Action.TargetId)))
+                (pending.Action.TargetId is not null && !_engine.World.HasObject(pending.Action.TargetId)) ||
+                (pending.Action.AuxTargetId is not null && !_engine.World.HasObject(pending.Action.AuxTargetId)))
                 return; // a participant is gone — the moment passes
             var agent = _engine.World.GetObject(pending.ActorId);
             // stale: the defender slipped out of reach during the window
@@ -177,7 +181,8 @@ public sealed class TurnManager
             // enforces posture/carried/incapacitation rules; a parked
             // action that is no longer available fizzles.
             if (!_engine.ActionResolver.ResolvePotential(agent).Any(a =>
-                    a.Verb == pending.Action.Verb && a.TargetId == pending.Action.TargetId))
+                    a.Verb == pending.Action.Verb && a.TargetId == pending.Action.TargetId &&
+                    a.AuxTargetId == pending.Action.AuxTargetId))
             {
                 _engine.Memory.Record(agent, "The moment passes.");
                 _engine.Reactions.RecordResolved(pending.ActorId, "The moment passes.");
@@ -189,13 +194,14 @@ public sealed class TurnManager
             // own signals never reach them): report it ahead of the outcome
             if (option.Report is not null)
             {
-                var report = FormatReactionReport(option.Report, defender);
+                var report = FormatReactionReport(
+                    option.Report, defender, AuxName(pending.Action.AuxTargetId));
                 _engine.Memory.Record(agent, report);
                 _engine.Reactions.RecordResolved(pending.ActorId, report);
             }
             var result = EvaluateCheck(agent, pending.Action, option)
                          ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
-                             pending.Text, pending.Action.Verb, option);
+                             pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId);
             _engine.Memory.Record(agent,
                 pending.Action.Verb == "look" ? "You look around." : result.Message);
             // the actor isn't an observer of their own signals — record
@@ -215,21 +221,29 @@ public sealed class TurnManager
     /// <summary>
     /// Render an option's actor-facing report: {agent} is the reacting
     /// defender ("the arena duelist"), {target} is the actor — "you", since
-    /// the report is shown to (and remembered by) the actor. The result is
-    /// sentence-capitalized ("The arena duelist attempts to dodge.").
+    /// the report is shown to (and remembered by) the actor; {item} is a
+    /// two-object verb's aux target. The result is sentence-capitalized
+    /// ("The arena duelist attempts to dodge.").
     /// </summary>
-    private static string FormatReactionReport(string template, WorldObject defender)
+    private static string FormatReactionReport(string template, WorldObject defender, string? itemName)
     {
         var text = template
             .Replace("{agent}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal)
-            .Replace("{target}", "you", StringComparison.Ordinal);
+            .Replace("{target}", "you", StringComparison.Ordinal)
+            .Replace("{item}", itemName ?? "", StringComparison.Ordinal);
         return string.Concat(text[..1].ToUpperInvariant(), text.AsSpan(1));
     }
+
+    /// <summary>The name of a two-object verb's aux target, or "" when unset.</summary>
+    private string AuxName(string? auxTargetId) =>
+        auxTargetId is not null && _engine.World.HasObject(auxTargetId)
+            ? _engine.World.GetObject(auxTargetId).Name
+            : "";
 
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(
         WorldObject agent, string handlerId, string? targetId = null, string? text = null,
-        string? verb = null, Modules.ReactionOptionSpec? reaction = null)
+        string? verb = null, Modules.ReactionOptionSpec? reaction = null, string? auxTargetId = null)
     {
         lock (_engine.SyncRoot)
         {
@@ -240,6 +254,9 @@ public sealed class TurnManager
                 Modules = _engine.ModuleRegistry,
                 Agent = agent,
                 Target = targetId is null ? null : _engine.World.GetObject(targetId),
+                AuxTarget = auxTargetId is not null && _engine.World.HasObject(auxTargetId)
+                    ? _engine.World.GetObject(auxTargetId)
+                    : null,
                 Verb = verb,
                 Random = _engine.Random,
                 Reaction = reaction,
@@ -299,7 +316,8 @@ public sealed class TurnManager
                     // Validate: the world may have changed since the choice was made.
                     var available = _engine.ActionResolver.Resolve(agent);
                     var action = available.FirstOrDefault(a =>
-                        a.Verb == chosen.Verb && a.TargetId == chosen.TargetId);
+                        a.Verb == chosen.Verb && a.TargetId == chosen.TargetId &&
+                        a.AuxTargetId == chosen.AuxTargetId);
                     if (action is null)
                         continue; // stale choice — discard, fresh selection next turn
                     PerformAction(agent, action, chosen.Text);
@@ -349,26 +367,29 @@ public sealed class TurnManager
             ? _engine.World.GetObject(action.TargetId)
             : null;
         var traversal = BuildTraversal(agent, action, target, departureRoomId);
-        _engine.SignalBus.Emit(agent, target, affordance.Signals, text, traversal, HolderExtra(holderBefore));
+        _engine.SignalBus.Emit(agent, target, affordance.Signals, text, traversal,
+            Extras(holderBefore, action.AuxTargetId));
     }
 
     /// <summary>
-    /// The {container} template placeholder: " from the cupboard" when the
-    /// action's target came out of a thing (container, furniture) — not off
-    /// the floor (a room) or out of somebody (an agent). Null otherwise, so
-    /// the placeholder formats to empty.
+    /// Extra template placeholders: {container} — " from the cupboard" when
+    /// the action's target came out of a thing (container, furniture), not
+    /// off the floor (a room) or out of somebody (an agent); {item} — the
+    /// name of a two-object verb's aux target (the gift for give, the
+    /// stowed item for put). Both format to empty when unset.
     /// </summary>
-    private IReadOnlyDictionary<string, string>? HolderExtra(string? holderId)
+    private IReadOnlyDictionary<string, string>? Extras(string? holderId, string? auxTargetId)
     {
-        if (holderId is null || !_engine.World.HasObject(holderId))
-            return null;
-        var holder = _engine.World.GetObject(holderId);
-        if (holder.HasModule("room") || holder.HasModule("agent"))
-            return null;
-        return new Dictionary<string, string>(StringComparer.Ordinal)
+        Dictionary<string, string>? extra = null;
+        if (holderId is not null && _engine.World.HasObject(holderId))
         {
-            ["{container}"] = $" from the {holder.Name}",
-        };
+            var holder = _engine.World.GetObject(holderId);
+            if (!holder.HasModule("room") && !holder.HasModule("agent"))
+                (extra ??= new(StringComparer.Ordinal))["{container}"] = $" from the {holder.Name}";
+        }
+        if (auxTargetId is not null && _engine.World.HasObject(auxTargetId))
+            (extra ??= new(StringComparer.Ordinal))["{item}"] = _engine.World.GetObject(auxTargetId).Name;
+        return extra;
     }
 
     /// <summary>
@@ -409,7 +430,8 @@ public sealed class TurnManager
         var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
             ? _engine.World.GetObject(action.TargetId)
             : null;
-        _engine.SignalBus.Emit(agent, target, affordance.FailSignals, null, null);
+        _engine.SignalBus.Emit(agent, target, affordance.FailSignals, null, null,
+            Extras(null, action.AuxTargetId));
     }
 
     /// <summary>The turn until which the agent is busy with its current action (0 = free). For tooling/tests.</summary>

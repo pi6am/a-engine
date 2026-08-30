@@ -123,7 +123,7 @@ public class OpposedCheckTests
 
         // the botched shove is observable by the victim (failSignals)
         Assert.Contains(engine.SignalBus.Drain("bob"),
-            s => s.Text == "Alice tries to shove the Bob, who holds their ground.");
+            s => s.Text == "Alice tries to shove you, who holds their ground.");
     }
 
     [Fact]
@@ -171,7 +171,7 @@ public class OpposedCheckTests
         // the pocket item offers steal, not take
         var actions = engine.ActionResolver.Resolve(alice);
         var steal = Assert.Single(actions, a => a.Verb == "steal" && a.TargetId == "apple");
-        Assert.Equal("Steal the apple", steal.Label);
+        Assert.Equal("Steal the apple from Bob", steal.Label);
         Assert.DoesNotContain(actions, a => a.Verb == "take" && a.TargetId == "apple");
 
         var result = engine.TurnManager.PerformAction(alice, steal);

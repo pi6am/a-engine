@@ -15,6 +15,8 @@ public static class BuiltinHandlers
         new CloseHandler(),
         new TakeHandler(),
         new DropHandler(),
+        new PutHandler(),
+        new GiveHandler(),
         new UnlockHandler(),
         new LockHandler(),
         new PickLockHandler(),
@@ -234,6 +236,60 @@ public static class BuiltinHandlers
                 ctx.World.SetFieldOverride(
                     target.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
             return ActionResult.Ok($"You drop the {target.Name}.");
+        }
+    }
+
+    // put: stow a held item in a container (the target), respecting its
+    // open state and capacity; the item is the action's aux target
+    private sealed class PutHandler : IActionHandler
+    {
+        public string Id => "put";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var container = ctx.Target ?? throw new InvalidOperationException("put requires a target container.");
+            if (!container.HasModule("container"))
+                return ActionResult.Fail($"You can't put anything into the {container.Name}.");
+            var item = ctx.AuxTarget ?? throw new InvalidOperationException("put requires an item (aux target).");
+            if (item.Id == container.Id)
+                return ActionResult.Fail($"You can't put the {item.Name} into itself.");
+            if (item.Parent != ctx.Agent.Id)
+                return ActionResult.Noop($"You're not carrying the {item.Name}.");
+            if (Clothing.IsWorn(ctx.Modules, item))
+                return ActionResult.Fail($"Take off the {item.Name} first.");
+            if (HandlerState.GetOpenState(ctx, container) is not null && !HandlerState.IsOpen(ctx, container))
+                return ActionResult.Fail($"The {container.Name} is closed.");
+            var capacity = ctx.Modules.ResolveInt(container, "container", "capacity", 10);
+            if (ctx.World.ChildrenOf(container.Id).Count() >= capacity)
+                return ActionResult.Fail($"The {container.Name} is full.");
+            ctx.World.MoveObject(item.Id, container.Id);
+            return ActionResult.Ok(
+                $"You put {Perception.WithDefiniteArticle(item.Name)} into {Perception.WithDefiniteArticle(container.Name)}.");
+        }
+    }
+
+    // give: offer a held item (the aux target) to another agent (the
+    // target). The recipient's reaction gates the hand-off — any choice
+    // that isn't noResist declines it; an incapacitated recipient can't
+    // react, so the hand-off just happens (you set it on them)
+    private sealed class GiveHandler : IActionHandler
+    {
+        public string Id => "give";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var recipient = ctx.Target ?? throw new InvalidOperationException("give requires a target agent.");
+            if (!recipient.HasModule("agent"))
+                return ActionResult.Fail($"The {recipient.Name} can't take that.");
+            var item = ctx.AuxTarget ?? throw new InvalidOperationException("give requires an item (aux target).");
+            if (item.Parent != ctx.Agent.Id)
+                return ActionResult.Noop($"You're not carrying the {item.Name}.");
+            if (ctx.Reaction is { NoResist: false })
+                return ActionResult.Fail(Capitalize(
+                    $"{recipient.Name} declines {Perception.WithDefiniteArticle(item.Name)}."));
+            ctx.World.MoveObject(item.Id, recipient.Id);
+            return ActionResult.Ok(
+                $"You give {Perception.WithDefiniteArticle(item.Name)} to {recipient.Name}.");
         }
     }
 

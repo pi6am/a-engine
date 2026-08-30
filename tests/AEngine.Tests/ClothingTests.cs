@@ -264,7 +264,7 @@ public class ClothingTests
         // pull), never steal or take
         var actions = engine.ActionResolver.Resolve(alice);
         var remove = Assert.Single(actions, a => a.Verb == "remove" && a.TargetId == "glove");
-        Assert.Equal("Take off the leather glove", remove.Label);
+        Assert.Equal("Take off the leather glove from Bob", remove.Label);
         Assert.DoesNotContain(actions,
             a => (a.Verb == "steal" || a.Verb == "take") && a.TargetId == "glove");
 
@@ -313,3 +313,4 @@ public class ClothingTests
         Assert.Equal("alice", engine.World.GetObject("glove").Parent);
     }
 }
+

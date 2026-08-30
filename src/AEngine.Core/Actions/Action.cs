@@ -24,6 +24,11 @@ public sealed class ActionContext
     /// checks (attack, remove) pass it to Checks.EvaluateOpposed.
     /// </summary>
     public ReactionOptionSpec? Reaction { get; init; }
+    /// <summary>
+    /// The second object of a two-object verb: the item for give/put
+    /// (whose Target is the recipient/container). Null for one-object verbs.
+    /// </summary>
+    public WorldObject? AuxTarget { get; init; }
     public IReadOnlyDictionary<string, string> Args { get; init; } =
         new Dictionary<string, string>();
 }
@@ -78,4 +83,11 @@ public sealed record AvailableAction(
     /// ActionContext.Args["text"].
     /// </summary>
     public string? Text { get; init; }
+
+    /// <summary>
+    /// The second object of a two-object verb: the item for give/put
+    /// (TargetId is the recipient/container). Surfaced to the handler as
+    /// ActionContext.AuxTarget and to signal templates as {item}.
+    /// </summary>
+    public string? AuxTargetId { get; init; }
 }

@@ -10,7 +10,10 @@ namespace AEngine.Core.Signals;
 /// perceive the action receives the single highest-priority receivable
 /// signal (ties: first listed) in an ephemeral per-agent queue. Delivered
 /// signals are also recorded into the observer's
-/// <see cref="Runtime.AgentMemory"/>.
+/// <see cref="Runtime.AgentMemory"/>. Formatting is observer-relative: when
+/// the observer IS the target, {target} renders as "you" (with the
+/// following verb dropping its third-person -s in subject position) —
+/// "the old cook gives the bread to you", never "... to the guest".
 ///
 /// Propagation: an observer in the origin room receives all senses; an
 /// observer one portal away receives a sense only if the portal side in
@@ -135,7 +138,7 @@ public sealed class SignalBus
                 {
                     best = new Signal(
                         spec.Sense, spec.Priority,
-                        Format(spec.Text, actor, null, null, extra),
+                        Format(spec.Text, actor, null, null, extra, observer),
                         scope == SignalScope.Departure
                             ? traversal.DepartureRoomId
                             : traversal.ArrivalRoomId,
@@ -196,7 +199,7 @@ public sealed class SignalBus
                 continue;
             if (best is null || spec.Priority > best.Priority)
             {
-                var text = Format(spec.Text, actor, target, arg, extra);
+                var text = Format(spec.Text, actor, target, arg, extra, observer);
                 if (observerSide is not null && !SameDoor(target, observerSide))
                     text = text.TrimEnd('.') + Suffix(observerSide);
                 best = new Signal(
@@ -268,18 +271,69 @@ public sealed class SignalBus
 
     private static string Format(
         string template, WorldObject actor, WorldObject? target, string? arg,
-        IReadOnlyDictionary<string, string>? extra = null)
+        IReadOnlyDictionary<string, string>? extra = null, WorldObject? observer = null)
     {
         var text = template
             .Replace("{agent}", actor.Name, StringComparison.Ordinal)
-            .Replace("{target}", target?.Name ?? "", StringComparison.Ordinal)
             .Replace("{arg}", arg ?? "", StringComparison.Ordinal);
+        // observer-relative naming: every agent is the protagonist of their
+        // own perception, so when the observer IS the target it renders as
+        // "you" ("the old cook gives the bread to you"), never by name
+        if (target is not null && observer is not null && target.Id == observer.Id)
+            text = ReplaceTargetAsYou(text);
+        else
+            text = text.Replace("{target}", target?.Name ?? "", StringComparison.Ordinal);
         if (extra is not null)
             foreach (var (placeholder, value) in extra)
                 text = text.Replace(placeholder, value, StringComparison.Ordinal);
-        // {container} defaults to empty when the target wasn't in a holder
+        // {container} defaults to empty when the target wasn't in a holder;
+        // {item} likewise for one-object verbs
         text = text.Replace("{container}", "", StringComparison.Ordinal);
+        text = text.Replace("{item}", "", StringComparison.Ordinal);
         return CollapseDoubledArticles(text);
+    }
+
+    /// <summary>
+    /// Render {target} as the observing target itself: object/possessive
+    /// positions ("to the {target}") become "you"; at sentence start the
+    /// placeholder is the subject, so the verb that follows it drops its
+    /// third-person -s ("{target} declines" → "you decline").
+    /// </summary>
+    private static string ReplaceTargetAsYou(string template)
+    {
+        var text = template
+            .Replace("the {target}", "you", StringComparison.Ordinal)
+            .Replace("The {target}", "you", StringComparison.Ordinal);
+        return SubjectTarget.Replace(text, match =>
+        {
+            var before = text[..match.Index].TrimEnd();
+            var sentenceStart = before.Length == 0 ||
+                before.EndsWith('.') || before.EndsWith('!') || before.EndsWith('?');
+            var word = match.Groups[1].Value;
+            return sentenceStart && word.Length > 0
+                ? "you " + SecondPerson(word)
+                : "you" + (word.Length > 0 ? " " + word : "");
+        });
+    }
+
+    private static readonly Regex SubjectTarget =
+        new(@"\{target\}(?: (\w+))?", RegexOptions.Compiled);
+
+    /// <summary>Third-person singular verb → second person: declines → decline, tries → try, watches → watch.</summary>
+    private static string SecondPerson(string verb)
+    {
+        if (verb.EndsWith("ies", StringComparison.Ordinal) && verb.Length > 3)
+            return verb[..^3] + "y";
+        if (verb.EndsWith("shes", StringComparison.Ordinal) ||
+            verb.EndsWith("ches", StringComparison.Ordinal) ||
+            verb.EndsWith("sses", StringComparison.Ordinal) ||
+            verb.EndsWith("xes", StringComparison.Ordinal) ||
+            verb.EndsWith("zes", StringComparison.Ordinal) ||
+            verb.EndsWith("oes", StringComparison.Ordinal))
+            return verb[..^2];
+        if (verb.EndsWith('s') && !verb.EndsWith("ss", StringComparison.Ordinal))
+            return verb[..^1];
+        return verb;
     }
 
     /// <summary>

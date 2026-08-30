@@ -45,9 +45,15 @@ busy-but-idle agent wakes early when new signals arrive.
 Module affordances name a `handler` **string id**, resolved through
 `HandlerRegistry` (handlers are replaceable at runtime — this is the
 extension seam). Built-ins: basic (flavor verbs, interpolates the verb into
-its message), look, go, open, close, take, drop, unlock, lock, pick,
-inventory, say, wait (`wait` just passes the turn; it is quiet — no
-signals), sit, lie, stand, wear, remove, shove, steal, examine. `examine`
+its message), look, go, open, close, take, drop, put, give, unlock, lock,
+pick, inventory, say, wait (`wait` just passes the turn; it is quiet — no
+signals), sit, lie, stand, wear, remove, shove, steal, examine. `put` and
+`give` are **two-object verbs**: the resolver emits one entry per
+(item × open container) / (held item × other agent) — "Put the key into
+the desk drawer", "Give the bread to the old cook" — with the item riding
+as the action's `AuxTargetId` (the container/recipient stays `TargetId`,
+so give's accept/decline reaction finds the recipient; `put` respects open
+state and the container's `capacity`). `examine`
 is universal: the resolver offers it for every visible object (room
 contents, agents and their pockets, open containers' contents, inventory)
 with no module of its own (moduleId "" — no signals, default duration, no
@@ -98,9 +104,14 @@ and each observing agent (any object with the `agent` module except the
 actor) receives the single highest-priority receivable signal (ties: first
 listed); texts format `{agent}`/`{target}`/`{arg}` placeholders plus
 `{container}` (" from the cupboard" when the target was taken out of a
-non-room, non-agent holder, empty otherwise), collapsing doubled articles
-when a template's own "the" meets a name that already carries one ("opens
-the the strongbox" → "opens the strongbox"). Propagation: same room → all
+non-room, non-agent holder, empty otherwise) and `{item}` (a two-object
+verb's aux target — the gift for give, the stowed item for put; empty for
+one-object verbs), collapsing doubled articles when a template's own "the"
+meets a name that already carries one ("opens the the strongbox" → "opens
+the strongbox"). Formatting is observer-relative: when the observer IS the
+target, `{target}` renders as "you" ("the old cook gives the bread to
+you"), and at sentence start the verb after it drops its third-person -s
+("{target} declines" → "you decline"). Propagation: same room → all
 senses; one portal away → a sense passes only if the portal **side in the
 origin room** transmits it (`portal` fields `transmitVisual`/
 `transmitAudio`: `always | whenOpen | never`, defaults `whenOpen`/`always`;
@@ -161,7 +172,10 @@ region (conflict = region-set intersection, so layering is the author's
 choice of region names — shirt `["top"]`, coat `["outer"]`, armor
 `["top","bottom"]`; sizes are expressible the same way, e.g. `giant_top`).
 `drop` refuses worn items. `remove` on a garment worn by *another* agent is
-an opposed pull (see `docs/rpg-systems.md` stage 2). Room listings stay
+an opposed pull (see `docs/rpg-systems.md` stage 2); labels name the holder
+("Take off the blue jeans from the arena duelist", "Steal the dagger from
+Bob") so the LLM planner and the player can tell whose item it is. Room
+listings stay
 compact; `look` (and the LLM context) adds a dressed line per *other*
 agent ("the old cook is wearing an apron." — your own outfit stays off
 the room description), and `inventory` splits "You are wearing: …" from

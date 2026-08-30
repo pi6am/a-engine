@@ -13,7 +13,7 @@ namespace AEngine.Llm;
 public static class PlanParser
 {
     private static readonly string[] DefaultVerbs =
-        ["look", "go", "open", "close", "take", "drop", "unlock", "lock", "inventory", "say"];
+        ["look", "go", "open", "close", "take", "drop", "put", "give", "unlock", "lock", "inventory", "say"];
 
     public static IReadOnlyList<string> Parse(
         string response,

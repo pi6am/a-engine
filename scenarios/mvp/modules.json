@@ -77,7 +77,9 @@
       "fields": [
         { "name": "capacity", "type": "int", "default": 10 }
       ],
-      "affordances": []
+      "affordances": [
+        { "verb": "put", "handler": "put", "duration": 2 }
+      ]
     },
     {
       "id": "portable",

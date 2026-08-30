@@ -178,7 +178,7 @@ public class GrappleTests
         Assert.False(result.Success);
         Assert.Equal("room_a", engine.World.GetObject("bob").Parent);
         Assert.Contains(engine.SignalBus.Drain("bob"),
-            s => s.Text == "Alice grabs at the Bob, who slips free.");
+            s => s.Text == "Alice grabs at you, who slips free.");
     }
 
     [Fact]

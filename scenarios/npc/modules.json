@@ -125,7 +125,16 @@
       "fields": [
         { "name": "capacity", "type": "int", "default": 10 }
       ],
-      "affordances": []
+      "affordances": [
+        {
+          "verb": "put",
+          "handler": "put",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} puts the {item} into the {target}." }
+          ]
+        }
+      ]
     },
     {
       "id": "portable",
@@ -148,6 +157,26 @@
             { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
             { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
           ]
+        },
+        {
+          "verb": "give",
+          "handler": "give",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} gives the {item} to the {target}." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 5, "text": "{target} declines the {item}." }
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} offers the {item} to the {target}.",
+            "actorText": "You offer the {item} to {target}.",
+            "options": [
+              { "id": "accept", "label": "Accept", "noResist": true, "default": true, "text": "You accept the gift." },
+              { "id": "decline", "label": "Decline", "text": "You decline the gift." }
+            ]
+          }
         }
       ]
     },

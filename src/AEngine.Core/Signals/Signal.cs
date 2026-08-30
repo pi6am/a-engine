@@ -33,8 +33,9 @@ public sealed record TraversalContext(
 /// <summary>
 /// A signal template declared on a module affordance: sense, priority,
 /// scope, and a text template with {agent} / {target} / {arg} placeholders
-/// (traversal specs may also use {exitPortal} / {exitDirection} /
-/// {entryPortal} / {entryDirection}).
+/// (plus {container} / {item} — see SignalBus.Format; traversal specs may
+/// also use {exitPortal} / {exitDirection} / {entryPortal} /
+/// {entryDirection}).
 /// </summary>
 public sealed class SignalSpec
 {

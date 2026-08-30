@@ -256,6 +256,7 @@ public sealed class DebugServer : IDisposable
             {
                 verb = a.Verb,
                 targetId = a.TargetId,
+                auxTargetId = a.AuxTargetId,
                 label = a.Label,
                 handlerId = a.HandlerId,
             }));
@@ -270,7 +271,8 @@ public sealed class DebugServer : IDisposable
             {
                 var agent = _engine.World.GetObject(body.AgentId); // unknown agent -> 404
                 var action = _engine.ActionResolver.Resolve(agent).FirstOrDefault(a =>
-                    a.Verb == body.Verb && a.TargetId == body.TargetId);
+                    a.Verb == body.Verb && a.TargetId == body.TargetId &&
+                    (body.AuxTargetId is null || a.AuxTargetId == body.AuxTargetId));
                 if (action is null)
                     return new ApiResponse(404, new
                     {
@@ -463,5 +465,6 @@ public sealed class DebugServer : IDisposable
 
     private sealed record OverridesRequest(Dictionary<string, JsonElement>? Overrides = null);
 
-    private sealed record ExecuteActionRequest(string? AgentId, string? Verb, string? TargetId = null);
+    private sealed record ExecuteActionRequest(
+        string? AgentId, string? Verb, string? TargetId = null, string? AuxTargetId = null);
 }

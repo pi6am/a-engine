@@ -207,7 +207,7 @@ public class ReactionsTests
         Assert.Equal("Alice swings at you!", pending.Announcement);
         Assert.True(engine.TurnManager.BusyUntilTurn("alice") > engine.TurnManager.Turn);
         Assert.Equal(10, engine.ModuleRegistry.ResolveInt(engine.World.GetObject("bob"), "health", "hp"));
-        Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice swings at the Bob!");
+        Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice swings at you!");
         // the shield/weapon-gated options are filtered out for Bob
         Assert.Equal(new[] { "dodge", "accept" }, pending.Options.Select(o => o.Id).ToArray());
 
@@ -216,7 +216,7 @@ public class ReactionsTests
         Assert.Empty(engine.Reactions.Pending);
         Assert.Equal(10, engine.ModuleRegistry.ResolveInt(engine.World.GetObject("bob"), "health", "hp"));
         Assert.Contains(engine.SignalBus.Drain("bob"),
-            s => s.Text == "Alice swings at the Bob and misses.");
+            s => s.Text == "Alice swings at you and misses.");
         Assert.Contains(engine.Memory.Recall("bob"), m => m.Contains("You dodge the blow."));
         // the actor isn't an observer of their own signals — the outcome
         // is reported separately so the UI can show it to them
@@ -401,7 +401,7 @@ public class ReactionsTests
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "hug", "bob"));
         Assert.Single(engine.Reactions.Pending);
         ExpireReactions(engine);
-        Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice hugs the Bob.");
+        Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice hugs you.");
         Assert.Contains(engine.Memory.Recall("bob"), m => m.Contains("You hug them back."));
     }
 
