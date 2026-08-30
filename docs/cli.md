@@ -17,6 +17,10 @@ capitalized ("The old cook opens the cupboard."); the "You see: …"/
 "You hear: …" framing is reserved for signals that crossed a portal
 (`Signal.ThroughPortal`).
 
+Every player action outcome ends with a blank line, separating the
+outcome log from the sensory log (or room arrival description) that
+follows; the arrival print itself carries no leading blank.
+
 Narrated prose (LLM narration, when enabled) is word-wrapped to
 `min(Console.WindowWidth, 80)` columns at print time; raw template
 output is left alone.

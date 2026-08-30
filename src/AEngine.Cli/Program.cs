@@ -267,6 +267,7 @@ if (debugServer is not null)
 if (realTime)
     SetTimeMode(TimeMode.RealTime);
 
+Console.WriteLine(); // separate the intro from the first room description
 while (true)
 {
     string? arrivalLook = null;
@@ -325,6 +326,7 @@ while (true)
             await PrintResultAsync(direct.Verb, directResult.Message);
             if (engine.TimeMode == TimeMode.TurnBased)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
+            Console.WriteLine(); // outcomes end with a blank line
             continue;
         }
         if (planner is null)
@@ -368,6 +370,7 @@ while (true)
             Console.WriteLine(lastStep.Note);
         else if (lastStep.Result is { Outcome: ActionOutcome.Failure } && steps.Count < plan.Count)
             Console.WriteLine("Plan stopped."); // only when later steps were skipped
+        Console.WriteLine(); // outcomes end with a blank line
         continue;
     }
     // numeric selection from the current action list (see /actions)
@@ -397,6 +400,7 @@ while (true)
     await PrintResultAsync(action.Verb, result.Message);
     if (engine.TimeMode == TimeMode.TurnBased)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
+    Console.WriteLine(); // outcomes end with a blank line
 }
 
 // Word-wrap narrated prose to the console width, capped at 80 columns,
@@ -459,11 +463,11 @@ async Task<string?> TryNarrateAsync(string roomId, string raw)
 }
 
 // Print the room on arrival: the raw look render, or the room's name
-// followed by narrated prose when room narration is on.
+// followed by narrated prose when room narration is on. No leading
+// blank — the preceding outcome (or the intro) already ended with one.
 async Task PrintRoomAsync(string roomId, string roomName, string raw)
 {
     var narrated = await TryNarrateAsync(roomId, raw);
-    Console.WriteLine();
     if (narrated is not null)
     {
         Console.WriteLine(roomName);
