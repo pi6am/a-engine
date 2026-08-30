@@ -134,7 +134,7 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
     };
     var llmClient = new OpenAiCompatibleClient(llmOptions);
     planner = new LlmPlanner(llmClient, engine);
-    narrator = new Narrator(llmClient);
+    narrator = new Narrator(llmClient, player.Name);
     engine.PolicyRegistry.Register(new LlmPolicy(planner));
     Console.WriteLine($"LLM planning enabled ({llmOptions.BaseUrl}, model '{llmOptions.Model}').");
 }
@@ -168,13 +168,9 @@ slash.Register("narrate", [], "Expand narration via LLM (/narrate all|room|actio
     {
         output.Narrate = scope;
         Console.WriteLine($"Narration: {args[0].ToLowerInvariant()}." +
-            (scope != NarrateScope.Off && planner is null
+            (scope != NarrateScope.Off && narrator is null
                 ? " (No LLM endpoint configured — no effect.)"
-                : scope == NarrateScope.Actions
-                    ? " (Action narration is not implemented yet — rooms stay raw.)"
-                    : scope == NarrateScope.All
-                        ? " (Rooms narrated; action narration is not implemented yet.)"
-                        : ""));
+                : ""));
         return false;
     }
     Console.WriteLine($"Narration is {output.Narrate.ToString().ToLowerInvariant()}. Usage: /narrate all|room|actions|off");
@@ -268,6 +264,10 @@ if (realTime)
     SetTimeMode(TimeMode.RealTime);
 
 Console.WriteLine(); // separate the intro from the first room description
+// action narration (/narrate actions|all): raw outcome and observation
+// lines buffer and flush as one LLM batch per player input — one call's
+// latency per turn instead of one per line
+var eventBuffer = new List<string>();
 while (true)
 {
     string? arrivalLook = null;
@@ -289,7 +289,15 @@ while (true)
 
     // sensory signals from other agents' actions (e.g. NPCs)
     foreach (var signal in engine.SignalBus.Drain(player.Id))
-        Console.WriteLine(RenderSignal(signal));
+    {
+        if (NarrateActions())
+            eventBuffer.Add(RenderSignal(signal));
+        else
+            Console.WriteLine(RenderSignal(signal));
+    }
+    // safety net: a real-time race can land a signal here after the
+    // action's own flush already ran
+    await FlushEventsAsync();
 
     var input = console.ReadLine("> ");
     if (input is null) // EOF (e.g. piped input exhausted) — exit cleanly
@@ -326,7 +334,7 @@ while (true)
             await PrintResultAsync(direct.Verb, directResult.Message);
             if (engine.TimeMode == TimeMode.TurnBased)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
-            Console.WriteLine(); // outcomes end with a blank line
+            await FinishActionAsync();
             continue;
         }
         if (planner is null)
@@ -366,11 +374,24 @@ while (true)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
         });
         var lastStep = steps[^1];
-        if (lastStep.Note is not null)
-            Console.WriteLine(lastStep.Note);
-        else if (lastStep.Result is { Outcome: ActionOutcome.Failure } && steps.Count < plan.Count)
-            Console.WriteLine("Plan stopped."); // only when later steps were skipped
-        Console.WriteLine(); // outcomes end with a blank line
+        var note = lastStep.Note
+            ?? (lastStep.Result is { Outcome: ActionOutcome.Failure } && steps.Count < plan.Count
+                ? "Plan stopped." // only when later steps were skipped
+                : null);
+        // narrated: the prose explains the failure, so the meta line
+        // follows it; raw: the meta line precedes the closing blank
+        if (NarrateActions())
+        {
+            await FinishActionAsync();
+            if (note is not null)
+                Console.WriteLine(note);
+        }
+        else
+        {
+            if (note is not null)
+                Console.WriteLine(note);
+            await FinishActionAsync();
+        }
         continue;
     }
     // numeric selection from the current action list (see /actions)
@@ -400,7 +421,7 @@ while (true)
     await PrintResultAsync(action.Verb, result.Message);
     if (engine.TimeMode == TimeMode.TurnBased)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
-    Console.WriteLine(); // outcomes end with a blank line
+    await FinishActionAsync();
 }
 
 // Word-wrap narrated prose to the console width, capped at 80 columns,
@@ -444,6 +465,50 @@ static string Wrap(string text)
 bool NarrateRooms() =>
     narrator is not null && output.Narrate is NarrateScope.Room or NarrateScope.All;
 
+// Action narration (/narrate actions|all) is on when the narrator exists
+// and the scope covers action outcomes and observations.
+bool NarrateActions() =>
+    narrator is not null && output.Narrate is NarrateScope.Actions or NarrateScope.All;
+
+// Narrate the buffered event lines as one prose block (falling back to
+// the raw lines on any failure) and close with a blank line. No-op on an
+// empty buffer.
+async Task FlushEventsAsync()
+{
+    if (eventBuffer.Count == 0)
+        return;
+    var batch = eventBuffer.ToList();
+    eventBuffer.Clear();
+    string? narrated = null;
+    try
+    {
+        narrated = await narrator!.NarrateEventsAsync(batch);
+    }
+    catch
+    {
+        // fall back to the raw lines
+    }
+    Console.WriteLine(narrated is not null ? Wrap(narrated) : string.Join('\n', batch));
+    Console.WriteLine(); // outcomes end with a blank line
+}
+
+// Close out a player action: raw mode just ends the outcome with a blank
+// line; narrated mode folds the NPC observations the action triggered
+// into the batch and flushes it. A move narrates the transition here too
+// ("You pass through the stone archway…") — the new room's description
+// prints after, at the top of the loop.
+async Task FinishActionAsync()
+{
+    if (!NarrateActions())
+    {
+        Console.WriteLine(); // outcomes end with a blank line
+        return;
+    }
+    foreach (var signal in engine.SignalBus.Drain(player.Id))
+        eventBuffer.Add(RenderSignal(signal));
+    await FlushEventsAsync();
+}
+
 // Narrate a raw look render, or null when narration is off or failed —
 // the caller then prints the raw text. Silent fallback by design: the raw
 // render is always a correct description.
@@ -478,29 +543,40 @@ async Task PrintRoomAsync(string roomId, string roomName, string raw)
 }
 
 // Print an action result. An explicit look is a room description, so it
-// routes through the narrator too (the cache makes repeat looks free).
+// routes through the room narrator (the cache makes repeat looks free) or
+// prints raw — it never joins the event batch, keeping the room/actions
+// scopes distinct.
 async Task PrintResultAsync(string verb, string message)
 {
-    if (verb == "look" && NarrateRooms())
+    if (verb == "look")
     {
-        string roomId;
-        string roomName;
-        lock (engine.SyncRoot)
+        if (NarrateRooms())
         {
-            var room = engine.World.RoomOf(player.Id);
-            roomId = room.Id;
-            roomName = room.Name;
+            string roomId;
+            string roomName;
+            lock (engine.SyncRoot)
+            {
+                var room = engine.World.RoomOf(player.Id);
+                roomId = room.Id;
+                roomName = room.Name;
+            }
+            var narrated = await TryNarrateAsync(roomId, message);
+            if (narrated is not null)
+            {
+                Console.WriteLine(roomName);
+                Console.WriteLine();
+                Console.WriteLine(Wrap(narrated));
+                return;
+            }
         }
-        var narrated = await TryNarrateAsync(roomId, message);
-        if (narrated is not null)
-        {
-            Console.WriteLine(roomName);
-            Console.WriteLine();
-            Console.WriteLine(Wrap(narrated));
-            return;
-        }
+        Console.WriteLine(message);
+        return;
     }
-    Console.WriteLine(message);
+    // action narration batches outcomes with the observations that follow
+    if (NarrateActions())
+        eventBuffer.Add(message);
+    else
+        Console.WriteLine(message);
 }
 
 static string RenderSignal(Signal signal) =>
@@ -575,7 +651,12 @@ void PrintResolvedOutcomes()
 {
     foreach (var (actorId, message) in engine.Reactions.DrainResolved())
         if (actorId == player.Id)
-            Console.WriteLine(message);
+        {
+            if (NarrateActions())
+                eventBuffer.Add(message);
+            else
+                Console.WriteLine(message);
+        }
 }
 
 void PromptReactionInline(PendingReaction pr)
@@ -625,6 +706,11 @@ async Task RealTimeLoop(CancellationToken ct)
     // fractional game seconds carried between ticks: each real second the
     // timescale accumulates, and whole game seconds tick off as they fill
     var pending = 0.0;
+    // narrated events accumulate over a short window before flushing as one
+    // batch (see the tick body)
+    var pendingEvents = new List<string>();
+    var pendingSince = DateTime.UtcNow;
+    var eventNarrationWindow = TimeSpan.FromSeconds(2);
     try
     {
         while (await timer.WaitForNextTickAsync(ct))
@@ -666,7 +752,7 @@ async Task RealTimeLoop(CancellationToken ct)
                         : null;
                 }
                 console.SetStatus(status);
-                if (arrival is null && signals.Count == 0 && resolved.Count == 0)
+                if (arrival is null && signals.Count == 0 && resolved.Count == 0 && pendingEvents.Count == 0)
                     continue;
                 var sb = new StringBuilder();
                 if (arrival is not null)
@@ -690,13 +776,59 @@ async Task RealTimeLoop(CancellationToken ct)
                         sb.AppendLine(arrival);
                     }
                 }
+                // the tick's events — observed signals plus the player's
+                // own telegraphed actions resolving (signals never reach
+                // the actor) — batch into one narration call
+                var eventLines = new List<string>();
                 foreach (var signal in signals)
-                    sb.AppendLine(RenderSignal(signal));
-                // the player's own telegraphed actions resolve here —
-                // signals never reach the actor, so print their outcomes
+                    eventLines.Add(RenderSignal(signal));
                 foreach (var (actorId, message) in resolved)
                     if (actorId == player.Id)
-                        sb.AppendLine(message);
+                        eventLines.Add(message);
+                if (NarrateActions())
+                {
+                    // batch over a short window: a burst of world activity
+                    // costs one LLM call instead of one per tick. The window
+                    // trades a little latency for far fewer calls (the LLM
+                    // server also serves NPC planning, serialized).
+                    if (eventLines.Count > 0)
+                    {
+                        if (pendingEvents.Count == 0)
+                            pendingSince = DateTime.UtcNow;
+                        pendingEvents.AddRange(eventLines);
+                    }
+                    if (pendingEvents.Count >= 6 ||
+                        (pendingEvents.Count > 0 && DateTime.UtcNow - pendingSince >= eventNarrationWindow))
+                    {
+                        var batch = pendingEvents.ToList();
+                        pendingEvents.Clear();
+                        // never block the world clock on the LLM: narrate in
+                        // the background and print above the prompt when ready
+                        _ = Task.Run(async () =>
+                        {
+                            string? narrated = null;
+                            try
+                            {
+                                narrated = await narrator!.NarrateEventsAsync(batch);
+                            }
+                            catch
+                            {
+                                // fall back to the raw lines
+                            }
+                            console.WriteAbove(narrated is not null
+                                ? Wrap(narrated)
+                                : string.Join('\n', batch));
+                        });
+                    }
+                }
+                else
+                {
+                    foreach (var line in pendingEvents) // narrate toggled off mid-batch
+                        sb.AppendLine(line);
+                    pendingEvents.Clear();
+                    foreach (var line in eventLines)
+                        sb.AppendLine(line);
+                }
                 // prints above the input line; the prompt and partial input
                 // are redrawn underneath
                 var text = sb.ToString().TrimEnd();

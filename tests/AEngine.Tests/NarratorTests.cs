@@ -68,4 +68,66 @@ public class NarratorTests
 
         Assert.Equal("raw study", await narrator.NarrateRoomAsync("study", "raw study"));
     }
+
+    [Fact]
+    public async Task Events_BatchIntoOneCall_WithVerbatimSpeechInstruction()
+    {
+        var client = new FakeLlmClient().Enqueue("You lift the dagger. \"Stop that!\" the duelist barks.");
+        var narrator = new Narrator(client);
+
+        var result = await narrator.NarrateEventsAsync(
+            ["You take the dagger.", "The arena duelist says: \"Stop that!\""]);
+
+        Assert.Equal("You lift the dagger. \"Stop that!\" the duelist barks.", result);
+        Assert.Equal(0, client.Remaining); // one call for the whole batch
+        var user = client.LastMessages!.Last(m => m.Role == "user").Content;
+        Assert.Contains("You take the dagger.", user);
+        Assert.Contains("The arena duelist says:", user);
+        var system = client.LastMessages!.First(m => m.Role == "system").Content;
+        Assert.Contains("verbatim", system);
+    }
+
+    [Fact]
+    public async Task Events_EmptyBatch_MakesNoCall()
+    {
+        var narrator = new Narrator(new FakeLlmClient()); // a call would throw
+
+        Assert.Null(await narrator.NarrateEventsAsync([]));
+    }
+
+    [Fact]
+    public async Task Events_EmptyReply_ReturnsNull()
+    {
+        var client = new FakeLlmClient().Enqueue("  ");
+        var narrator = new Narrator(client);
+
+        Assert.Null(await narrator.NarrateEventsAsync(["You wait."]));
+    }
+
+    [Fact]
+    public async Task PlayerName_RendersAsYou_InBothPrompts()
+    {
+        var client = new FakeLlmClient().Enqueue("room prose").Enqueue("event prose");
+        var narrator = new Narrator(client, "Max");
+
+        await narrator.NarrateRoomAsync("bedroom", "Bedroom\nMax's bed sits here.");
+        var roomSystem = client.LastMessages!.First(m => m.Role == "system").Content;
+        Assert.Contains("Max", roomSystem);
+        Assert.Contains("you", roomSystem);
+
+        await narrator.NarrateEventsAsync(["Max lies down on Max's bed."]);
+        var eventsSystem = client.LastMessages!.First(m => m.Role == "system").Content;
+        Assert.Contains("Max", eventsSystem);
+    }
+
+    [Fact]
+    public async Task NoPlayerName_PromptsStayUnchanged()
+    {
+        var client = new FakeLlmClient().Enqueue("prose");
+        var narrator = new Narrator(client);
+
+        await narrator.NarrateEventsAsync(["You wait."]);
+        var system = client.LastMessages!.First(m => m.Role == "system").Content;
+        Assert.DoesNotContain("player's character is named", system);
+    }
 }

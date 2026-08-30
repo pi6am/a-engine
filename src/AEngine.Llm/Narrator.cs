@@ -1,12 +1,16 @@
 namespace AEngine.Llm;
 
 /// <summary>
-/// LLM room narration (/narrate room|all): rewrites the raw "look" render
-/// into prose. Per-room cache: an unchanged raw description replays the
-/// cached narration without an LLM call; a changed one is narrated with
-/// the previous raw text and narration as history, so the prose stays
-/// consistent and calls out what changed. Purely presentational — the
-/// engine and agent memory always see the raw render.
+/// LLM narration (/narrate): rewrites raw engine text into prose. Room
+/// narration (room|all) rewrites the raw "look" render with a per-room
+/// cache: an unchanged raw description replays the cached narration
+/// without an LLM call; a changed one is narrated with the previous raw
+/// text and narration as history, so the prose stays consistent and calls
+/// out what changed. Event narration (actions|all) rewrites a batch of
+/// raw action outcomes and observations (one batch per player input in
+/// turn-based mode, one per world-clock tick in real-time) — no cache,
+/// events don't repeat. Purely presentational — the engine and agent
+/// memory always see the raw render.
 /// </summary>
 public sealed class Narrator
 {
@@ -25,12 +29,48 @@ public sealed class Narrator
           quoting of the raw description.
         """;
 
+    private const string EventsSystemPrompt = """
+        You narrate a text adventure. You receive raw event lines the game
+        engine produced — what the player's character did and what they
+        observed happening around them — and rewrite them as vivid but
+        concise prose for the player, second person ("you"). Rules:
+        - Keep every fact accurate: who did what, to whom, with what, and
+          how it turned out, including any numbers. Never invent events,
+          objects, or people, and never drop an event.
+        - Speech is verbatim: when someone says something, quote their
+          exact words unchanged — never paraphrase, summarize, or
+          translate them.
+        - Merge the lines into flowing prose — one short paragraph, two
+          when the events are many — in the order they happened. Do not
+          restate them as a list.
+        - Reply with the narration only: no commentary, no quoting of the
+          raw lines.
+        """;
+
     private sealed record RoomNarration(string Raw, string Narration);
 
     private readonly ILlmClient _client;
+    private readonly string _roomSystemPrompt;
+    private readonly string _eventsSystemPrompt;
     private readonly Dictionary<string, RoomNarration> _rooms = new(StringComparer.Ordinal);
 
-    public Narrator(ILlmClient client) => _client = client;
+    /// <param name="playerName">The player character's name. Raw engine text
+    /// names them ("Max's bed"); the narration must render them as "you".</param>
+    public Narrator(ILlmClient client, string? playerName = null)
+    {
+        _client = client;
+        // the same second-person rule for both prompts: the player character
+        // is always "you"/"your", never named — their possessions included
+        var playerRule = string.IsNullOrWhiteSpace(playerName)
+            ? ""
+            : $"""
+               - The player's character is named "{playerName}". Always refer
+                 to them as "you"/"your", never by name — their possessions
+                 included ("your bed", not "{playerName}'s bed").
+               """;
+        _roomSystemPrompt = SystemPrompt + playerRule;
+        _eventsSystemPrompt = EventsSystemPrompt + playerRule;
+    }
 
     /// <summary>Build the narration request messages (exposed for tests).</summary>
     public IReadOnlyList<LlmMessage> BuildMessages(
@@ -61,7 +101,7 @@ public sealed class Narrator
                consistent with your earlier narration, and naturally call
                out what has changed.
                """;
-        return [LlmMessage.System(SystemPrompt), LlmMessage.User(user)];
+        return [LlmMessage.System(_roomSystemPrompt), LlmMessage.User(user)];
     }
 
     /// <summary>
@@ -82,5 +122,26 @@ public sealed class Narrator
             return raw;
         _rooms[roomId] = new RoomNarration(raw, reply);
         return reply;
+    }
+
+    /// <summary>Build the event-narration request messages (exposed for tests).</summary>
+    public IReadOnlyList<LlmMessage> BuildEventMessages(IReadOnlyList<string> rawLines) =>
+        [LlmMessage.System(_eventsSystemPrompt),
+         LlmMessage.User($"The events read:\n\n{string.Join('\n', rawLines)}\n\nNarrate them.")];
+
+    /// <summary>
+    /// Narrate a batch of raw event lines (action outcomes and
+    /// observations) as one prose block — one LLM call per batch, so the
+    /// caller controls the batching window. Returns null on an empty batch
+    /// or an empty reply (callers fall back to the raw lines); throws on
+    /// transport errors.
+    /// </summary>
+    public async Task<string?> NarrateEventsAsync(IReadOnlyList<string> rawLines, CancellationToken ct = default)
+    {
+        if (rawLines.Count == 0)
+            return null;
+        var reply = (await _client.CompleteAsync(BuildEventMessages(rawLines), ct)
+            .ConfigureAwait(false)).Trim();
+        return reply.Length == 0 ? null : reply;
     }
 }

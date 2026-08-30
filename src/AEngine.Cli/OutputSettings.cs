@@ -9,7 +9,7 @@ public sealed class OutputSettings
     /// <summary>Whether LLM action plans print before execution (/showplan on|off).</summary>
     public bool ShowPlan { get; set; }
 
-    /// <summary>LLM narration scope (/narrate). Room|All narrate arrival descriptions; action narration is not implemented yet.</summary>
+    /// <summary>LLM narration scope (/narrate). Room|All narrate room descriptions; Actions|All narrate action outcomes and observations.</summary>
     public NarrateScope Narrate { get; set; } = NarrateScope.Off;
 }
 

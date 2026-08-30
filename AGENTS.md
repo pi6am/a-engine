@@ -106,8 +106,8 @@ working in that area, and update them when the behavior changes:
 
 ## Future goals (NOT yet implemented — don't assume these exist)
 
-- **LLM integration** — the harness is live (planning, NPC policy, room
-  narration; see `docs/llm.md`). Still planned: action narration, guided world
+- **LLM integration** — the harness is live (planning, NPC policy, room and
+  event narration; see `docs/llm.md`). Still planned: guided world
   expansion for *open* scenarios, speech variants (Shout/Whisper), provider
   config files, streaming, retries/backoff.
 - **Autonomous agents** — NPCs act through policies; planned: perception-driven
