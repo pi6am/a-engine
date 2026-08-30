@@ -40,7 +40,7 @@
       "id": "body",
       "name": "Body",
       "fields": [
-        { "name": "regions", "type": "list", "default": ["head", "top", "bottom", "feet", "hand", "held"] }
+        { "name": "regions", "type": "list", "default": ["head", "top", "bottom", "feet", "hand", "held", "held_off_hand"] }
       ],
       "affordances": []
     },
@@ -69,7 +69,15 @@
           ],
           "failSignals": [
             { "sense": "visual", "priority": 10, "text": "{agent} grabs at the {target}!" }
-          ]
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} reaches for the {target}!",
+            "options": [
+              { "id": "resist", "label": "Keep it on", "stat": "agility", "default": true, "text": "You keep hold of your clothing.", "report": "{agent} tries to keep their clothing on." },
+              { "id": "accept", "label": "Let them take it", "noResist": true, "text": "You let them take it.", "report": "{agent} lets you take it." }
+            ]
+          }
         }
       ]
     },
@@ -123,7 +131,17 @@
           ],
           "failSignals": [
             { "sense": "visual", "priority": 10, "text": "{agent} swings at the {target} and misses." }
-          ]
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} swings at the {target}!",
+            "options": [
+              { "id": "dodge", "label": "Dodge", "stat": "agility", "default": true, "text": "You dodge the blow.", "report": "{agent} attempts to dodge." },
+              { "id": "block", "label": "Block", "stat": "strength", "bonus": 2, "requiresWornModule": "shield", "text": "You block with your shield.", "report": "{agent} attempts to block with their shield." },
+              { "id": "parry", "label": "Parry", "stat": "agility", "skill": "swords", "requiresWornModule": "weapon", "text": "You parry the blow.", "report": "{agent} attempts to parry." },
+              { "id": "accept", "label": "Take the hit", "noResist": true, "text": "You take the hit.", "report": "{agent} takes the hit." }
+            ]
+          }
         }
       ]
     },
@@ -316,7 +334,15 @@
           ],
           "failSignals": [
             { "sense": "visual", "priority": 10, "text": "{agent} grabs at the {target}, who slips free." }
-          ]
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} lunges at the {target}!",
+            "options": [
+              { "id": "resist", "label": "Resist", "stat": "strength", "skill": "brawling", "default": true, "text": "You resist the grapple.", "report": "{agent} struggles to fend you off." },
+              { "id": "accept", "label": "Let them grab you", "noResist": true, "text": "You let them grab you.", "report": "{agent} lets you grab them." }
+            ]
+          }
         },
         {
           "verb": "release",
@@ -361,6 +387,39 @@
           ]
         }
       ]
+    },
+    {
+      "id": "huggable",
+      "name": "Huggable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "hug",
+          "handler": "basic",
+          "duration": 2,
+          "check": { "opposed": { "stat": "agility" } },
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} hugs the {target}." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 5, "text": "{target} pushes {agent} away." }
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} moves to hug the {target}!",
+            "options": [
+              { "id": "push_away", "label": "Push them away", "stat": "agility", "text": "You push them away.", "report": "{agent} tries to push you away." },
+              { "id": "accept", "label": "Hug them back", "noResist": true, "default": true, "text": "You hug them back.", "report": "{agent} hugs you back." }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "shield",
+      "name": "Shield",
+      "fields": [],
+      "affordances": []
     },
     {
       "id": "lockable",
