@@ -31,7 +31,10 @@ src/AEngine.Cli/          # text-first console REPL (slash commands, optional LL
                           # as they happen; ConsolePrompt does per-key line
                           # editing — cursor movement, mid-line insert, up/down history,
                           # slash-command completion popup with tab — and redraws the
-                          # input line around background output)
+                          # input line around background output). Output toggles live in
+                          # OutputSettings, driven by slash commands: /showplan on|off
+                          # (log the extracted LLM plan, default off), /narrate
+                          # all|room|actions|off (placeholder for LLM narration)
 src/AEngine.DebugServer/  # debug REST API (System.Net.HttpListener, loopback only)
 src/AEngine.Llm/          # LLM harness: OpenAI-compatible client, planner, parser, executor, LlmPolicy
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
@@ -423,7 +426,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   (menu numbers still work; input exactly matching an action label, e.g.
   "wait", runs directly without an LLM call). Live verification against a real server (e.g.
   KoboldCPP) is manual. Still planned: narration (LLM translating outcomes
-  into prose), guided world expansion for *open* scenarios, speech variants
+  into prose — the CLI already has the /narrate all|room|actions|off
+  setting, unwired), guided world expansion for *open* scenarios, speech variants
   (Shout/Whisper — need per-spec propagation overrides; say already carries
   free-text speech), provider config files, streaming, retries/backoff.
 - **Autonomous agents** — partially implemented: NPCs with

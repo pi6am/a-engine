@@ -21,8 +21,8 @@ using AEngine.Llm;
 // label ("wait", "go north", ...) runs directly without an LLM call.
 // With an LLM endpoint configured (or AENGINE_LLM_ENDPOINT/MODEL/API_KEY
 // set), other non-numeric free text is sent to the LLM as a planning
-// request: the extracted plan is printed and executed stepwise. Action
-// numbers keep working either way. In real-time mode (--real-time or
+// request: the extracted plan is printed (/showplan, default off) and
+// executed stepwise. Action numbers keep working either way. In real-time mode (--real-time or
 // /realtime) a per-second timer advances the world on its own — NPCs act
 // without waiting for the player, and signals the player observes print
 // as they happen; /turnbased switches back.
@@ -144,7 +144,36 @@ CancellationTokenSource? realTimeCts = null;
 // a 2s action take 4s of real time, 2.0 takes 1s. Read/written across
 // threads (the timer loop), so use Interlocked.
 var timescale = 1.0;
+var output = new OutputSettings();
 var slash = new SlashCommandRegistry();
+slash.Register("showplan", [], "Control whether the plan is logged (/showplan on|off)", args =>
+{
+    if (args.Length == 1 && args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+        output.ShowPlan = true;
+    else if (args.Length == 1 && args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+        output.ShowPlan = false;
+    else
+    {
+        Console.WriteLine($"Plan logging is {(output.ShowPlan ? "on" : "off")}. Usage: /showplan on|off");
+        return false;
+    }
+    Console.WriteLine($"Plan logging {(output.ShowPlan ? "on" : "off")}.");
+    return false;
+});
+slash.Register("narrate", [], "Expand narration via LLM (/narrate all|room|actions|off)", args =>
+{
+    if (args.Length == 1 && Enum.TryParse<NarrateScope>(args[0], ignoreCase: true, out var scope))
+    {
+        output.Narrate = scope;
+        Console.WriteLine($"Narration: {args[0].ToLowerInvariant()}." +
+            (scope != NarrateScope.Off && planner is null
+                ? " (No LLM endpoint configured — no effect.)"
+                : scope != NarrateScope.Off ? " (Narration is not implemented yet.)" : ""));
+        return false;
+    }
+    Console.WriteLine($"Narration is {output.Narrate.ToString().ToLowerInvariant()}. Usage: /narrate all|room|actions|off");
+    return false;
+});
 slash.Register("actions", [], "List the actions currently available to you", _ =>
 {
     var list = engine.ActionResolver.Resolve(player);
@@ -317,9 +346,12 @@ while (true)
             Console.WriteLine("The LLM returned no usable actions.");
             continue;
         }
-        Console.WriteLine("Plan:");
-        foreach (var line in plan)
-            Console.WriteLine($"  - {line}");
+        if (output.ShowPlan)
+        {
+            Console.WriteLine("Plan:");
+            foreach (var line in plan)
+                Console.WriteLine($"  - {line}");
+        }
         var executor = new PlanExecutor(engine, player);
         var steps = executor.Execute(plan, step =>
         {
