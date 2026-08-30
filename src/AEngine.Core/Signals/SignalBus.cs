@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using AEngine.Core.Modules;
 using AEngine.Core.World;
 
@@ -266,6 +267,22 @@ public sealed class SignalBus
         if (extra is not null)
             foreach (var (placeholder, value) in extra)
                 text = text.Replace(placeholder, value, StringComparison.Ordinal);
+        return CollapseDoubledArticles(text);
+    }
+
+    /// <summary>
+    /// Templates habitually write "the {target}" while descriptive names
+    /// already carry their article ("the arena duelist") — collapse the
+    /// resulting "the the" / "a an" doublings.
+    /// </summary>
+    private static readonly Regex DoubledArticles =
+        new(@"\b(?:the|a|an) (the|a|an) ", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static string CollapseDoubledArticles(string text)
+    {
+        string collapsed;
+        while ((collapsed = DoubledArticles.Replace(text, "$1 ")) != text)
+            text = collapsed;
         return text;
     }
 }

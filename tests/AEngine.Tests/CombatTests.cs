@@ -238,7 +238,7 @@ public class CombatTests
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.True(result.Success);
         Assert.EndsWith("Bob collapses, incapacitated!", result.Message);
-        Assert.True(Health.IsIncapacitated(engine.ModuleRegistry, engine.World.GetObject("bob")));
+        Assert.True(Health.IsIncapacitated(engine.World, engine.ModuleRegistry, engine.World.GetObject("bob")));
     }
 
     [Fact]

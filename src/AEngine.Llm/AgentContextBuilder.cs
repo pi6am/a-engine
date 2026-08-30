@@ -55,10 +55,13 @@ public sealed class AgentContextBuilder
                 sb.AppendLine("Exits: " + string.Join(", ", parts));
             }
 
-            var items = _engine.World.ChildrenOf(agent.Id).ToList();
+            var items = _engine.World.ChildrenOf(agent.Id)
+                .Where(i => !i.HasModule("bodypart")).ToList();
             sb.AppendLine(items.Count == 0
                 ? "You are carrying nothing."
                 : "You are carrying: " + string.Join(", ", items.Select(i => i.Name)));
+            foreach (var line in Condition.SelfLines(_engine.World, _engine.ModuleRegistry, agent))
+                sb.AppendLine(line);
 
             if (npc)
             {

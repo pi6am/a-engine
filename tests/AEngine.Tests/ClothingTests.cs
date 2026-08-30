@@ -97,10 +97,10 @@ public class ClothingTests
 
         Assert.True(engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wear", "shirt")).Success);
 
-        // a second top garment conflicts, naming the region
+        // a second top garment conflicts, naming the garment in the way
         var conflict = engine.TurnManager.Execute(alice, "wear", "tee");
         Assert.False(conflict.Success);
-        Assert.Contains("on your top", conflict.Message);
+        Assert.Equal("You're already wearing the shirt there.", conflict.Message);
 
         // the coat uses a distinct region and stacks over the shirt
         Assert.True(engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wear", "coat")).Success);

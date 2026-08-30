@@ -68,7 +68,7 @@ public sealed class TurnManager
                 action.TargetId is not null && _engine.World.HasObject(action.TargetId) &&
                 _engine.World.GetObject(action.TargetId) is { } defender &&
                 defender.HasModule("agent") && defender.Id != agent.Id &&
-                !Actions.Health.IsIncapacitated(_engine.ModuleRegistry, defender))
+                !Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, defender))
             {
                 var options = reaction.Options.Where(o =>
                     o.RequiresWornModule is null ||
@@ -273,7 +273,7 @@ public sealed class TurnManager
                     continue;
                 }
                 var agent = _engine.World.GetObject(agentId);
-                if (Actions.Health.IsIncapacitated(_engine.ModuleRegistry, agent))
+                if (Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, agent))
                     continue; // unconscious agents get no turn
                 var policyId = _engine.ModuleRegistry.ResolveString(agent, "agent", "policy")!;
                 if (!_engine.PolicyRegistry.Has(policyId))

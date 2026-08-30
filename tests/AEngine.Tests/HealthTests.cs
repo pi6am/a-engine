@@ -41,12 +41,12 @@ public class HealthTests
 
         Assert.Null(Damage.Apply(engine.World, engine.ModuleRegistry, bob, 4));
         Assert.Equal(6, engine.ModuleRegistry.ResolveInt(bob, "health", "hp"));
-        Assert.False(Health.IsIncapacitated(engine.ModuleRegistry, bob));
+        Assert.False(Health.IsIncapacitated(engine.World, engine.ModuleRegistry, bob));
 
         var fragment = Damage.Apply(engine.World, engine.ModuleRegistry, bob, 50);
         Assert.Equal("Bob collapses, incapacitated!", fragment);
         Assert.Equal(0, engine.ModuleRegistry.ResolveInt(bob, "health", "hp"));
-        Assert.True(Health.IsIncapacitated(engine.ModuleRegistry, bob));
+        Assert.True(Health.IsIncapacitated(engine.World, engine.ModuleRegistry, bob));
         // a standing agent crumples
         Assert.Equal(Postures.Prone, Postures.Of(engine.World, engine.ModuleRegistry, bob));
 

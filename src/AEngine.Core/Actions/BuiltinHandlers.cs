@@ -45,6 +45,9 @@ public static class BuiltinHandlers
         return string.IsNullOrEmpty(value) ? null : value;
     }
 
+    private static string Capitalize(string s) =>
+        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+
     // flavor verbs that don't change the world ("Touch the red flower") —
     // the message interpolates the affordance's verb
     private sealed class BasicHandler : IActionHandler
@@ -290,7 +293,11 @@ public static class BuiltinHandlers
             var worn = new List<string>();
             var carried = new List<string>();
             foreach (var item in ctx.World.ChildrenOf(ctx.Agent.Id))
+            {
+                if (item.HasModule("bodypart"))
+                    continue; // anatomy, not belongings
                 (Clothing.IsWorn(ctx.Modules, item) ? worn : carried).Add(item.Name);
+            }
 
             var parts = new List<string>();
             if (worn.Count > 0)
@@ -298,6 +305,7 @@ public static class BuiltinHandlers
             parts.Add(carried.Count == 0
                 ? "You are carrying nothing."
                 : "You are carrying: " + string.Join(", ", carried.Select(Perception.WithArticle)));
+            parts.AddRange(Condition.SelfLines(ctx.World, ctx.Modules, ctx.Agent));
             return ActionResult.Ok(string.Join("\n", parts));
         }
     }
@@ -330,7 +338,12 @@ public static class BuiltinHandlers
     // spec) because the attacker's bonus depends on the wielded weapon.
     // A wielded weapon is a worn item with the weapon module; without one
     // the attacker's combatant module supplies unarmed defaults. Armor is
-    // the sum of armor.protection over the defender's worn garments.
+    // the sum of armor.protection over the defender's worn garments —
+    // region-scoped when the defender has body parts (only garments
+    // covering the hit part's region soak). A part-ful defender takes the
+    // blow on one part: aimed via the optional free-text argument (an
+    // unknown part fails; rules.aimedPenalty applies) or a uniform random
+    // part. Damage and blow wording follow the rules crunch level.
     private sealed class AttackHandler : IActionHandler
     {
         public string Id => "attack";
@@ -370,7 +383,28 @@ public static class BuiltinHandlers
                 ? Checks.EvaluateOpposed(ctx.World, ctx.Modules, random, ctx.Agent, spec, target,
                     ctx.Reaction)
                 : 1;
-            if (margin < 0)
+
+            // body parts: the blow lands on one part — aimed (free-text
+            // argument, with the data-driven penalty) or random
+            var parts = BodyParts.Of(ctx.World, target);
+            WorldObject? part = null;
+            if (parts.Count > 0)
+            {
+                if (ctx.Args.TryGetValue("text", out var aimed) && aimed.Length > 0)
+                {
+                    part = BodyParts.FindByName(ctx.World, target, aimed, random);
+                    if (part is null)
+                        return ActionResult.Fail($"{Capitalize(targetName)} has no such part.");
+                    margin -= BodyParts.AimedPenalty(ctx.Modules, part);
+                }
+                else
+                {
+                    part = parts[random.Next(parts.Count)];
+                }
+                if (margin < 0)
+                    return ActionResult.Fail($"You swing at {targetName}'s {part.Name} and miss.");
+            }
+            else if (margin < 0)
                 return ActionResult.Fail($"You swing at {targetName} and miss.");
 
             var damageBonus = weapon is not null
@@ -384,14 +418,32 @@ public static class BuiltinHandlers
                 : combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageSides", 2) : 2;
             var armor = Clothing.WornItems(ctx.World, ctx.Modules, target)
                 .Where(w => w.HasModule("armor"))
+                .Where(w => part is null || Clothing.GarmentRegions(ctx.Modules, w)
+                    .Contains(BodyParts.Region(ctx.Modules, part)))
                 .Sum(w => ctx.Modules.ResolveInt(w, "armor", "protection"));
 
             var damage = Math.Max(
                 damageBonus + Checks.RollDice(random, damageDice, damageSides) - armor, 0);
-            var message = $"You hit {targetName}" +
-                          (weapon is not null ? $" with the {weapon.Name}" : "") +
-                          $" for {damage} damage.";
-            if (Damage.Apply(ctx.World, ctx.Modules, target, damage) is { } fragment)
+            var weaponSuffix = weapon is not null ? $" with the {weapon.Name}" : "";
+            string message;
+            string? fragment;
+            if (part is not null)
+            {
+                fragment = Damage.ApplyToPart(ctx.World, ctx.Modules, part, damage);
+                message = Condition.Descriptive(ctx.World, ctx.Modules)
+                    ? $"You land {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, part, damage))} " +
+                      $"blow on {targetName}'s {part.Name}{weaponSuffix}."
+                    : $"You hit {targetName} in the {part.Name}{weaponSuffix} for {damage} damage.";
+            }
+            else
+            {
+                fragment = Damage.Apply(ctx.World, ctx.Modules, target, damage);
+                message = Condition.Descriptive(ctx.World, ctx.Modules) && target.HasModule("health")
+                    ? $"You land {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, target, damage))} " +
+                      $"blow on {targetName}{weaponSuffix}."
+                    : $"You hit {targetName}{weaponSuffix} for {damage} damage.";
+            }
+            if (fragment is not null)
                 message += " " + fragment;
             return ActionResult.Ok(message);
         }
@@ -415,8 +467,10 @@ public static class BuiltinHandlers
 
             if (target.HasModule("agent"))
             {
-                if (Health.IsIncapacitated(ctx.Modules, target))
+                if (Health.IsIncapacitated(ctx.World, ctx.Modules, target))
                     sb.AppendLine($"{target.Name} is incapacitated.");
+                foreach (var line in Condition.ExamineLines(ctx.World, ctx.Modules, target))
+                    sb.AppendLine(line);
                 var posture = Postures.Of(ctx.World, ctx.Modules, target);
                 if (posture == Postures.Prone)
                     sb.AppendLine($"{target.Name} is prone on the ground.");
@@ -428,7 +482,7 @@ public static class BuiltinHandlers
                 if (worn.Count > 0)
                     sb.AppendLine($"Wearing: {string.Join(", ", worn.Select(w => Perception.WithArticle(w.Name)))}.");
                 var carried = ctx.World.ChildrenOf(target.Id)
-                    .Where(c => !Clothing.IsWorn(ctx.Modules, c)).ToList();
+                    .Where(c => !c.HasModule("bodypart") && !Clothing.IsWorn(ctx.Modules, c)).ToList();
                 if (carried.Count > 0)
                     sb.AppendLine($"Carrying: {string.Join(", ", carried.Select(c => Perception.WithArticle(c.Name)))}.");
             }
@@ -496,6 +550,12 @@ public static class BuiltinHandlers
                 return ActionResult.Noop("You're already standing.");
             if (posture == Postures.Carried)
                 return ActionResult.Fail("You can't get up while being carried.");
+            // a crippled no_stand part (a ruined leg) can't bear weight
+            var crippled = BodyParts.Of(ctx.World, ctx.Agent).FirstOrDefault(p =>
+                BodyParts.CrippleEffects(ctx.Modules, p).Contains("no_stand") &&
+                BodyParts.IsCrippled(ctx.Modules, p));
+            if (crippled is not null)
+                return ActionResult.Fail($"You can't stand — your {crippled.Name} is crippled.");
             if (posture == Postures.Prone)
             {
                 // knocked down in the room: no furniture to climb off
@@ -540,7 +600,7 @@ public static class BuiltinHandlers
                 var overlap = Clothing.GarmentRegions(ctx.Modules, worn).Intersect(regions).ToList();
                 if (overlap.Count > 0)
                     return ActionResult.Fail(
-                        $"You're already wearing the {worn.Name} on your {overlap[0]}.");
+                        $"You're already wearing the {worn.Name} there.");
             }
 
             ctx.World.SetFieldOverride(
@@ -716,11 +776,29 @@ public static class BuiltinHandlers
                              random,
                              combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageDice", 1) : 1,
                              combatant ? ctx.Modules.ResolveInt(ctx.Agent, "combatant", "damageSides", 2) : 2);
-            var message =
-                $"You choke {Perception.WithDefiniteArticle(target.Name)} for {damage} damage.";
+            // a no-roll unarmed attack, armor ignored; against a part-ful
+            // victim the choke crushes the chokeable module's `part`
+            // (fallback: a random part)
+            var targetName = Perception.WithDefiniteArticle(target.Name);
+            var parts = BodyParts.Of(ctx.World, target);
+            if (parts.Count > 0)
+            {
+                var named = ctx.Modules.ResolveString(target, "chokeable", "part");
+                var part = named is { Length: > 0 }
+                    ? BodyParts.FindByName(ctx.World, target, named, random) ?? parts[random.Next(parts.Count)]
+                    : parts[random.Next(parts.Count)];
+                var message = Condition.Descriptive(ctx.World, ctx.Modules)
+                    ? $"You choke {targetName}: {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, part, damage))} " +
+                      $"blow to their {part.Name}."
+                    : $"You choke {targetName} for {damage} damage.";
+                if (Damage.ApplyToPart(ctx.World, ctx.Modules, part, damage) is { } partFragment)
+                    message += " " + partFragment;
+                return ActionResult.Ok(message);
+            }
+            var monolithic = $"You choke {targetName} for {damage} damage.";
             if (Damage.Apply(ctx.World, ctx.Modules, target, damage) is { } fragment)
-                message += " " + fragment;
-            return ActionResult.Ok(message);
+                monolithic += " " + fragment;
+            return ActionResult.Ok(monolithic);
         }
     }
 }

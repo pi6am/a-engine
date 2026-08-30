@@ -70,12 +70,17 @@ public static class Perception
                 continue;
             var entry = NameFor(observer, child) + Annotate(world, modules, child);
             // agent conditions gather into one parenthetical list:
-            // "the arena duelist (prone, incapacitated)"
+            // "the arena duelist (prone, incapacitated)"; descriptive
+            // crunch adds the overall condition word ("wounded")
             var conditions = new List<string>();
+            if (Condition.Descriptive(world, modules) && child.HasModule("agent") &&
+                !Health.IsIncapacitated(world, modules, child) &&
+                Condition.Overall(world, modules, child) is { } condition)
+                conditions.Add(condition.Label);
             if (child.HasModule("agent") &&
                 Postures.Of(world, modules, child) == Postures.Prone)
                 conditions.Add("prone");
-            if (Health.IsIncapacitated(modules, child))
+            if (Health.IsIncapacitated(world, modules, child))
                 conditions.Add("incapacitated");
             if (conditions.Count > 0)
                 entry += $" ({string.Join(", ", conditions)})";

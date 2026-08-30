@@ -20,7 +20,13 @@ public static class PlanParser
         IReadOnlyList<string>? knownVerbs = null,
         IReadOnlyList<string>? knownLabels = null)
     {
-        var verbs = knownVerbs ?? DefaultVerbs;
+        // the defaults cover prerequisite lines for actions not currently
+        // listed ("Take the brass key" while the drawer is closed); the
+        // caller's verbs (the scenario's current affordances) union in so
+        // RPG verbs like attack/shove/grapple survive filtering
+        var verbs = knownVerbs is null
+            ? DefaultVerbs
+            : DefaultVerbs.Union(knownVerbs, StringComparer.OrdinalIgnoreCase).ToArray();
         var lines = new List<string>();
         foreach (var raw in response.Split('\n'))
         {

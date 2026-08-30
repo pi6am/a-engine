@@ -22,13 +22,19 @@ public static class Checks
         return total;
     }
 
+    /// <summary>The object carrying the scenario's rules module: the world root, or a top-level object.</summary>
+    public static WorldObject? RulesHost(World.World world)
+    {
+        var root = world.GetObject(World.World.RootId);
+        return root.HasModule("rules")
+            ? root
+            : world.ChildrenOf(World.World.RootId).FirstOrDefault(c => c.HasModule("rules"));
+    }
+
     /// <summary>The scenario's dice formula: n d m from the rules module.</summary>
     public static (int Count, int Sides) DiceFormula(World.World world, ModuleRegistry modules)
     {
-        var root = world.GetObject(World.World.RootId);
-        var rulesHost = root.HasModule("rules")
-            ? root
-            : world.ChildrenOf(World.World.RootId).FirstOrDefault(c => c.HasModule("rules"));
+        var rulesHost = RulesHost(world);
         return rulesHost is null
             ? (1, 20)
             : (modules.ResolveInt(rulesHost, "rules", "diceCount", 1),
@@ -80,7 +86,7 @@ public static class Checks
             { NoResist: true } => 0,
             not null => RollDice(random, count, sides) +
                         Bonus(modules, defender, reaction.Stat, reaction.Skill) + reaction.Bonus,
-            _ when Health.IsIncapacitated(modules, defender) => 0,
+            _ when Health.IsIncapacitated(world, modules, defender) => 0,
             _ => RollDice(random, count, sides) +
                  Bonus(modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill),
         };

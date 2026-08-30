@@ -57,16 +57,21 @@ public class PlanParserTests
     }
 
     [Fact]
-    public void LabelMatch_IsCaseInsensitive_AndAllowsTrailingWords()
+    public void ParameterizedLabel_WithFilledInArgument_IsKeptViaScenarioVerbs()
     {
-        var labels = new[] { "Check inventory" };
+        // "Attack the arena duelist [in the {part}]" — an aimed attack line
+        // neither equals nor extends the parameterized label, so it only
+        // survives when the scenario's verbs are known
+        var labels = new[] { "Attack the arena duelist [in the {part}]", "Wait" };
+        var verbs = new[] { "attack", "wait" };
         Assert.Equal(
-            ["check inventory"],
-            PlanParser.Parse("check inventory", knownLabels: labels));
+            ["Attack the arena duelist in the head"],
+            PlanParser.Parse(
+                "Attack the arena duelist in the head", knownVerbs: verbs, knownLabels: labels));
+        // the verbatim label (raw placeholder) is kept too — the executor
+        // treats {part} as unaimed
         Assert.Equal(
-            ["Check inventory first"],
-            PlanParser.Parse("Check inventory first", knownLabels: labels));
-        // non-listed prose is still dropped
-        Assert.Empty(PlanParser.Parse("Admire the scenery", knownLabels: labels));
+            labels[..1],
+            PlanParser.Parse(labels[0], knownVerbs: verbs, knownLabels: labels));
     }
 }

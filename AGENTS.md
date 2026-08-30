@@ -117,7 +117,9 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   looks up the affordance's signal specs and each observing agent (any object
   with the `agent` module except the actor) receives the single highest-priority
   receivable signal (ties: first listed); texts format `{agent}`/`{target}`/
-  `{arg}` placeholders. Propagation: same room → all senses; one portal away →
+  `{arg}` placeholders, collapsing doubled articles when a template's own
+  "the" meets a name that already carries one ("opens the the strongbox" →
+  "opens the strongbox"). Propagation: same room → all senses; one portal away →
   a sense passes only if the portal **side in the origin room** transmits it
   (`portal` fields `transmitVisual`/`transmitAudio`: `always | whenOpen | never`,
   defaults `whenOpen`/`always`; `whenOpen` reads the shared doorstate via that
@@ -219,7 +221,8 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   defender's guard is their combatant `defenseStat`/`defenseSkill`
   (default agility). Damage is N + n d m (weapon `damageBonus`/
   `damageDice`/`damageSides`, e.g. greatsword 2d6) minus the defender's
-  worn `armor.protection` total, floored at 0; non-agent targets (training
+  worn `armor.protection` total (region-scoped once the defender has body
+  parts — stage 6), floored at 0; non-agent targets (training
   dummies) are auto-hit. Handlers roll on `ActionContext.Random` (the
   engine's seedable source). `failSignals` moved to the **affordance**
   level: any Failure result (gate or handler) emits them — a missed attack
@@ -235,15 +238,37 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   grappler gets `release` (set the victim down, standing) and `choke`
   (on `chokeable`) — a no-roll unarmed attack, combatant damage, armor
   ignored; victims choked unconscious stay in the grappler's grasp.
-  **Planned stages:** 6 — granular body parts and targeted damage (per-part pools,
-  region-scoped armor). Stage 6 should also make damage/health reporting
-  crunch-level configurable via scenario data (e.g. a `rules` module
-  field): in "numeric" mode attacks report damage numbers and
-  look/examine/inventory show health as an hp fraction; in "descriptive"
-  mode blows are categorized (glancing/solid/severe) and agents show a
-  relative condition (unhurt, slightly wounded, wounded, severely
-  wounded, incapacitated) — damage reports and status reports must use
-  the same crunch level.
+  **Stage 6 (done):** granular body parts and configurable crunch.
+  A body part is a **child object** of the agent with a `bodypart` module
+  (`region` — the wear region that armor must cover to protect it;
+  `vital`; `crippleEffects`; `aimedPenalty` — the to-hit penalty for
+  aiming at this part, default 4) plus its own `health` pool. Parts are
+  anatomy, not items: the resolver and the inventory/examine/context
+  listings skip them. Overall state derives from the parts (no global
+  pool): a crippled vital part incapacitates, and the rules module's
+  optional `shockThreshold` (percent of total part damage) incapacitates
+  by accumulated trauma. Cripple effects are a small engine-known
+  vocabulary fired on the >0 → 0 transition: `disarm`/`disarm_offhand`
+  (the worn held-region item unwears and clatters to the floor), `prone`
+  (they topple), `no_stand` (passive — the stand handler refuses).
+  Attacks land on a part: aimed via the say-style free-text argument
+  (label "Attack the arena duelist [in the {part}]" — parsed generously,
+  verbatim `{part}` = unaimed, unknown part fails, an ambiguous side name
+  ("arm") picks randomly among the matches, the part's own
+  `bodypart.aimedPenalty` applies — arms 3, legs 4, head 6, torso 0 in
+  the arena) or a uniform random part; armor soaks only when a worn garment
+  covers the part's region. `choke` crushes the `chokeable` module's
+  `part`. Agents without parts (the new training dummy, future slimes)
+  keep the monolithic health pool, flat armor sum, and threshold
+  incapacitation. The `rules` module's `crunch` field ("numeric" default
+  | "descriptive") plus the `blowBands`/`conditionBands` map fields
+  (label → percent, engine defaults glancing/solid/severe and slightly
+  wounded/wounded/severely wounded) drive ALL damage and status reporting
+  through one helper (`Condition` in Core/Actions): numeric attacks report
+  "in the left arm … for 7 damage", and examine and inventory show the
+  per-part fractions (pool fraction for part-less agents); descriptive
+  categorizes blows by damage-vs-part-pool percent and shows condition
+  words in room listings, examine, and inventory (nothing while unhurt).
 - **Reactions (quick-time events)** — an affordance can declare a
   `reaction` spec (`window` in game seconds, `telegraph` signal text,
   `options`): when the action targets a non-incapacitated agent and ≥2
@@ -311,7 +336,10 @@ tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration tes
   labels; NPC extras: `agent` module `character`/`goals` fields + the
   agent's memory of recent observations and actions). `LlmPlanner` builds the system/user prompts (output contract: one
   action per line, exactly as listed); `PlanParser` tolerantly strips
-  numbering/bullets/prose (keeps lines starting with a known verb);
+  numbering/bullets/prose (keeps lines starting with a known verb — the
+  defaults union the scenario's currently available verbs, so RPG verbs
+  like `attack` survive, and parameterized labels with filled-in arguments
+  parse: "Attack the arena duelist in the head");
   `PlanExecutor` matches each line against **currently** available actions
   (case-insensitive label equality, then normalized containment) and stops on
   no-match or failure — conditional availability (unlock → open → go) resolves

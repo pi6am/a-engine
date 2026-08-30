@@ -22,7 +22,10 @@ public sealed class LlmPlanner
         earlier steps succeed. Exception: the Say action is parameterized —
         replace {speech} with the exact words you want to say, in quotes or
         not, e.g. Say: "Hello there." — and when it appears with [to name],
-        you may keep or drop that part to choose who you address.
+        you may keep or drop that part to choose who you address. Likewise,
+        when Attack appears with [in the {part}], replace {part} with a body
+        part name to aim (e.g. Attack the guard in the head) or drop the
+        bracketed part entirely for an unaimed blow.
         """;
 
     private readonly ILlmClient _client;
@@ -52,9 +55,14 @@ public sealed class LlmPlanner
         var reply = await _client.CompleteAsync(BuildMessages(agent, request, npc), ct)
             .ConfigureAwait(false);
         string[] labels;
+        string[] verbs;
         lock (_engine.SyncRoot)
-            labels = _engine.ActionResolver.Resolve(agent).Select(a => a.Label).ToArray();
-        return PlanParser.Parse(reply, knownLabels: labels);
+        {
+            var actions = _engine.ActionResolver.Resolve(agent);
+            labels = actions.Select(a => a.Label).ToArray();
+            verbs = actions.Select(a => a.Verb).Distinct().ToArray();
+        }
+        return PlanParser.Parse(reply, knownVerbs: verbs, knownLabels: labels);
     }
 
     private const string ReactionSystemPrompt = """

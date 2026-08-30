@@ -77,8 +77,71 @@ public sealed class PlanExecutor
             if (say is not null)
                 return say with { Text = speech };
         }
+        if (TryParseAttack(engine, agent, line) is { } attack)
+            return attack;
         return MatchLine(engine.ActionResolver.Resolve(agent), line)
             ?? MatchLine(engine.ActionResolver.ResolvePotential(agent), line);
+    }
+
+    /// <summary>
+    /// Parse an attack line, optionally aimed at a body part: "Attack the
+    /// X", "Attack the X [in the head]", "Attack the X in the head", or
+    /// the advertised label verbatim ("... [in the {part}]" — the raw
+    /// placeholder means unaimed). Returns the matching attack action with
+    /// Text carrying the part name (null when unaimed); null when the line
+    /// matches no attack action.
+    /// </summary>
+    public static AvailableAction? TryParseAttack(GameEngine engine, WorldObject agent, string line)
+    {
+        if (!line.StartsWith("attack", StringComparison.OrdinalIgnoreCase))
+            return null;
+        if (line.Length > 6 && line[6] is not (' ' or '['))
+            return null; // "attacking" — not an attack command
+        var rest = line[6..].Trim();
+        string? part = null;
+        if (rest.EndsWith(']'))
+        {
+            // bracketed suffix: "... [in the head]" / "... [in head]"
+            var open = rest.LastIndexOf("[in ", StringComparison.OrdinalIgnoreCase);
+            if (open >= 0)
+            {
+                part = rest[(open + 4)..^1].Trim();
+                rest = rest[..open].Trim();
+            }
+        }
+        else
+        {
+            // bare suffix: "... in the head" / "... in head"
+            var idx = rest.LastIndexOf(" in the ", StringComparison.OrdinalIgnoreCase);
+            var cut = idx >= 0 ? idx : rest.LastIndexOf(" in ", StringComparison.OrdinalIgnoreCase);
+            if (cut >= 0)
+            {
+                part = rest[(cut + (idx >= 0 ? 8 : 4))..].Trim();
+                rest = rest[..cut].Trim();
+            }
+        }
+        if (part is not null)
+        {
+            if (part.StartsWith("the ", StringComparison.OrdinalIgnoreCase))
+                part = part[4..].Trim();
+            if (part.Length == 0 || part == "{part}")
+                part = null; // the advertised label verbatim = unaimed
+        }
+        if (rest.Length == 0)
+            return null;
+
+        var needle = Normalize(rest);
+        foreach (var action in engine.ActionResolver.Resolve(agent)
+                     .Concat(engine.ActionResolver.ResolvePotential(agent))
+                     .Where(a => a.Verb == "attack" && a.TargetId is not null))
+        {
+            var name = Normalize(engine.World.GetObject(action.TargetId!).Name);
+            if (name == needle ||
+                name.Contains(needle, StringComparison.Ordinal) ||
+                needle.Contains(name, StringComparison.Ordinal))
+                return action with { Text = part };
+        }
+        return null;
     }
 
     /// <summary>

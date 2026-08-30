@@ -65,7 +65,7 @@ public sealed class ActionResolver
         AddFromModules(actions, agent, agent, stateFiltered, others, examinable);
 
         // an incapacitated agent can only look
-        if (Health.IsIncapacitated(_modules, agent))
+        if (Health.IsIncapacitated(_world, _modules, agent))
         {
             actions.RemoveAll(a => a.Verb != "look");
             return actions;
@@ -138,6 +138,10 @@ public sealed class ActionResolver
         List<AvailableAction> actions, WorldObject agent, WorldObject target, bool stateFiltered,
         IReadOnlyList<WorldObject> others, List<WorldObject> examinable)
     {
+        // body parts are anatomy, not items: no affordances, no pocket
+        // scans, no examine entries — they're wounded, not rummaged
+        if (target.HasModule("bodypart"))
+            return;
         examinable.Add(target);
         foreach (var attachment in target.Modules)
         {
@@ -270,6 +274,10 @@ public sealed class ActionResolver
         "escape" => "Break free",
         "wear" => $"Wear {The(target)}",
         "remove" => $"Take off {The(target)}",
+        // a part-ful target advertises the optional aimed syntax (parsed
+        // like Say's [to X]): "Attack the arena duelist [in the {part}]"
+        "attack" when BodyParts.Of(_world, target).Count > 0 =>
+            $"Attack {The(target)} [in the {{part}}]",
         _ => $"{Capitalize(verb)} {The(target)}",
     };
 

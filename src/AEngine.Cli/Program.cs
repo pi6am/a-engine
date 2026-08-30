@@ -313,8 +313,8 @@ while (true)
         var lastStep = steps[^1];
         if (lastStep.Note is not null)
             Console.WriteLine(lastStep.Note);
-        else if (lastStep.Result is { Outcome: ActionOutcome.Failure })
-            Console.WriteLine("Plan stopped.");
+        else if (lastStep.Result is { Outcome: ActionOutcome.Failure } && steps.Count < plan.Count)
+            Console.WriteLine("Plan stopped."); // only when later steps were skipped
         continue;
     }
     // numeric selection from the current action list (see /actions)

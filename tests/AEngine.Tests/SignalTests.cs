@@ -25,6 +25,23 @@ public class SignalTests
     }
 
     [Fact]
+    public void SignalText_CollapsesDoubledArticles()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a"); // same room as alice
+        // a name that already carries its article must not double the
+        // template's own "the" ("opens the the strongbox")
+        engine.World.GetObject("chest").Name = "the strongbox";
+
+        var open = TestWorlds.Find(engine, "alice", "open", "chest");
+        Assert.True(engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), open).Success);
+
+        var signal = Assert.Single(engine.SignalBus.Drain("bob"));
+        Assert.Equal("Alice opens the strongbox.", signal.Text);
+    }
+
+    [Fact]
     public void ClosedDoor_AdjacentObserverGetsAudibleOnly()
     {
         var engine = TestWorlds.NewTwoRoomEngine(); // bob in room_b, door closed

@@ -258,7 +258,7 @@ public class GrappleTests
         Assert.EndsWith("Bob is incapacitated!", result.Message);
         // a carried victim stays in the grappler's grasp (not knocked prone)
         Assert.Equal("alice", bob.Parent);
-        Assert.True(Health.IsIncapacitated(engine.ModuleRegistry, bob));
+        Assert.True(Health.IsIncapacitated(engine.World, engine.ModuleRegistry, bob));
     }
 
     [Fact]
