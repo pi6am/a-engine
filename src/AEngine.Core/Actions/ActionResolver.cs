@@ -264,8 +264,12 @@ public sealed class ActionResolver
             "put" => target.HasModule("container") &&
                      (!stateFiltered || !HasOpenState(target) || IsOpenState(target)),
             "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
-            // trade: barter for a ware another agent is holding
-            "trade" => heldByOther,
+            // trade: barter for a ware another agent is holding; a ware
+            // with a `trader` sells only through that agent — once sold,
+            // nobody can barter it back out of the buyer's hands
+            "trade" => heldByOther &&
+                       (_modules.ResolveString(target, "ware", "trader") is not { Length: > 0 } trader ||
+                        trader == target.Parent),
             "shove" => target.HasModule("agent") && target.Id != agent.Id,
             "attack" => target.HasModule("attackable") && target.Id != agent.Id,
             // grappling: seize a free agent (not one already carried);

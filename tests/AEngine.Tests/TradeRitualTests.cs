@@ -17,7 +17,8 @@ public class TradeRitualTests
         "id": "ware", "name": "Ware",
         "fields": [
           { "name": "wants", "type": "string", "default": "" },
-          { "name": "refusal", "type": "string", "default": "" }
+          { "name": "refusal", "type": "string", "default": "" },
+          { "name": "trader", "type": "string", "default": "" }
         ],
         "affordances": [
           {
@@ -191,6 +192,34 @@ public class TradeRitualTests
         engine.Reactions.Choose(Assert.Single(engine.Reactions.Pending).Id, "accept");
         Assert.Equal("alice", engine.World.GetObject("salt").Parent);
         Assert.Equal("bob", engine.World.GetObject("moonpetal").Parent);
+    }
+
+    [Fact]
+    public void Trade_TraderWare_SellsOnlyThroughTheTrader()
+    {
+        var engine = NewEngine();
+        engine.World.CreateObject("carol", "room_a", "Carol");
+        engine.World.AddModule("carol", "agent");
+        AddItem(engine, "moonpetal", "moonpetal bloom", "alice");
+        MakeWare(engine, "salt", "ember salt", "bob", "moonpetal");
+        engine.World.SetFieldOverride("salt", "ware", "trader", Core.World.World.ToJson("bob"));
+        var alice = engine.World.GetObject("alice");
+
+        // Carol holds the ware but isn't its trader: the barter isn't
+        // offered, and the handler refuses if forced
+        engine.World.MoveObject("salt", "carol");
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(alice), a => a.Verb == "trade");
+        var refused = engine.TurnManager.Execute(alice, "trade", "salt");
+        Assert.False(refused.Success);
+        Assert.Equal("Carol isn't trading the ember salt.", refused.Message);
+
+        // in the trader's hands it sells normally
+        engine.World.MoveObject("salt", "bob");
+        Assert.Contains(engine.ActionResolver.Resolve(alice), a => a.Verb == "trade");
+        var result = engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "trade", "salt"));
+        Assert.True(result.Success);
+        Assert.Equal("alice", engine.World.GetObject("salt").Parent);
     }
 
     [Fact]

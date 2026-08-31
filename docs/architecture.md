@@ -61,7 +61,9 @@ phrasing the verb can't produce, like "Ask the sorcerer to remove the
 dragon-mark". `trade` is the barter verb: the affordance lives on a `ware`
 item another agent holds (the resolver's held-by-other allowlist covers
 it), and the handler swaps it for the item id named by the ware's `wants`
-field. Barter is consent-gated like `give`: the offer telegraphs and the
+field. A ware with a `trader` field sells only through that agent — once
+sold, the barter isn't offered against the buyer (no reverse-barter
+loops). Barter is consent-gated like `give`: the offer telegraphs and the
 ware's holder (the reaction's defender — for item-targeted reactions the
 holder, not the target item) accepts (default) or declines; a decline
 fails the trade and nothing moves. This stops agents from unilaterally

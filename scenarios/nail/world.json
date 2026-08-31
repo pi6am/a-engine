@@ -222,7 +222,7 @@
               "overrides": {
                 "policy": "auto",
                 "character": "Mira, a round, cheerful herbalist with ink-stained fingers and an eye for rare reagents.",
-                "goals": "Sell your remedies. Stay at your stall — you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action — a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done — never barter to get it back.",
+                "goals": "Sell your remedies. Stay at your stall — you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action — a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done — you have the bloom you wanted and nothing left to sell, so never barter to get it back and stop asking customers for moonpetals.",
                 "traits": "You are a shrewd trader and your wares are NEVER gifts. You love to gossip: cultists smuggle relics through the smugglers' cellar below Candlewick Alley, and the sorcerer Rath Cinderstorm keeps to his tower north of the market."
               }
             },
@@ -237,7 +237,7 @@
               "description": "A waxed pouch of brick-red salt, warm to the touch. A ritual reagent.",
               "modules": [
                 "portable",
-                { "module": "ware", "overrides": { "wants": "moonpetal", "refusal": "Ah-ah! That salt's worth a moonpetal bloom, dear. Bring me the bloom and we'll talk." } }
+                { "module": "ware", "overrides": { "wants": "moonpetal", "trader": "mira", "refusal": "Ah-ah! That salt's worth a moonpetal bloom, dear. Bring me the bloom and we'll talk." } }
               ]
             }
           ]

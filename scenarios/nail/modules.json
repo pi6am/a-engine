@@ -531,7 +531,8 @@
       "name": "Ware",
       "fields": [
         { "name": "wants", "type": "ref", "default": null },
-        { "name": "refusal", "type": "string", "default": "" }
+        { "name": "refusal", "type": "string", "default": "" },
+        { "name": "trader", "type": "ref", "default": null }
       ],
       "affordances": [
         {

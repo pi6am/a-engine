@@ -917,6 +917,10 @@ public static class BuiltinHandlers
                 return ActionResult.Fail($"There's nobody here to trade the {ware.Name} with.");
             if (holder.Id == ctx.Agent.Id)
                 return ActionResult.Noop($"You're already carrying the {ware.Name}.");
+            // a ware with a `trader` sells only through that agent
+            if (ctx.Modules.ResolveString(ware, "ware", "trader") is { Length: > 0 } trader &&
+                holder.Id != trader)
+                return ActionResult.Fail($"{Capitalize(holder.Name)} isn't trading the {ware.Name}.");
             // the holder consented or declined via the trade's reaction
             if (ctx.Reaction is { NoResist: false })
                 return ActionResult.Fail($"{Capitalize(holder.Name)} declines the offer.");
