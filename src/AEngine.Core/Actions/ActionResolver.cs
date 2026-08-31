@@ -151,6 +151,23 @@ public sealed class ActionResolver
             {
                 if (!Applies(affordance, agent, target, stateFiltered))
                     continue;
+                // othersOnly: a service is never aimed at its own owner
+                // (the sorcerer does not "ask the sorcerer")
+                if (affordance.OthersOnly && target.Id == agent.Id)
+                    continue;
+                // targetOthers: the performer-facing direction of a service,
+                // offered from the agent's own modules, one entry per other
+                // agent present ("Perform the unbinding rite on {target}")
+                if (affordance.TargetOthers)
+                {
+                    if (target.Id != agent.Id)
+                        continue;
+                    foreach (var other in others)
+                        actions.Add(new AvailableAction(
+                            affordance.Verb, other.Id, LabelFor(affordance, agent, other),
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                    continue;
+                }
                 // speech is parameterized: the label carries a {speech}
                 // placeholder, plus an addressee when several agents are
                 // present ("Say [to the old cook]: {speech}")
@@ -200,7 +217,7 @@ public sealed class ActionResolver
                     }
                     continue;
                 }
-                var label = LabelFor(affordance.Verb, agent, target);
+                var label = LabelFor(affordance, agent, target);
                 actions.Add(new AvailableAction(
                     affordance.Verb, target.Id, label, affordance.Handler,
                     attachment.ModuleId, affordance.Prompt));
@@ -223,13 +240,14 @@ public sealed class ActionResolver
     {
         bool held = target.Parent == agent.Id;
         // items held by another agent are only reachable via steal (their
-        // pockets) or remove (a garment they're wearing) — their
-        // take/drop/open/close affordances don't apply to you
+        // pockets), remove (a garment they're wearing), or trade (a ware
+        // they're selling) — their take/drop/open/close affordances don't
+        // apply to you
         bool heldByOther = target.Id != agent.Id &&
                            target.Parent.Length > 0 && target.Parent != agent.Id &&
                            _world.HasObject(target.Parent) &&
                            _world.GetObject(target.Parent).HasModule("agent");
-        if (heldByOther && affordance.Verb is not ("steal" or "remove"))
+        if (heldByOther && affordance.Verb is not ("steal" or "remove" or "trade"))
             return false;
         var applies = affordance.Verb switch
         {
@@ -246,6 +264,8 @@ public sealed class ActionResolver
             "put" => target.HasModule("container") &&
                      (!stateFiltered || !HasOpenState(target) || IsOpenState(target)),
             "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
+            // trade: barter for a ware another agent is holding
+            "trade" => heldByOther,
             "shove" => target.HasModule("agent") && target.Id != agent.Id,
             "attack" => target.HasModule("attackable") && target.Id != agent.Id,
             // grappling: seize a free agent (not one already carried);
@@ -296,8 +316,14 @@ public sealed class ActionResolver
         return target.HasModule("openable") ? (target, "openable") : null;
     }
 
-    private string LabelFor(string verb, WorldObject agent, WorldObject target) => verb switch
+    private string LabelFor(Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
     {
+        // a data-driven label override wins; {target} names the target
+        // verbatim — the author owns the phrasing, articles included
+        if (affordance.Label is { } custom)
+            return custom.Replace("{target}", target.Name, StringComparison.Ordinal);
+        return affordance.Verb switch
+        {
         "look" => "Look around",
         "inventory" => "Check inventory",
         "wait" => "Wait",
@@ -323,8 +349,9 @@ public sealed class ActionResolver
         // like Say's [to X]): "Attack the arena duelist [in the {part}]"
         "attack" when BodyParts.Of(_world, target).Count > 0 =>
             $"Attack {The(target)} [in the {{part}}]",
-        _ => $"{Capitalize(verb)} {The(target)}",
-    };
+        _ => $"{Capitalize(affordance.Verb)} {The(target)}",
+        };
+    }
 
     /// <summary>The target's name with a definite article, unless it already carries one.</summary>
     private static string The(WorldObject target) => Perception.WithDefiniteArticle(target.Name);

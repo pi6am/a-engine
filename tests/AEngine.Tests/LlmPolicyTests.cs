@@ -127,7 +127,9 @@ public class LlmPolicyTests
 
         var messages = llm.LastMessages!;
         Assert.Equal(2, messages.Count);
-        Assert.Contains("grizzled old cook", messages[1].Content);
+        // the system prompt frames the NPC's identity: who "you" IS
+        Assert.Contains("You are the old cook", messages[0].Content);
+        Assert.Contains("grizzled old cook", messages[0].Content);
         Assert.Contains("Goals:", messages[1].Content);
         Assert.Contains("Available actions", messages[1].Content);
         // the request nudges idle agents to Wait instead of polling with Look

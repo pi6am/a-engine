@@ -268,6 +268,24 @@ Console.WriteLine(); // separate the intro from the first room description
 var eventBuffer = new List<string>();
 while (true)
 {
+    // game over: a handler ended it (epilogue), or the player was
+    // incapacitated (defeat) — print the ending and leave
+    string? gameOverText;
+    lock (engine.SyncRoot)
+    {
+        if (engine.GameOver is null &&
+            Health.IsIncapacitated(engine.World, engine.ModuleRegistry, player))
+            engine.GameOver = engine.DefeatText;
+        gameOverText = engine.GameOver;
+    }
+    if (gameOverText is not null)
+    {
+        Console.WriteLine();
+        Console.WriteLine(Wrap(gameOverText));
+        realTimeCts?.Cancel();
+        return 0;
+    }
+
     string? arrivalLook = null;
     string? arrivalRoomId = null;
     string? arrivalRoomName = null;
@@ -329,7 +347,9 @@ while (true)
         if (direct is not null)
         {
             var directResult = engine.TurnManager.PerformAction(player, direct);
-            await PrintResultAsync(direct.Verb, directResult.Message);
+            // an ending prints once, at the top of the loop — not inline
+            if (!directResult.EndsGame)
+                await PrintResultAsync(direct.Verb, directResult.Message);
             if (engine.TimeMode == TimeMode.TurnBased)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
             await FinishActionAsync();
@@ -367,7 +387,8 @@ while (true)
         {
             // sync-over-async is safe here: no synchronization context in a
             // console app, and the plan executor's callback is synchronous
-            PrintResultAsync(step.Action!.Verb, step.Result!.Message).GetAwaiter().GetResult();
+            if (!step.Result!.EndsGame) // an ending prints once, at the top of the loop
+                PrintResultAsync(step.Action!.Verb, step.Result!.Message).GetAwaiter().GetResult();
             if (step.Result.Success && engine.TimeMode == TimeMode.TurnBased)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
         });
@@ -416,7 +437,8 @@ while (true)
     }
 
     var result = engine.TurnManager.PerformAction(player, action, text);
-    await PrintResultAsync(action.Verb, result.Message);
+    if (!result.EndsGame) // an ending prints once, at the top of the loop
+        await PrintResultAsync(action.Verb, result.Message);
     if (engine.TimeMode == TimeMode.TurnBased)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
     await FinishActionAsync();

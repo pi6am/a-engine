@@ -36,6 +36,8 @@ public static class BuiltinHandlers
         new EscapeHandler(),
         new ChokeHandler(),
         new ExamineHandler(),
+        new TradeHandler(),
+        new RitualHandler(),
     ];
 
     /// <summary>A module's string field, or null when the module is absent or the field is empty.</summary>
@@ -60,7 +62,7 @@ public static class BuiltinHandlers
         {
             var target = ctx.Target ?? throw new InvalidOperationException("basic requires a target.");
             var verb = ctx.Verb ?? "touch";
-            return ActionResult.Ok($"You {verb} the {target.Name}.");
+            return ActionResult.Ok($"You {verb} {Perception.WithDefiniteArticle(target.Name)}.");
         }
     }
 
@@ -353,11 +355,17 @@ public static class BuiltinHandlers
         {
             var worn = new List<string>();
             var carried = new List<string>();
+            var borne = new List<string>();
             foreach (var item in ctx.World.ChildrenOf(ctx.Agent.Id))
             {
                 if (item.HasModule("bodypart"))
                     continue; // anatomy, not belongings
-                (Clothing.IsWorn(ctx.Modules, item) ? worn : carried).Add(item.Name);
+                if (Clothing.IsWorn(ctx.Modules, item))
+                    worn.Add(item.Name);
+                else if (item.HasModule("portable"))
+                    carried.Add(item.Name);
+                else
+                    borne.Add(item.Name); // inalienable: a brand, a curse
             }
 
             var parts = new List<string>();
@@ -366,6 +374,8 @@ public static class BuiltinHandlers
             parts.Add(carried.Count == 0
                 ? "You are carrying nothing."
                 : "You are carrying: " + string.Join(", ", carried.Select(Perception.WithArticle)));
+            if (borne.Count > 0)
+                parts.Add("You bear: " + string.Join(", ", borne.Select(Perception.WithArticle)));
             parts.AddRange(Condition.SelfLines(ctx.World, ctx.Modules, ctx.Agent));
             return ActionResult.Ok(string.Join("\n", parts));
         }
@@ -860,6 +870,86 @@ public static class BuiltinHandlers
             if (Damage.Apply(ctx.World, ctx.Modules, target, damage) is { } fragment)
                 monolithic += " " + fragment;
             return ActionResult.Ok(monolithic);
+        }
+    }
+
+    // barter: the target is a ware another agent holds; the ware module's
+    // `wants` field names the item id the trader wants in exchange — the
+    // two items swap inventories
+    private sealed class TradeHandler : IActionHandler
+    {
+        public string Id => "trade";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var ware = ctx.Target ?? throw new InvalidOperationException("trade requires a target ware.");
+            var holder = ware.Parent.Length > 0 && ctx.World.HasObject(ware.Parent)
+                ? ctx.World.GetObject(ware.Parent) : null;
+            if (holder is null || !holder.HasModule("agent"))
+                return ActionResult.Fail($"There's nobody here to trade the {ware.Name} with.");
+            if (holder.Id == ctx.Agent.Id)
+                return ActionResult.Noop($"You're already carrying the {ware.Name}.");
+            var wantsId = ctx.Modules.ResolveString(ware, "ware", "wants");
+            if (wantsId is null || !ctx.World.HasObject(wantsId))
+                return ActionResult.Fail($"{Capitalize(holder.Name)} isn't trading the {ware.Name}.");
+            var wants = ctx.World.GetObject(wantsId);
+            // the wanted item counts whether the actor still holds it or has
+            // already handed it over (a gift ahead of the barter)
+            if (wants.Parent != ctx.Agent.Id && wants.Parent != holder.Id)
+                return ActionResult.Fail(
+                    $"{Capitalize(holder.Name)} wants {Perception.WithDefiniteArticle(wants.Name)} in exchange.");
+            ctx.World.MoveObject(wants.Id, holder.Id);
+            ctx.World.MoveObject(ware.Id, ctx.Agent.Id);
+            return ActionResult.Ok(
+                $"You trade {Perception.WithDefiniteArticle(wants.Name)} for {Perception.WithDefiniteArticle(ware.Name)}.");
+        }
+    }
+
+    // a requirements-gated rite or service (unbinding a curse, forging an
+    // item): the `ritual` module lives on the rite's host (the sorcerer, the
+    // altar) and lists required item ids (held by the host or the
+    // supplicant), items to consume, modules to remove from the supplicant,
+    // and an epilogue; `endsGame` ends the game with that epilogue. Two
+    // directions share the handler: the supplicant asks (actor = supplicant,
+    // target = host) or the host performs (a targetOthers affordance —
+    // actor = host, target = supplicant).
+    private sealed class RitualHandler : IActionHandler
+    {
+        public string Id => "ritual";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            // the host is whichever side carries the ritual module
+            var host = ctx.Agent.HasModule("ritual") &&
+                       (ctx.Target is null || !ctx.Target.HasModule("ritual"))
+                ? ctx.Agent
+                : ctx.Target ?? throw new InvalidOperationException("ritual requires a target.");
+            var supplicant = ReferenceEquals(host, ctx.Agent) ? ctx.Target : ctx.Agent;
+            if (supplicant is null)
+                return ActionResult.Fail("There is nobody here to receive the rite.");
+            bool IsAtHand(string id) => ctx.World.HasObject(id) &&
+                (ctx.World.GetObject(id).Parent == host.Id ||
+                 ctx.World.GetObject(id).Parent == supplicant.Id);
+            var missing = (ctx.Modules.ResolveStringList(host, "ritual", "requiresItems") ?? [])
+                .Where(id => !IsAtHand(id)).ToList();
+            if (missing.Count > 0)
+            {
+                var names = missing.Select(id =>
+                    ctx.World.HasObject(id) ? ctx.World.GetObject(id).Name : id);
+                return ActionResult.Fail(
+                    $"{Capitalize(host.Name)} shakes their head — the rite still needs: {string.Join(", ", names)}.");
+            }
+            foreach (var id in ctx.Modules.ResolveStringList(host, "ritual", "consumesItems") ?? [])
+                if (IsAtHand(id))
+                    ctx.World.DestroyObject(id);
+            foreach (var module in ctx.Modules.ResolveStringList(host, "ritual", "removesModules") ?? [])
+                if (supplicant.HasModule(module))
+                    ctx.World.RemoveModule(supplicant.Id, module);
+            var epilogue = Field(ctx, host, "ritual", "epilogue") ?? "It is done.";
+            var result = ActionResult.Ok(epilogue);
+            return ctx.Modules.ResolveBool(host, "ritual", "endsGame")
+                ? result with { EndsGame = true }
+                : result;
         }
     }
 }

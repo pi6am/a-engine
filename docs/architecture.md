@@ -47,7 +47,26 @@ Module affordances name a `handler` **string id**, resolved through
 extension seam). Built-ins: basic (flavor verbs, interpolates the verb into
 its message), look, go, open, close, take, drop, put, give, unlock, lock,
 pick, inventory, say, wait (`wait` just passes the turn; it is quiet — no
-signals), sit, lie, stand, wear, remove, shove, steal, examine. `put` and
+signals), sit, lie, stand, wear, remove, shove, steal, examine, trade,
+ritual. An affordance may declare a `label` to override the verb-generated
+menu text (`{target}` substitutes the target's name verbatim) — for
+phrasing the verb can't produce, like "Ask the sorcerer to remove the
+dragon-mark". `trade` is the barter verb: the affordance lives on a `ware`
+item another agent holds (the resolver's held-by-other allowlist covers
+it), and the handler swaps it for the item id named by the ware's `wants`
+field, failing with the wanted item's name when the actor lacks it.
+`ritual` is a requirements-gated service on the host's `ritual` module:
+required item ids (held by host or supplicant), consumed items (destroyed),
+modules removed from the supplicant, an `epilogue`, and `endsGame`. It runs
+in both directions — the supplicant-facing "ask" (actor = supplicant,
+target = host) and a performer-facing one (actor = host, target =
+supplicant) — via two affordance targeting flags: `othersOnly` (never
+offered against the module's own owner — the sorcerer does not "ask the
+sorcerer") and `targetOthers` (emitted from the agent's own modules, one
+entry per other agent present — "Perform the unbinding rite on {target}").
+`inventory` splits belongings into wearing/carrying, plus
+"You bear:" for inalienable (non-portable, non-bodypart) objects like a
+curse-brand. `put` and
 `give` are **two-object verbs**: the resolver emits one entry per
 (item × open container) / (held item × other agent) — "Put the key into
 the desk drawer", "Give the bread to the old cook" — with the item riding
@@ -84,7 +103,10 @@ a brass key inside.").
 speak), only ever offered from the agent's own modules. Its label is
 parameterized: `Say: {speech}`, or `Say [to <name>]: {speech}` per
 addressee when several other agents are in the room. Plan parsing is
-generous ("Say [to X]: \"...\"", quotes optional, colon optional); the
+generous ("Say [to X]: \"...\"", quotes optional, colon optional, and the
+speech-first paraphrase `Say: "..." to X` — the trailing addressee is only
+recognized with quoted speech, where the closing quote disambiguates it
+from the utterance); the
 parsed speech rides `AvailableAction.Text` into `Args["text"]`. Naming is
 **observer-relative**: every agent is the protagonist of their own
 perception (`Perception.NameFor` renders self as "you"); scenario data
@@ -95,7 +117,12 @@ gives agents descriptive names (the player object is "the guest", not
 
 Ephemeral sensory observations (`SignalSense.Visual | Audible`) delivered
 by `SignalBus` on `GameEngine` into per-agent in-memory queues
-(`Emit`/`Drain`/`Peek`). Location is room-granular: `World.RoomOf` walks
+(`Emit`/`Drain`/`Peek`), plus private sensations via `SendTo`: an object
+with the `ambient` module periodically (every `interval` turns plus
+jitter, scanned in `AdvanceTurn`) sends one of its `texts` variants to the
+agent holding it — a cursed mark burning. Ambient texts are authored
+second-person for the holder and do not propagate. Location is
+room-granular: `World.RoomOf` walks
 the parent chain to the nearest `room` module, so a carried agent (or one
 inside a container) acts from and observes in the carrier's room — a
 carried NPC's speech reaches the player holding it. After a successful
@@ -239,9 +266,14 @@ signals.
 events: signals the agent observed (recorded by `SignalBus` at delivery)
 and the results of its own actions (recorded by `TurnManager.PerformAction`;
 `look` is stored compactly as "You look around."). Capacity is data-driven
-via the `agent` module's `memoryLength` field (default 25). NPC LLM
-contexts render it as "Recent observations and actions (oldest first)" for
-continuity across plans and conversations.
+via the `agent` module's `memoryLength` field (default 25). Two anti-bloat
+rules keep the log informative under idling: consecutive duplicate entries
+collapse to one ("You wait." × 17 is one fact), and state snapshots — look
+and examine results — are recorded under a snapshot key that supersedes the
+previous snapshot of the same subject, so only the freshest rendering
+survives (an NPC who examines you three times remembers one block, not
+three). NPC LLM contexts render it as "Recent observations and actions
+(oldest first)" for continuity across plans and conversations.
 
 ## Runtime
 
@@ -252,6 +284,15 @@ the timer instead of player input). Turn-consuming actions leave the actor
 **busy** for their affordance's data-driven `duration` (seconds/turns,
 default 1); busy NPCs skip their turns. `Scheduler` is a wake-up queue for
 long-running actions (nothing schedules multi-turn actions yet).
+**Game over**: a handler result flagged `EndsGame` records its message on
+`engine.GameOver` (NPC turns stop once set); the CLI prints it as the
+ending and exits. The CLI also ends the game with the scenario's root
+`defeatText` when the player is incapacitated. **Level of detail**:
+`RunNpcTurns` throttles agents no player can perceive — full rate in a
+player's room and adjacent (portal-linked) rooms, otherwise new work
+starts only every `npcLodFactor` turns (rules module, default 10, 1
+disables), staggered per agent id; in-flight policy decisions always
+finish.
 
 ## Scenarios
 

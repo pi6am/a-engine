@@ -59,6 +59,12 @@ public sealed record ActionResult(ActionOutcome Outcome, string Message)
     /// </summary>
     public int? Duration { get; init; }
 
+    /// <summary>
+    /// True when this result ends the game (a completed rite's epilogue);
+    /// TurnManager records the message on <see cref="GameEngine.GameOver"/>.
+    /// </summary>
+    public bool EndsGame { get; init; }
+
     public static ActionResult Ok(string message, int? duration = null) =>
         new(ActionOutcome.Success, message) { Duration = duration };
     public static ActionResult Noop(string message) => new(ActionOutcome.Noop, message);

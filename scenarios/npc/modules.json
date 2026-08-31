@@ -14,6 +14,7 @@
         { "name": "policy", "type": "string", "default": "player" },
         { "name": "character", "type": "string", "default": "" },
         { "name": "goals", "type": "string", "default": "" },
+        { "name": "traits", "type": "string", "default": "" },
         { "name": "memoryLength", "type": "int", "default": 25 },
         { "name": "posture", "type": "string", "default": "standing" }
       ],

@@ -11,7 +11,10 @@ namespace AEngine.Core.Runtime;
 /// their affordance's data-driven duration (seconds/turns, default 1).
 /// Successful actions emit their affordance's sensory signals to
 /// observers. RunNpcTurns drives autonomous agents through their policies
-/// via an async-ready start/skip/validate-execute pipeline.
+/// via an async-ready start/skip/validate-execute pipeline, throttled by
+/// level of detail: agents outside every player's room and its adjacent
+/// rooms start new work only every `npcLodFactor` turns (rules module;
+/// default 10) — in-flight policy decisions always run to completion.
 /// </summary>
 public sealed class TurnManager
 {
@@ -27,6 +30,9 @@ public sealed class TurnManager
     /// <summary>Per-agent consecutive-repeat streaks for backoff affordances (idle verbs).</summary>
     private readonly Dictionary<string, (string Verb, int Count)> _repeatStreaks =
         new(StringComparer.Ordinal);
+
+    /// <summary>Per-object next-due turn for ambient emissions.</summary>
+    private readonly Dictionary<string, int> _ambientDue = new(StringComparer.Ordinal);
 
     /// <summary>Agents whose current busy spell is idle backoff — interruptible by new signals.</summary>
     private readonly HashSet<string> _busyInterruptible = new(StringComparer.Ordinal);
@@ -88,10 +94,12 @@ public sealed class TurnManager
             var result = EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb,
                              auxTargetId: action.AuxTargetId);
+            if (result.EndsGame)
+                _engine.GameOver ??= result.Message;
             // remember your own action and its outcome (a look result is too
-            // verbose to store verbatim)
-            _engine.Memory.Record(agent,
-                action.Verb == "look" ? "You look around." : result.Message);
+            // verbose to store verbatim; look/examine are state snapshots —
+            // only the freshest of each survives in memory)
+            RecordOutcome(agent, action, result.Message);
             if (result.Outcome == ActionOutcome.Noop)
                 return result;
             if (result.Success)
@@ -202,8 +210,9 @@ public sealed class TurnManager
             var result = EvaluateCheck(agent, pending.Action, option)
                          ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
                              pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId);
-            _engine.Memory.Record(agent,
-                pending.Action.Verb == "look" ? "You look around." : result.Message);
+            if (result.EndsGame)
+                _engine.GameOver ??= result.Message;
+            RecordOutcome(agent, pending.Action, result.Message);
             // the actor isn't an observer of their own signals — record
             // the outcome separately so the UI can show it to them
             _engine.Reactions.RecordResolved(pending.ActorId, result.Message);
@@ -239,6 +248,21 @@ public sealed class TurnManager
         auxTargetId is not null && _engine.World.HasObject(auxTargetId)
             ? _engine.World.GetObject(auxTargetId).Name
             : "";
+
+    /// <summary>
+    /// Record the actor's own action outcome into their memory. Look is too
+    /// verbose to store verbatim; look and examine are state snapshots —
+    /// keyed so only the freshest of each subject survives.
+    /// </summary>
+    private void RecordOutcome(WorldObject agent, AvailableAction action, string message) =>
+        _engine.Memory.Record(agent,
+            action.Verb == "look" ? "You look around." : message,
+            action.Verb switch
+            {
+                "look" => "look",
+                "examine" => $"examine:{action.TargetId}",
+                _ => null,
+            });
 
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(
@@ -287,7 +311,11 @@ public sealed class TurnManager
     {
         lock (_engine.SyncRoot)
         {
+            if (_engine.GameOver is not null)
+                return; // the game has ended — nobody else acts
             _engine.Reactions.PollPolicies(); // NPC defenders' reaction choices land here
+            var fullLodRooms = FullLodRooms();
+            var lodFactor = NpcLodFactor();
             foreach (var agentId in NpcAgentIds())
             {
                 if (!_engine.World.HasObject(agentId))
@@ -324,6 +352,15 @@ public sealed class TurnManager
                     continue;
                 }
 
+                // LOD: agents nobody can perceive (not in a player's room or
+                // an adjacent one) start new work only every npcLodFactor
+                // turns — in-flight decisions always run to completion. With
+                // no player in the world, everything runs at full LOD.
+                if (lodFactor > 1 && fullLodRooms.Count > 0 &&
+                    !fullLodRooms.Contains(_engine.World.RoomOf(agentId).Id) &&
+                    Turn % lodFactor != StableOffset(agentId, lodFactor))
+                    continue;
+
                 // no selection in flight: busy agents skip (idle backoff is
                 // interruptible — new signals wake the agent to start deciding)
                 if (IsBusy(agentId) && !CanWake(agentId))
@@ -334,6 +371,52 @@ public sealed class TurnManager
                 // deciding counts as this agent's turn
             }
         }
+    }
+
+    /// <summary>
+    /// Rooms at full level of detail: every player-controlled agent's room
+    /// plus adjacent rooms (linked by a portal in either direction). No
+    /// players in the world → everything is full LOD.
+    /// </summary>
+    private HashSet<string> FullLodRooms()
+    {
+        var rooms = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var obj in _engine.World.Objects.Values)
+        {
+            if (!obj.HasModule("agent") ||
+                (_engine.ModuleRegistry.ResolveString(obj, "agent", "policy") ?? "player") != "player")
+                continue;
+            var roomId = _engine.World.RoomOf(obj.Id).Id;
+            rooms.Add(roomId);
+            foreach (var portal in _engine.World.Objects.Values)
+            {
+                if (!portal.HasModule("portal"))
+                    continue;
+                var to = _engine.ModuleRegistry.ResolveString(portal, "portal", "to");
+                if (portal.Parent == roomId && to is not null)
+                    rooms.Add(to);
+                if (to == roomId && portal.Parent.Length > 0)
+                    rooms.Add(portal.Parent); // one-way portal inbound to a player's room
+            }
+        }
+        return rooms;
+    }
+
+    /// <summary>The scenario's remote-NPC action divisor (rules module field npcLodFactor, default 10).</summary>
+    private int NpcLodFactor()
+    {
+        var host = Actions.Checks.RulesHost(_engine.World);
+        return host is null ? 10
+            : Math.Max(1, _engine.ModuleRegistry.ResolveInt(host, "rules", "npcLodFactor", 10));
+    }
+
+    /// <summary>A deterministic per-agent stagger (string hashes are process-randomized).</summary>
+    private static int StableOffset(string agentId, int factor)
+    {
+        var hash = 0;
+        foreach (var c in agentId)
+            hash = hash * 31 + c;
+        return (hash & 0x7fffffff) % factor;
     }
 
     private List<string> NpcAgentIds()
@@ -524,6 +607,32 @@ public sealed class TurnManager
     {
         Turn++;
         _engine.Reactions.ExpireDue(Turn); // reaction deadlines pick the default
+        // ambient emissions (a cursed mark burning, a charm tingling): an
+        // object with the `ambient` module periodically sends one of its
+        // `texts` variants to the agent holding it
+        foreach (var obj in _engine.World.Objects.Values)
+        {
+            if (!obj.HasModule("ambient"))
+                continue;
+            var interval = _engine.ModuleRegistry.ResolveInt(obj, "ambient", "interval", 8);
+            if (interval < 1)
+                interval = 1;
+            if (!_ambientDue.TryGetValue(obj.Id, out var due))
+                due = Turn + interval; // first fire after one interval
+            if (Turn < due)
+            {
+                _ambientDue[obj.Id] = due;
+                continue;
+            }
+            _ambientDue[obj.Id] = Turn + interval + _engine.Random.Next(interval / 2 + 1);
+            if (obj.Parent.Length > 0 && _engine.World.HasObject(obj.Parent) &&
+                _engine.World.GetObject(obj.Parent) is { } holder && holder.HasModule("agent"))
+            {
+                var texts = _engine.ModuleRegistry.ResolveStringList(obj, "ambient", "texts") ?? [];
+                if (texts.Count > 0)
+                    _engine.SignalBus.SendTo(holder, texts[_engine.Random.Next(texts.Count)]);
+            }
+        }
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))
         {
             if (!_engine.World.HasObject(scheduled.AgentId))

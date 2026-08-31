@@ -26,6 +26,16 @@ public sealed class GameEngine
     /// <summary>Config surface for future real-time support; stage 1 is turn-based only.</summary>
     public TimeMode TimeMode { get; set; } = TimeMode.TurnBased;
 
+    /// <summary>
+    /// The ending text once the game has ended (a handler's epilogue, or
+    /// <see cref="DefeatText"/> when the player is incapacitated); null
+    /// while the game is still running. NPC turns stop once set.
+    /// </summary>
+    public string? GameOver { get; set; }
+
+    /// <summary>Ending text for player incapacitation (scenario root <c>defeatText</c>).</summary>
+    public string DefeatText { get; set; } = "Your journey ends here.";
+
     /// <summary>Randomness source for built-in policies; settable (seed it in tests).</summary>
     public Random Random { get; set; } = new();
 

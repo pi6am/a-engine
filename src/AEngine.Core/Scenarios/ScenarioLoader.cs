@@ -11,7 +11,7 @@ namespace AEngine.Core.Scenarios;
 /// come from the latest file that defines it; objects not redefined
 /// persist).
 ///
-/// File shape: { name, modules?: [module definitions], world?: object tree }.
+/// File shape: { name, defeatText?, modules?: [module definitions], world?: object tree }.
 /// Object tree node: { id, name?, description?, attributes?,
 /// modules?: [{ module, overrides? }] (or plain strings), children?: [...] }.
 /// </summary>
@@ -38,6 +38,8 @@ public static class ScenarioLoader
     private sealed class ScenarioDto
     {
         public string? Name { get; init; }
+        /// <summary>Ending text when the player is incapacitated (→ GameEngine.DefeatText).</summary>
+        public string? DefeatText { get; init; }
         public List<ModuleDefinition>? Modules { get; init; }
         /// <summary>Top-level objects (each becomes a child of the world root).</summary>
         public List<NodeDto>? World { get; init; }
@@ -78,6 +80,8 @@ public static class ScenarioLoader
                 ?? throw new InvalidDataException($"Scenario document '{document.Label}' parsed to null.");
             if (dto.Name is not null)
                 name = dto.Name;
+            if (dto.DefeatText is not null)
+                engine.DefeatText = dto.DefeatText;
             if (dto.Modules is not null)
             {
                 foreach (var module in dto.Modules)

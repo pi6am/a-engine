@@ -38,6 +38,7 @@ client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-onl
 scenarios/mvp/            # MVP scenario: two rooms, locked door, key in a drawer
 scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook
 scenarios/rpg/            # RPG systems demo: dueling arena, stats, combat, grappling, body parts
+scenarios/nail/           # full quest: barter, stealth/combat paths, persuasion-gated ritual, game over
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 docs/                     # deep-dive documentation (see below)
 ```

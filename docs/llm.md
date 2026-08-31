@@ -16,13 +16,16 @@ schema, optional Bearer key; works against KoboldCPP/llama.cpp, OpenRouter,
 Kimi, DeepSeek); `FakeLlmClient` queues canned responses for tests.
 `AgentContextBuilder` renders the **public** world view only (room, visible
 items with closed-container contents hidden, exits open/closed, inventory,
-action menu labels; NPC extras: `agent` module `character`/`goals` fields +
-the agent's memory of recent observations and actions).
+action menu labels; NPC extras: `agent` module `character`/`goals`/`traits`
+fields + the agent's memory of recent observations and actions).
 
 ## Planning and execution
 
 `LlmPlanner` builds the system/user prompts (output contract: one action
-per line, exactly as listed); `PlanParser` tolerantly strips
+per line, exactly as listed). The system prompt frames identity: an NPC
+gets "You are <name>, a character in a text adventure game. <character>"
+(without it, small models lose track of who "you" is and hold conversations
+with themselves); the player plans as themselves. `PlanParser` tolerantly strips
 numbering/bullets/prose (keeps lines starting with a known verb — the
 defaults union the scenario's currently available verbs, so RPG verbs like
 `attack` survive, and parameterized labels with filled-in arguments parse:

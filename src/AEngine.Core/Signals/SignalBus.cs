@@ -165,6 +165,15 @@ public sealed class SignalBus
     public IReadOnlyList<Signal> Peek(string agentId) =>
         _queues.TryGetValue(agentId, out var queue) ? queue.ToArray() : [];
 
+    /// <summary>
+    /// Deliver a private sensation to one agent (ambient module emissions —
+    /// a curse burning, a charm tingling). No propagation, no observer
+    /// formatting: the text is authored for the perceiver.
+    /// </summary>
+    public void SendTo(WorldObject observer, string text) =>
+        Enqueue(observer, new Signal(
+            SignalSense.Visual, 0, text, _world.RoomOf(observer.Id).Id));
+
     private Signal? BestReceivable(
         WorldObject observer, string originRoomId, string? otherSideRoomId,
         WorldObject actor, WorldObject? target,

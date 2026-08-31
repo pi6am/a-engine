@@ -11,8 +11,8 @@ namespace AEngine.Llm;
 /// </summary>
 public sealed class LlmPlanner
 {
-    private const string SystemPrompt = """
-        You are playing a text adventure. You receive a description of your
+    private const string PlanningInstructions = """
+        You receive a description of your
         current situation and a list of available actions, then a request.
         Reply with a short plan: one action per line, each copied EXACTLY as
         it appears in the available actions list. No numbering, no bullets,
@@ -27,6 +27,23 @@ public sealed class LlmPlanner
         part name to aim (e.g. Attack the guard in the head) or drop the
         bracketed part entirely for an unaimed blow.
         """;
+
+    /// <summary>
+    /// The planning system prompt. NPCs get an identity framing ("You ARE
+    /// the old cook...") with their character inline — without it, small
+    /// models lose track of who "you" is and hold conversations with
+    /// themselves. The player plans as themselves.
+    /// </summary>
+    private string SystemPromptFor(WorldObject agent, bool npc)
+    {
+        if (!npc)
+            return "You are playing a text adventure. " + PlanningInstructions;
+        var character = _engine.ModuleRegistry.ResolveString(agent, "agent", "character");
+        var identity = $"You are {agent.Name}, a character in a text adventure game.";
+        if (!string.IsNullOrWhiteSpace(character))
+            identity += $" {character}";
+        return identity + " Stay in character.\n" + PlanningInstructions;
+    }
 
     private readonly ILlmClient _client;
     private readonly GameEngine _engine;
@@ -43,7 +60,7 @@ public sealed class LlmPlanner
         var context = new AgentContextBuilder(_engine).BuildContext(agent, npc);
         return
         [
-            LlmMessage.System(SystemPrompt),
+            LlmMessage.System(SystemPromptFor(agent, npc)),
             LlmMessage.User(context + "\n\nRequest: " + request),
         ];
     }
@@ -66,7 +83,7 @@ public sealed class LlmPlanner
     }
 
     private const string ReactionSystemPrompt = """
-        You are playing a character in a text adventure. Something is about
+        You are {name}, a character in a text adventure. Something is about
         to happen to your character. You receive a description of your
         current situation, what is happening, and a list of ways to react.
         Reply with EXACTLY ONE option, copied as listed. No explanations,
@@ -85,7 +102,7 @@ public sealed class LlmPlanner
         var options = string.Join("\n", reaction.Options.Select(o => "- " + o.Label));
         var messages = new[]
         {
-            LlmMessage.System(ReactionSystemPrompt),
+            LlmMessage.System(ReactionSystemPrompt.Replace("{name}", agent.Name, StringComparison.Ordinal)),
             LlmMessage.User(
                 $"{context}\n\n{reaction.Announcement}\nHow do you react? Options:\n{options}"),
         };

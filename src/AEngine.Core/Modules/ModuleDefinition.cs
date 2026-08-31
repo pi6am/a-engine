@@ -40,8 +40,27 @@ public sealed class AffordanceDefinition
 {
     public required string Verb { get; init; }
     public required string Handler { get; init; }
+    /// <summary>
+    /// Optional display label overriding the verb-generated one (for
+    /// phrasing the menu/LLM can't produce from a verb alone, e.g. "Ask
+    /// Rath to remove the dragon-mark"); {target} is substituted.
+    /// </summary>
+    public string? Label { get; init; }
     public string? Requires { get; init; }
+    /// <summary>Free-text prompt (the verb takes an argument).</summary>
     public string? Prompt { get; init; }
+    /// <summary>
+    /// Never offered against the module's owner itself — for services an
+    /// agent performs for others ("Ask the blacksmith to repair..." makes
+    /// no sense in the blacksmith's own action list).
+    /// </summary>
+    public bool OthersOnly { get; init; }
+    /// <summary>
+    /// Emitted from the agent's own modules once per other agent present,
+    /// with that agent as the target ("Perform the rite on {target}") —
+    /// the performer-facing direction of a service.
+    /// </summary>
+    public bool TargetOthers { get; init; }
     public int Duration { get; init; } = 1;
     public bool RepeatBackoff { get; init; }
     public int RepeatBackoffCap { get; init; } = 30;

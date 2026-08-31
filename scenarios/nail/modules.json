@@ -1,5 +1,5 @@
 {
-  "name": "rpg-modules",
+  "name": "nail-modules",
   "modules": [
     {
       "id": "rules",
@@ -10,7 +10,8 @@
         { "name": "crunch", "type": "string", "default": "numeric" },
         { "name": "blowBands", "type": "map", "default": {} },
         { "name": "conditionBands", "type": "map", "default": {} },
-        { "name": "shockThreshold", "type": "int", "default": 0 }
+        { "name": "shockThreshold", "type": "int", "default": 0 },
+        { "name": "npcLodFactor", "type": "int", "default": 10 }
       ],
       "affordances": []
     },
@@ -152,8 +153,7 @@
             "telegraph": "{agent} swings at the {target}!",
             "options": [
               { "id": "dodge", "label": "Dodge", "stat": "agility", "default": true, "text": "You dodge the blow.", "report": "{agent} attempts to dodge." },
-              { "id": "block", "label": "Block", "stat": "strength", "bonus": 2, "requiresWornModule": "shield", "text": "You block with your shield.", "report": "{agent} attempts to block with their shield." },
-              { "id": "parry", "label": "Parry", "stat": "agility", "skill": "swords", "requiresWornModule": "weapon", "text": "You parry the blow.", "report": "{agent} attempts to parry." },
+              { "id": "parry", "label": "Parry", "stat": "agility", "skill": "blades", "requiresWornModule": "weapon", "text": "You parry the blow.", "report": "{agent} attempts to parry." },
               { "id": "accept", "label": "Take the hit", "noResist": true, "text": "You take the hit.", "report": "{agent} takes the hit." }
             ]
           }
@@ -229,6 +229,31 @@
             { "sense": "audible", "priority": 5, "scope": "departure", "text": "{agent} leaving through the {exitPortal}." },
             { "sense": "visual", "priority": 10, "scope": "arrival", "text": "{agent} enters from the {entryPortal} to the {entryDirection}." },
             { "sense": "audible", "priority": 5, "scope": "arrival", "text": "footsteps approaching from the {entryPortal}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "door",
+      "name": "Door (openable portal side)",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "open",
+          "handler": "open",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
+            { "sense": "audible", "priority": 5, "text": "the sound of a door opening." }
+          ]
+        },
+        {
+          "verb": "close",
+          "handler": "close",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+            { "sense": "audible", "priority": 5, "text": "a door thudding shut." }
           ]
         }
       ]
@@ -463,12 +488,6 @@
       ]
     },
     {
-      "id": "shield",
-      "name": "Shield",
-      "fields": [],
-      "affordances": []
-    },
-    {
       "id": "lockable",
       "name": "Lockable",
       "fields": [
@@ -504,6 +523,81 @@
           ]
         }
       ]
+    },
+    {
+      "id": "ware",
+      "name": "Ware",
+      "fields": [
+        { "name": "wants", "type": "ref", "default": null }
+      ],
+      "affordances": [
+        {
+          "verb": "trade",
+          "handler": "trade",
+          "duration": 2,
+          "label": "Barter for the {target}",
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} barters for the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ritual",
+      "name": "Ritual",
+      "fields": [
+        { "name": "requiresItems", "type": "list", "default": [] },
+        { "name": "consumesItems", "type": "list", "default": [] },
+        { "name": "removesModules", "type": "list", "default": [] },
+        { "name": "epilogue", "type": "string", "default": "" },
+        { "name": "endsGame", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "unbrand",
+          "handler": "ritual",
+          "duration": 10,
+          "label": "Ask {target} to remove the dragon-mark",
+          "othersOnly": true,
+          "check": {
+            "skill": "persuasion",
+            "stat": "charisma",
+            "difficulty": 20,
+            "failText": "The sorcerer studies the dragon-mark, then shakes his head. \"Words alone won't sway me.\""
+          },
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} undergoes the unbinding rite." }
+          ]
+        },
+        {
+          "verb": "perform",
+          "handler": "ritual",
+          "duration": 10,
+          "label": "Perform the unbinding rite on {target}",
+          "targetOthers": true,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} performs the unbinding rite on the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dragonmark",
+      "name": "Dragon-mark",
+      "fields": [
+        { "name": "patron", "type": "string", "default": "" },
+        { "name": "suppressed", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "ambient",
+      "name": "Ambient",
+      "fields": [
+        { "name": "texts", "type": "list", "default": [] },
+        { "name": "interval", "type": "int", "default": 8 }
+      ],
+      "affordances": []
     }
   ]
 }

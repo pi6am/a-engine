@@ -86,4 +86,44 @@ public class AgentMemoryTests
 
         Assert.Equal(["event 3", "event 4", "event 5"], engine.Memory.Recall("bob"));
     }
+
+    [Fact]
+    public void Memory_CollapsesConsecutiveDuplicates()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var alice = engine.World.GetObject("alice");
+
+        // seventeen waits are one fact: time passed
+        for (var i = 0; i < 17; i++)
+            engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wait"));
+
+        // separated duplicates both count — something happened between them
+        engine.Memory.Record(alice, "something happens.");
+        engine.Memory.Record(alice, "You wait.");
+
+        // the 17-wait run collapsed to one entry, and the fresh "You wait."
+        // after the event is distinct from it
+        Assert.Equal(
+            ["You wait.", "something happens.", "You wait."],
+            engine.Memory.Recall("alice"));
+    }
+
+    [Fact]
+    public void Memory_ExamineSnapshots_SupersedeOlderOnes()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var alice = engine.World.GetObject("alice");
+
+        // examining the same thing twice keeps only the freshest snapshot
+        var examine = TestWorlds.Find(engine, "alice", "examine", "chest");
+        Assert.True(engine.TurnManager.PerformAction(alice, examine).Success);
+        engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wait"));
+        Assert.True(engine.TurnManager.PerformAction(alice,
+            TestWorlds.Find(engine, "alice", "examine", "chest")).Success);
+
+        var memory = engine.Memory.Recall("alice");
+        Assert.Single(memory, m => m.StartsWith("chest")); // the examine result block
+        // ...and it sits at the end, freshest
+        Assert.StartsWith("chest", memory[^1]);
+    }
 }

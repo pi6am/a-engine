@@ -10,9 +10,9 @@ namespace AEngine.Llm;
 /// room name/description, visible items (same visibility rules as `look` —
 /// closed containers hide their contents), exits (open/closed only; lock
 /// state is not observable), the agent's inventory, and the current action
-/// menu labels. NPCs additionally get the agent module's character/goals
-/// fields; every agent's context carries their memory of recent
-/// observations and own actions.
+/// menu labels. NPCs additionally get the agent module's
+/// character/goals/traits fields; every agent's context carries their
+/// memory of recent observations and own actions.
 /// </summary>
 public sealed class AgentContextBuilder
 {
@@ -71,6 +71,9 @@ public sealed class AgentContextBuilder
                 var goals = _engine.ModuleRegistry.ResolveString(agent, "agent", "goals");
                 if (!string.IsNullOrWhiteSpace(goals))
                     sb.AppendLine($"Goals: {goals}");
+                var traits = _engine.ModuleRegistry.ResolveString(agent, "agent", "traits");
+                if (!string.IsNullOrWhiteSpace(traits))
+                    sb.AppendLine($"Traits: {traits}");
 
                 // signal delivery already recorded observations into
                 // memory; draining here just marks the pending queue as

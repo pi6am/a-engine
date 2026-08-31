@@ -91,6 +91,12 @@ public class AgentContextBuilderTests
         Assert.Contains("grizzled old cook", context);
         Assert.Contains("Goals:", context);
 
+        // traits render when set (and only then)
+        Assert.DoesNotContain("Traits:", context);
+        engine.World.SetFieldOverride("cook", "agent", "traits",
+            Core.World.World.ToJson("Gruff but sentimental."));
+        Assert.Contains("Traits: Gruff but sentimental.", builder.BuildContext(cook, npc: true));
+
         // player talks; the audio crosses the closed door to the cook
         var say = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
         Assert.True(engine.TurnManager.PerformAction(player, say, "Hello, cook!").Success);

@@ -32,4 +32,15 @@ public class BasicHandlerTests
         Assert.True(result.Success);
         Assert.Equal("You touch the apple.", result.Message);
     }
+
+    [Fact]
+    public void BasicHandler_DoesNotDoubleArticles()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var alice = engine.World.GetObject("alice");
+        engine.World.GetObject("apple").Name = "the golden apple";
+
+        var result = engine.TurnManager.Execute(alice, "basic", "apple");
+        Assert.Equal("You touch the golden apple.", result.Message);
+    }
 }
