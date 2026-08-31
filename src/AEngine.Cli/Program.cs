@@ -318,6 +318,10 @@ while (true)
     var input = console.ReadLine("> ");
     if (input is null) // EOF (e.g. piped input exhausted) — exit cleanly
     {
+        // woken by the world clock (real-time mode): the game ended while
+        // the player was idle — the loop top prints the ending
+        if (console.WasWoken)
+            continue;
         realTimeCts?.Cancel();
         Console.WriteLine();
         Console.WriteLine("Goodbye.");
@@ -731,6 +735,7 @@ async Task RealTimeLoop(CancellationToken ct)
     var pendingEvents = new List<string>();
     var pendingSince = DateTime.UtcNow;
     var eventNarrationWindow = TimeSpan.FromSeconds(2);
+    var gameOverWakeSent = false;
     try
     {
         while (await timer.WaitForNextTickAsync(ct))
@@ -743,6 +748,7 @@ async Task RealTimeLoop(CancellationToken ct)
                 string? arrival = null;
                 string? arrivalRoomId = null;
                 string? arrivalRoomName = null;
+                bool gameOver;
                 lock (engine.SyncRoot)
                 {
                     pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
@@ -752,6 +758,11 @@ async Task RealTimeLoop(CancellationToken ct)
                         pending -= 1.0;
                     }
                     engine.TurnManager.RunNpcTurns();
+                    // an NPC action may have ended the game (a rite, a
+                    // defeat): the main loop is blocked in ReadLine and
+                    // would never notice — wake it so it prints the ending
+                    gameOver = engine.GameOver is not null ||
+                        Health.IsIncapacitated(engine.World, engine.ModuleRegistry, player);
                     signals = engine.SignalBus.Drain(player.Id);
                     resolved = engine.Reactions.DrainResolved();
                     // the player arrived somewhere new without acting
@@ -772,7 +783,8 @@ async Task RealTimeLoop(CancellationToken ct)
                         : null;
                 }
                 console.SetStatus(status);
-                if (arrival is null && signals.Count == 0 && resolved.Count == 0 && pendingEvents.Count == 0)
+                if (!gameOver &&
+                    arrival is null && signals.Count == 0 && resolved.Count == 0 && pendingEvents.Count == 0)
                     continue;
                 var sb = new StringBuilder();
                 if (arrival is not null)
@@ -805,7 +817,7 @@ async Task RealTimeLoop(CancellationToken ct)
                 foreach (var (actorId, message) in resolved)
                     if (actorId == player.Id)
                         eventLines.Add(message);
-                if (NarrateActions())
+                if (NarrateActions() && !gameOver)
                 {
                     // batch over a short window: a burst of world activity
                     // costs one LLM call instead of one per tick. The window
@@ -854,6 +866,14 @@ async Task RealTimeLoop(CancellationToken ct)
                 var text = sb.ToString().TrimEnd();
                 if (text.Length > 0)
                     console.WriteAbove(text);
+                // the world ended on this tick: wake the blocked ReadLine —
+                // the main loop re-checks and prints the ending (single
+                // print path; never printed from the timer thread)
+                if (gameOver && !gameOverWakeSent)
+                {
+                    gameOverWakeSent = true;
+                    console.Wake();
+                }
             }
             catch (OperationCanceledException)
             {

@@ -41,6 +41,7 @@ public sealed class ConsolePrompt
     private string? _status; // the status line above the input line, when set
     private ReactionMenu? _modalMenu; // the open F2 reaction popup
     private int _modalSel;
+    private bool _wakePending; // Wake() asked the blocked ReadLine to return
 
     /// <summary>Slash commands (with leading '/') and their summaries, for tab completion.</summary>
     public IReadOnlyList<(string Name, string Description)>? Completions { get; set; }
@@ -50,6 +51,23 @@ public sealed class ConsolePrompt
 
     /// <summary>Called with the chosen option index when the F2 popup is confirmed.</summary>
     public Action<int>? ReactionChosen { get; set; }
+
+    /// <summary>
+    /// True when the last ReadLine returned because of <see cref="Wake"/>
+    /// rather than input or EOF — the caller re-checks world state (e.g.
+    /// the game ended while the player was idle) instead of exiting.
+    /// </summary>
+    public bool WasWoken { get; private set; }
+
+    /// <summary>
+    /// Interrupt a blocked ReadLine (from another thread — the real-time
+    /// world clock): the call returns null promptly with WasWoken set.
+    /// </summary>
+    public void Wake()
+    {
+        lock (_writeLock)
+            _wakePending = true;
+    }
 
     /// <summary>Prompt and read one line of input. Null on EOF (redirected input only).</summary>
     public string? ReadLine(string prompt = "> ", bool completions = true)
@@ -70,6 +88,7 @@ public sealed class ConsolePrompt
             _selected = 0;
             _popupDismissed = false;
             _completionsEnabled = completions;
+            WasWoken = false;
             _reading = true;
             Console.Write(prompt);
         }
@@ -77,7 +96,37 @@ public sealed class ConsolePrompt
         {
             while (true)
             {
-                // ReadKey blocks; do NOT hold the lock while waiting
+                // poll instead of a blocking ReadKey so Wake() (the world
+                // clock ending the game) can interrupt the wait; do NOT
+                // hold the lock while sleeping
+                lock (_writeLock)
+                {
+                    if (_wakePending)
+                    {
+                        _wakePending = false;
+                        WasWoken = true;
+                        // settle at the end of the line and erase anything
+                        // below it, like Enter does, so the log continues
+                        // on a clean line
+                        if (_status is not null)
+                        {
+                            _status = null;
+                            Console.Write("\x1b[1A\r\x1b[2K\x1b[M");
+                        }
+                        Console.Write('\r');
+                        var endCol = _prompt.Length + _buffer.Length;
+                        if (endCol > 0)
+                            Console.Write($"\x1b[{endCol}C");
+                        Console.Write("\x1b[J");
+                        Console.Write("\n");
+                        return null;
+                    }
+                }
+                if (!Console.KeyAvailable)
+                {
+                    Thread.Sleep(15);
+                    continue;
+                }
                 var key = Console.ReadKey(intercept: true);
                 // menu provider/callback invocations happen outside the lock
                 // (they take engine locks; the timer thread calls SetStatus

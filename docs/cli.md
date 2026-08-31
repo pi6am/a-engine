@@ -56,7 +56,12 @@ mode; the timer does. Observed events accumulate in the player's memory
 (capped at `memoryLength`), so plans made after watching events still know
 what happened. `/timescale N` scales the clock: each real second
 accumulates N game seconds (default 1.0; action durations are unchanged —
-0.5 makes a 2s action take 4s of real time).
+0.5 makes a 2s action take 4s of real time). If the world ends while the
+player is idle (an NPC's rite, a defeat — anything that sets
+`engine.GameOver` or incapacitates the player), the timer wakes the
+blocked prompt (`ConsolePrompt.Wake()` — ReadLine polls `KeyAvailable`
+rather than blocking on `ReadKey`), and the main loop prints the ending
+through the same top-of-loop path as turn-based mode.
 
 Planned: pacing the player's own multi-step plans by action duration (steps
 currently execute back-to-back), multi-player.
