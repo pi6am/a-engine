@@ -14,6 +14,7 @@ import {
 } from '../store'
 
 const detail = computed(() => store.selected)
+const memory = computed(() => store.memory)
 
 // attribute add/edit inputs, keyed by attribute name (function refs in v-for)
 const attrInputs = reactive<Record<string, HTMLInputElement | null>>({})
@@ -200,6 +201,14 @@ function createChild(): void {
           <input v-model="newChildName" class="grow" placeholder="name (optional)" />
           <button :disabled="!newChildId.trim()" @click="createChild">create child</button>
         </div>
+      </div>
+
+      <div v-if="memory !== null" class="card">
+        <h3>Memory</h3>
+        <ol class="memory">
+          <li v-for="(entry, i) in memory" :key="i">{{ entry }}</li>
+        </ol>
+        <p v-if="!memory.length" class="dim">No memories yet.</p>
       </div>
 
       <div class="card">

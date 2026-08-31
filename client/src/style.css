@@ -309,3 +309,14 @@ table.simple td {
 .dim {
   color: var(--text-dim);
 }
+
+/* agent memory panel: entries can hold multi-line blocks (examine results) */
+.memory {
+  margin: 0;
+  padding-left: 22px;
+}
+
+.memory li {
+  white-space: pre-wrap;
+  margin-bottom: 4px;
+}

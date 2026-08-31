@@ -31,6 +31,11 @@ export interface ObjectDetail {
   modules: ModuleAttachment[]
 }
 
+export interface AgentMemory {
+  agentId: string
+  entries: string[]
+}
+
 export interface ModuleFieldDef {
   name: string
   type: string
@@ -132,6 +137,11 @@ export class DebugApi {
 
   getObject(id: string): Promise<ObjectDetail> {
     return this.request('GET', `/api/objects/${encodeURIComponent(id)}`)
+  }
+
+  /** An agent's remembered observations and actions (oldest first). */
+  getMemory(id: string): Promise<AgentMemory> {
+    return this.request('GET', `/api/objects/${encodeURIComponent(id)}/memory`)
   }
 
   createObject(id: string, parentId: string, name?: string, description?: string): Promise<ObjectDetail> {

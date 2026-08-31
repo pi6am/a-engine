@@ -153,6 +153,15 @@ public sealed class DebugServer : IDisposable
         _routes.Add(new("GET", S("api", "objects", "{id}"), (_, v) => Locked(() =>
             Ok(ObjectDetail(_engine.World.GetObject(v["id"]))))));
 
+        // an agent's remembered observations and actions (oldest first)
+        _routes.Add(new("GET", S("api", "objects", "{id}", "memory"), (_, v) => Locked(() =>
+        {
+            var obj = _engine.World.GetObject(v["id"]);
+            return obj.HasModule("agent")
+                ? Ok(new { agentId = obj.Id, entries = _engine.Memory.Recall(obj.Id) })
+                : new ApiResponse(400, new { error = $"Object '{obj.Id}' is not an agent." });
+        })));
+
         _routes.Add(new("POST", S("api", "objects"), async (req, _) =>
         {
             var body = await ReadJson<CreateObjectRequest>(req)

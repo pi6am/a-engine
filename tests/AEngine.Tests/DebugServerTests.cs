@@ -197,6 +197,25 @@ public class DebugServerTests : IDisposable
     }
 
     [Fact]
+    public async Task ObjectMemory_ReturnsAgentMemories_And400ForItems()
+    {
+        // give the player something to remember
+        var player = _engine.World.GetObject("player");
+        _engine.TurnManager.PerformAction(player,
+            _engine.ActionResolver.Resolve(player).First(a => a.Verb == "look"));
+
+        var body = await GetJson("/api/objects/player/memory");
+        Assert.Equal("player", body.GetProperty("agentId").GetString());
+        var entries = body.GetProperty("entries").EnumerateArray().Select(e => e.GetString()).ToArray();
+        Assert.Contains("You look around.", entries);
+
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await _http.GetAsync("/api/objects/desk/memory")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound,
+            (await _http.GetAsync("/api/objects/nope/memory")).StatusCode);
+    }
+
+    [Fact]
     public async Task Errors_InvariantViolations_Return409()
     {
         // cycle: moving room_a under its own child

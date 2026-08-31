@@ -15,6 +15,7 @@ Endpoints (JSON in/out, camelCase):
 - `GET /api/world/tree`
 - `GET /api/objects`
 - `GET /api/objects/{id}` (attributes + modules with resolved field values)
+- `GET /api/objects/{id}/memory` (agents only: remembered observations and actions, oldest first; 400 for non-agents)
 - `POST /api/objects` `{id, parentId, name?, description?}`
 - `DELETE /api/objects/{id}` (recursive)
 - `POST /api/objects/{id}/move` `{"parentId": "..."}`
@@ -42,9 +43,10 @@ browser client. All world access (HTTP and REPL alike) is serialized on
 running with `--debug-api`; the API base URL is editable in the header
 (default `http://127.0.0.1:5050`, persisted to localStorage). Views: world
 tree, object editor (attributes, modules + field overrides,
-move/delete/create child), engine panel, actions panel (execute via
-`POST /api/actions/execute`). Manual refresh + optional ~2s auto-poll; no
-server push.
+move/delete/create child — plus a memory panel when the selected object is
+an agent, via `GET /api/objects/{id}/memory`), engine panel, actions panel
+(execute via `POST /api/actions/execute`). Manual refresh + optional ~2s
+auto-poll; no server push.
 
 Planned: a `GET /api/signals?agentId=` peek endpoint + signals panel
 (`SignalBus.Peek` already exists).

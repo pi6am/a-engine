@@ -25,6 +25,8 @@ interface StoreState {
   modules: ModuleDef[]
   selectedId: string | null
   selected: ObjectDetail | null
+  /** remembered events of the selected object when it is an agent; null otherwise */
+  memory: string[] | null
   agentId: string | null
   actions: AvailableAction[]
   lastResult: ExecuteResult | null
@@ -42,6 +44,7 @@ export const store = reactive<StoreState>({
   modules: [],
   selectedId: null,
   selected: null,
+  memory: null,
   agentId: null,
   actions: [],
   lastResult: null,
@@ -99,6 +102,10 @@ export async function selectObject(id: string): Promise<void> {
   await guarded(async () => {
     store.selectedId = id
     store.selected = await api.getObject(id)
+    // agents get their memory alongside; other objects have none to show
+    store.memory = store.selected.modules.some((m) => m.moduleId === 'agent')
+      ? (await api.getMemory(id)).entries
+      : null
   })
 }
 
@@ -138,6 +145,7 @@ export function deleteObject(id: string): Promise<boolean> {
     if (store.selectedId === id) {
       store.selectedId = null
       store.selected = null
+      store.memory = null
     }
   })
 }
