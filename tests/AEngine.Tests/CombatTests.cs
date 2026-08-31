@@ -90,9 +90,7 @@ public class CombatTests
         "affordances": [
           {
             "verb": "attack", "handler": "attack",
-            "signals": [
-              { "sense": "visual", "priority": 10, "text": "{agent} hits the {target}!" }
-            ],
+            "signals": [],
             "failSignals": [
               { "sense": "visual", "priority": 10, "text": "{agent} swings at the {target} and misses." }
             ]
@@ -147,6 +145,53 @@ public class CombatTests
         var result = engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.True(result.Success);
         Assert.Matches(@"You hit the Bob for [12] damage\.", result.Message);
+    }
+
+    [Fact]
+    public void Attack_Hit_VictimSeesTheDamage()
+    {
+        var engine = NewEngine();
+        SetStat(engine, "alice", "strength", 10);
+        SetStat(engine, "bob", "agility", 5);
+        AddSword(engine, "alice");
+        Assert.True(engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "wear", "sword")).Success);
+
+        Assert.True(engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob")).Success);
+
+        // the victim hears the damage they took, observer-relative
+        Assert.Contains(engine.SignalBus.Drain("bob"),
+            s => s.Text == "Alice hits you for 5 damage.");
+    }
+
+    [Fact]
+    public void Attack_VictimCondition_WarnsOnBandCrossings()
+    {
+        var engine = NewEngine();
+        SetStat(engine, "alice", "strength", 10);
+        SetStat(engine, "bob", "agility", 5);
+        AddSword(engine, "alice");
+        Assert.True(engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "wear", "sword")).Success);
+        var attack = TestWorlds.Find(engine, "alice", "attack", "bob");
+
+        // 10 -> 5 hp crosses into "wounded"; 5 -> 0 into "severely
+        // wounded", and the knockout is felt too
+        Assert.True(engine.TurnManager.PerformAction(engine.World.GetObject("alice"), attack).Success);
+        Assert.True(engine.TurnManager.PerformAction(engine.World.GetObject("alice"), attack).Success);
+
+        // the hit report precedes the wound reports it caused
+        var felt = engine.SignalBus.Drain("bob").Select(s => s.Text).ToList();
+        Assert.Equal(
+            [
+                "Alice hits you for 5 damage.",
+                "You are wounded.",
+                "Alice hits you for 5 damage.",
+                "You are severely wounded.",
+                "You collapse, incapacitated!",
+            ],
+            felt);
     }
 
     [Fact]

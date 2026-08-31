@@ -506,11 +506,27 @@ public static class BuiltinHandlers
             var damage = Math.Max(
                 damageBonus + Checks.RollDice(random, damageDice, damageSides) - armor, 0);
             var weaponSuffix = weapon is not null ? $" with the {weapon.Name}" : "";
+
+            // the hit report goes out BEFORE the damage is applied, so the
+            // wound reports it triggers (crippled, condition bands,
+            // incapacitation) land in observers' queues after it, in order
+            var hitText = part is not null
+                ? Condition.Descriptive(ctx.World, ctx.Modules)
+                    ? $"{{agent}} lands {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, part, damage))} " +
+                      $"blow on {{target}} in the {part.Name}."
+                    : $"{{agent}} hits {{target}} in the {part.Name} for {damage} damage."
+                : Condition.Descriptive(ctx.World, ctx.Modules) && target.HasModule("health")
+                    ? $"{{agent}} lands {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, target, damage))} " +
+                      $"blow on {{target}}."
+                    : $"{{agent}} hits {{target}} for {damage} damage.";
+            ctx.Signals.Emit(ctx.Agent, target,
+                [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 10, Text = hitText }]);
+
             string message;
             string? fragment;
             if (part is not null)
             {
-                fragment = Damage.ApplyToPart(ctx.World, ctx.Modules, part, damage);
+                fragment = Damage.ApplyToPart(ctx.World, ctx.Modules, part, damage, ctx.Signals);
                 message = Condition.Descriptive(ctx.World, ctx.Modules)
                     ? $"You land {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, part, damage))} " +
                       $"blow on {targetName}'s {part.Name}{weaponSuffix}."
@@ -518,7 +534,7 @@ public static class BuiltinHandlers
             }
             else
             {
-                fragment = Damage.Apply(ctx.World, ctx.Modules, target, damage);
+                fragment = Damage.Apply(ctx.World, ctx.Modules, target, damage, ctx.Signals);
                 message = Condition.Descriptive(ctx.World, ctx.Modules) && target.HasModule("health")
                     ? $"You land {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, target, damage))} " +
                       $"blow on {targetName}{weaponSuffix}."
@@ -872,12 +888,12 @@ public static class BuiltinHandlers
                     ? $"You choke {targetName}: {Perception.WithArticle(Condition.BlowCategory(ctx.World, ctx.Modules, part, damage))} " +
                       $"blow to their {part.Name}."
                     : $"You choke {targetName} for {damage} damage.";
-                if (Damage.ApplyToPart(ctx.World, ctx.Modules, part, damage) is { } partFragment)
+                if (Damage.ApplyToPart(ctx.World, ctx.Modules, part, damage, ctx.Signals) is { } partFragment)
                     message += " " + partFragment;
                 return ActionResult.Ok(message);
             }
             var monolithic = $"You choke {targetName} for {damage} damage.";
-            if (Damage.Apply(ctx.World, ctx.Modules, target, damage) is { } fragment)
+            if (Damage.Apply(ctx.World, ctx.Modules, target, damage, ctx.Signals) is { } fragment)
                 monolithic += " " + fragment;
             return ActionResult.Ok(monolithic);
         }

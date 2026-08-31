@@ -246,7 +246,12 @@ an actor incapacitated, knocked prone, or grabbed during the window fizzles
 discarded. An option's `stat`/`skill`/`bonus` replace the defender's side
 of the opposed check (gate and handler-rolled alike, via
 `Checks.EvaluateOpposed`'s reaction parameter and `ActionContext.Reaction`);
-`noResist` accepts the action. An option's `report` is the actor-facing
+`noResist` accepts the action. An option's `text` is the defender-side
+line, delivered as a private sensation (`SendTo` — queued for display
+and recorded to memory) BEFORE the check/handler resolves, so the
+defender's log shows their choice ahead of the outcome ("You try to
+dodge the blow.", then the hit). It's recorded when the choice is made —
+phrase it as the attempt, not the outcome. An option's `report` is the actor-facing
 line for the choice ("{agent} attempts to dodge." — {agent} is the
 reacting defender, {target} the actor rendered "you";
 sentence-capitalized): it's recorded to the actor's memory and shown ahead

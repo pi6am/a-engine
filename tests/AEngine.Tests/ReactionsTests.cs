@@ -81,9 +81,7 @@ public class ReactionsTests
         "affordances": [
           {
             "verb": "attack", "handler": "attack", "duration": 3,
-            "signals": [
-              { "sense": "visual", "priority": 10, "text": "{agent} hits the {target}!" }
-            ],
+            "signals": [],
             "failSignals": [
               { "sense": "visual", "priority": 10, "text": "{agent} swings at the {target} and misses." }
             ],
@@ -245,6 +243,27 @@ public class ReactionsTests
         // and the actor's own memory keeps the choice for later context
         var memory = engine.Memory.Recall("alice");
         Assert.Contains(memory, m => m == "The Bob attempts to dodge.");
+    }
+
+    [Fact]
+    public void Reaction_DefenderSeesTheirChoice_BeforeTheOutcome()
+    {
+        var engine = NewEngine();
+        SetStat(engine, "alice", "strength", 10);
+        SetStat(engine, "bob", "agility", 0); // dodge fails: the hit lands
+        engine.World.SetFieldOverride("alice", "combatant", "damageDice", Core.World.World.ToJson(0));
+        engine.World.SetFieldOverride("alice", "combatant", "damageBonus", Core.World.World.ToJson(3));
+
+        engine.TurnManager.PerformAction(
+            engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
+        var pending = Assert.Single(engine.Reactions.Pending);
+        engine.Reactions.Choose(pending.Id, "dodge");
+
+        // the defender's log shows their choice ahead of the blow landing
+        var seen = engine.SignalBus.Drain("bob").Select(s => s.Text).ToList();
+        var dodgeIndex = seen.IndexOf("You dodge the blow.");
+        var hitIndex = seen.FindIndex(t => t == "Alice hits you for 3 damage.");
+        Assert.True(dodgeIndex >= 0 && hitIndex > dodgeIndex, string.Join(" | ", seen));
     }
 
     [Fact]

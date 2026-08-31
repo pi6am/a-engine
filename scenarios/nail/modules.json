@@ -144,7 +144,6 @@
           "duration": 3,
           "postures": ["standing"],
           "signals": [
-            { "sense": "visual", "priority": 10, "text": "{agent} hits the {target}!" },
             { "sense": "audible", "priority": 5, "text": "the crack of a blow landing." }
           ],
           "failSignals": [
@@ -154,8 +153,8 @@
             "window": 3,
             "telegraph": "{agent} swings at the {target}!",
             "options": [
-              { "id": "dodge", "label": "Dodge", "stat": "agility", "default": true, "text": "You dodge the blow.", "report": "{agent} attempts to dodge." },
-              { "id": "parry", "label": "Parry", "stat": "agility", "skill": "blades", "requiresWornModule": "weapon", "text": "You parry the blow.", "report": "{agent} attempts to parry." },
+              { "id": "dodge", "label": "Dodge", "stat": "agility", "default": true, "text": "You try to dodge the blow.", "report": "{agent} attempts to dodge." },
+              { "id": "parry", "label": "Parry", "stat": "agility", "skill": "blades", "requiresWornModule": "weapon", "text": "You try to parry the blow.", "report": "{agent} attempts to parry." },
               { "id": "accept", "label": "Take the hit", "noResist": true, "text": "You take the hit.", "report": "{agent} takes the hit." }
             ]
           }

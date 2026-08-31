@@ -104,4 +104,11 @@ wounded) drive ALL damage and status reporting through one helper
 for 7 damage", and examine and inventory show the per-part fractions (pool
 fraction for part-less agents); descriptive categorizes blows by
 damage-vs-part-pool percent and shows condition words in room listings,
-examine, and inventory (nothing while unhurt).
+examine, and inventory (nothing while unhurt). The same detail reaches
+the victim and bystanders: the attack handler emits the hit signal itself
+with the damage baked in ("the cultist sentry hits you in the head for 4
+damage." — the affordance no longer needs a static "hits!" spec), and a
+victim who worsens past a condition band, is crippled, or is
+incapacitated feels it as a private sensation ("Your left arm is
+wounded.", "Your head is crippled!", "You collapse, incapacitated!") so
+agents have a chance to flee a losing fight.

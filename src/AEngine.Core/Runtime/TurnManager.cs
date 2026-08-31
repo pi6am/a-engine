@@ -285,6 +285,12 @@ public sealed class TurnManager
                 _engine.Memory.Record(agent, report);
                 _engine.Reactions.RecordResolved(pending.ActorId, report);
             }
+            // the defender's choice is felt and shown BEFORE the outcome
+            // resolves ("You try to dodge the blow." ahead of the hit) —
+            // SendTo both records it to their memory and queues it for
+            // display; the actor sees the option's report instead
+            if (option.Text is not null)
+                _engine.SignalBus.SendTo(defender, option.Text);
             var result = EvaluateCheck(agent, pending.Action, option)
                          ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
                              pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId);
@@ -294,8 +300,6 @@ public sealed class TurnManager
             // the actor isn't an observer of their own signals — record
             // the outcome separately so the UI can show it to them
             _engine.Reactions.RecordResolved(pending.ActorId, result.Message);
-            if (option.Text is not null)
-                _engine.Memory.Record(defender, option.Text);
             if (result.Outcome == ActionOutcome.Noop)
                 return;
             if (result.Success)

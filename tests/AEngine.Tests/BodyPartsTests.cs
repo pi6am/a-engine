@@ -109,9 +109,7 @@ public class BodyPartsTests
         "affordances": [
           {
             "verb": "attack", "handler": "attack",
-            "signals": [
-              { "sense": "visual", "priority": 10, "text": "{agent} hits the {target}!" }
-            ],
+            "signals": [],
             "failSignals": [
               { "sense": "visual", "priority": 10, "text": "{agent} swings at the {target} and misses." }
             ]
@@ -343,6 +341,21 @@ public class BodyPartsTests
         Assert.Equal(ActionOutcome.Failure, stand.Outcome);
         Assert.Equal("You can't stand — your left leg is crippled.", stand.Message);
         Assert.Equal(Postures.Prone, Postures.Of(engine.World, engine.ModuleRegistry, bob));
+    }
+
+    [Fact]
+    public void Cripple_VictimFeelsIt()
+    {
+        var engine = NewEngine();
+        AddPart(engine, "bob", "head", "head", "head", 5);
+        SetStat(engine, "alice", "strength", 10);
+        SetDamage(engine, "alice", 5);
+
+        Assert.True(Attack(engine, "head").Success);
+
+        var felt = engine.SignalBus.Drain("bob").Select(s => s.Text).ToList();
+        Assert.Contains("Alice hits you in the head for 5 damage.", felt);
+        Assert.Contains("Your head is crippled!", felt);
     }
 
     [Fact]
