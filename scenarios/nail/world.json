@@ -42,7 +42,7 @@
                 {
                   "module": "ambient",
                   "overrides": {
-                    "interval": 6,
+                    "interval": { "min": 30, "max": 60 },
                     "texts": [
                       "The dragon-mark on your shoulder burns.",
                       "The dragon-mark itches with a distant, crawling heat.",

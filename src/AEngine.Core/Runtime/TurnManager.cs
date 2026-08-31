@@ -31,8 +31,11 @@ public sealed class TurnManager
     private readonly Dictionary<string, (string Verb, int Count)> _repeatStreaks =
         new(StringComparer.Ordinal);
 
-    /// <summary>Per-object next-due turn for ambient emissions.</summary>
-    private readonly Dictionary<string, int> _ambientDue = new(StringComparer.Ordinal);
+    /// <summary>Per-object elapsed seconds toward the next ambient emission.</summary>
+    private readonly Dictionary<string, int> _ambientElapsed = new(StringComparer.Ordinal);
+
+    /// <summary>Per-object randomized delay (seconds) at which the next ambient emission fires.</summary>
+    private readonly Dictionary<string, int> _ambientNextDue = new(StringComparer.Ordinal);
 
     /// <summary>Agents whose current busy spell is idle backoff — interruptible by new signals.</summary>
     private readonly HashSet<string> _busyInterruptible = new(StringComparer.Ordinal);
@@ -106,9 +109,15 @@ public sealed class TurnManager
                 EmitSignals(agent, action, text, departureRoomId, holderBefore);
             else
                 EmitFailSignals(agent, action);
-            _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, result);
+            var duration = BusyDuration(agent, action, result);
+            _busyUntil[agent.Id] = Turn + duration;
             if (_engine.TimeMode == TimeMode.TurnBased)
+            {
+                // ambient time passes with the actor's own activity, so NPC
+                // count doesn't speed up emissions for the player
+                AdvanceAmbient(duration, agent.Id);
                 AdvanceTurn();
+            }
             return result;
         }
     }
@@ -149,9 +158,13 @@ public sealed class TurnManager
             .Replace("{target}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal)
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         _engine.Memory.Record(agent, actorText);
-        _busyUntil[agent.Id] = Turn + BusyDuration(agent, action, ActionResult.Ok(actorText));
+        var parkDuration = BusyDuration(agent, action, ActionResult.Ok(actorText));
+        _busyUntil[agent.Id] = Turn + parkDuration;
         if (_engine.TimeMode == TimeMode.TurnBased)
+        {
+            AdvanceAmbient(parkDuration, agent.Id);
             AdvanceTurn();
+        }
         return ActionResult.Ok(actorText);
     }
 
@@ -603,36 +616,83 @@ public sealed class TurnManager
             .FirstOrDefault(a => a.Verb == action.Verb);
     }
 
-    private void AdvanceTurn()
+    /// <summary>
+    /// Advance ambient emission timers (a cursed mark burning, a charm
+    /// tingling) by <paramref name="seconds"/> and fire any that come due.
+    /// An object with the `ambient` module periodically sends one of its
+    /// `texts` variants to the agent holding it. Timing is in seconds of
+    /// time actually passing: real-time ticks advance every object, while
+    /// in turn-based mode each action advances only the acting agent's own
+    /// held objects by the action's duration — so adding more NPCs doesn't
+    /// speed up the player's emissions. When <paramref name="onlyHolderId"/>
+    /// is set, only objects held by that agent advance. The delay between
+    /// emissions is re-rolled each time from the `interval` spec.
+    /// </summary>
+    private void AdvanceAmbient(int seconds, string? onlyHolderId)
     {
-        Turn++;
-        _engine.Reactions.ExpireDue(Turn); // reaction deadlines pick the default
-        // ambient emissions (a cursed mark burning, a charm tingling): an
-        // object with the `ambient` module periodically sends one of its
-        // `texts` variants to the agent holding it
         foreach (var obj in _engine.World.Objects.Values)
         {
             if (!obj.HasModule("ambient"))
                 continue;
-            var interval = _engine.ModuleRegistry.ResolveInt(obj, "ambient", "interval", 8);
-            if (interval < 1)
-                interval = 1;
-            if (!_ambientDue.TryGetValue(obj.Id, out var due))
-                due = Turn + interval; // first fire after one interval
-            if (Turn < due)
+            WorldObject? holder = obj.Parent.Length > 0 && _engine.World.HasObject(obj.Parent)
+                ? _engine.World.GetObject(obj.Parent)
+                : null;
+            if (holder is null || !holder.HasModule("agent"))
+                continue; // the timer only runs while an agent holds it
+            if (onlyHolderId is not null && holder.Id != onlyHolderId)
+                continue;
+            if (!_ambientNextDue.TryGetValue(obj.Id, out var due))
+                due = RollAmbientDelay(obj); // first fire after one interval
+            var elapsed = _ambientElapsed.GetValueOrDefault(obj.Id) + seconds;
+            if (elapsed < due)
             {
-                _ambientDue[obj.Id] = due;
+                _ambientElapsed[obj.Id] = elapsed;
+                _ambientNextDue[obj.Id] = due;
                 continue;
             }
-            _ambientDue[obj.Id] = Turn + interval + _engine.Random.Next(interval / 2 + 1);
-            if (obj.Parent.Length > 0 && _engine.World.HasObject(obj.Parent) &&
-                _engine.World.GetObject(obj.Parent) is { } holder && holder.HasModule("agent"))
-            {
-                var texts = _engine.ModuleRegistry.ResolveStringList(obj, "ambient", "texts") ?? [];
-                if (texts.Count > 0)
-                    _engine.SignalBus.SendTo(holder, texts[_engine.Random.Next(texts.Count)]);
-            }
+            _ambientElapsed[obj.Id] = 0;
+            _ambientNextDue[obj.Id] = RollAmbientDelay(obj);
+            var texts = _engine.ModuleRegistry.ResolveStringList(obj, "ambient", "texts") ?? [];
+            if (texts.Count > 0)
+                _engine.SignalBus.SendTo(holder, texts[_engine.Random.Next(texts.Count)]);
         }
+    }
+
+    /// <summary>
+    /// Roll the next ambient delay from the `interval` spec:
+    /// a plain number (fixed period) or { "min": n, "max": n } (uniform
+    /// random between them, re-rolled per emission).
+    /// </summary>
+    private int RollAmbientDelay(WorldObject obj)
+    {
+        var min = 8;
+        var max = 8;
+        switch (_engine.ModuleRegistry.ResolveField(obj, "ambient", "interval"))
+        {
+            case { ValueKind: System.Text.Json.JsonValueKind.Number } e:
+                min = max = e.GetInt32();
+                break;
+            case { ValueKind: System.Text.Json.JsonValueKind.Object } e:
+                if (e.TryGetProperty("min", out var mn) && mn.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    min = mn.GetInt32();
+                if (e.TryGetProperty("max", out var mx) && mx.ValueKind == System.Text.Json.JsonValueKind.Number)
+                    max = mx.GetInt32();
+                break;
+        }
+        min = Math.Max(1, min);
+        max = Math.Max(min, max);
+        return min + _engine.Random.Next(max - min + 1);
+    }
+
+    private void AdvanceTurn()
+    {
+        Turn++;
+        _engine.Reactions.ExpireDue(Turn); // reaction deadlines pick the default
+        // in real-time mode each tick is one second for everyone; in
+        // turn-based mode ambient time is advanced per actor by
+        // PerformAction (see AdvanceAmbient) so NPC count doesn't matter
+        if (_engine.TimeMode == TimeMode.RealTime)
+            AdvanceAmbient(1, onlyHolderId: null);
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))
         {
             if (!_engine.World.HasObject(scheduled.AgentId))

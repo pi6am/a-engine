@@ -4,9 +4,12 @@ namespace AEngine.Tests;
 
 /// <summary>
 /// Ambient emissions: an object with the `ambient` module periodically
-/// sends one of its `texts` variants (picked at random, interval plus
-/// jitter) as a private sensation to the agent holding it — a cursed mark
-/// burning. Non-agent holders and empty variant lists emit nothing.
+/// sends one of its `texts` variants (picked at random, after a delay
+/// rolled from the `interval` spec — a number or { min, max }) as a
+/// private sensation to the agent holding it — a cursed mark burning.
+/// Timing follows time passing (the holder's own action durations in
+/// turn-based mode), not turn counts, so other agents' activity doesn't
+/// accelerate it. Non-agent holders pause the timer and emit nothing.
 /// </summary>
 public class AmbientTests
 {
@@ -42,25 +45,55 @@ public class AmbientTests
     }
 
     [Fact]
-    public void Ambient_EmitsAVariantToTheHolder_EveryInterval()
+    public void Ambient_EmitsAVariantToTheHolder_AfterIntervalSeconds()
     {
         var engine = NewEngine();
         engine.Random = new Random(1);
         var alice = engine.World.GetObject("alice");
 
-        // nothing before the first interval elapses (scheduled at load)
-        Wait(engine, 2);
+        // interval 3: one wait (1s) is not enough...
+        Wait(engine, 1);
         Assert.Empty(engine.SignalBus.Drain("alice"));
 
-        Wait(engine, 2); // turn 4: interval 3 due (first fire at load + interval)
+        // ...but the second wait (2s more = 3s of her own time) fires it
+        Wait(engine, 1);
         var signal = Assert.Single(engine.SignalBus.Drain("alice"));
         Assert.True(signal.Text is "The mark burns." or "The mark itches.", signal.Text);
 
         // and it keeps coming, also remembered
-        Wait(engine, 8);
+        Wait(engine, 4);
         Assert.NotEmpty(engine.SignalBus.Drain("alice"));
         Assert.Contains(engine.Memory.Recall("alice"),
             m => m == "The mark burns." || m == "The mark itches.");
+    }
+
+    [Fact]
+    public void Ambient_OtherAgentsActions_DontAdvanceTheTimer()
+    {
+        var engine = NewEngine();
+        var bob = engine.World.GetObject("bob");
+
+        // Bob is busy for many turns; Alice (holding the mark) does nothing,
+        // so no time passes for the mark and nothing fires
+        for (var i = 0; i < 10; i++)
+            engine.TurnManager.PerformAction(bob, TestWorlds.Find(engine, "bob", "wait"));
+        Assert.Empty(engine.SignalBus.Drain("alice"));
+    }
+
+    [Fact]
+    public void Ambient_IntervalRange_FiresWithinMinMax()
+    {
+        var engine = NewEngine();
+        engine.World.SetFieldOverride("mark", "ambient", "interval",
+            Core.World.World.ToJson(new { min = 2, max = 4 }));
+
+        // 1s of holder time: below the minimum delay, nothing fires
+        Wait(engine, 1);
+        Assert.Empty(engine.SignalBus.Drain("alice"));
+
+        // a few more seconds: past even the maximum delay, it has fired
+        Wait(engine, 3);
+        Assert.NotEmpty(engine.SignalBus.Drain("alice"));
     }
 
     [Fact]

@@ -118,9 +118,15 @@ gives agents descriptive names (the player object is "the guest", not
 Ephemeral sensory observations (`SignalSense.Visual | Audible`) delivered
 by `SignalBus` on `GameEngine` into per-agent in-memory queues
 (`Emit`/`Drain`/`Peek`), plus private sensations via `SendTo`: an object
-with the `ambient` module periodically (every `interval` turns plus
-jitter, scanned in `AdvanceTurn`) sends one of its `texts` variants to the
-agent holding it — a cursed mark burning. Ambient texts are authored
+with the `ambient` module periodically sends one of its `texts` variants
+to the agent holding it — a cursed mark burning. The delay comes from
+the `interval` spec, either a fixed number of seconds or
+`{ "min": n, "max": n }` (uniform random, re-rolled per emission), and
+tracks time actually passing: real-time ticks advance all timers, while
+in turn-based mode each action advances only the acting agent's own held
+objects by the action's duration — so NPC count doesn't speed up the
+player's emissions. The timer only runs while an agent holds the object.
+Ambient texts are authored
 second-person for the holder and do not propagate. Location is
 room-granular: `World.RoomOf` walks
 the parent chain to the nearest `room` module, so a carried agent (or one
