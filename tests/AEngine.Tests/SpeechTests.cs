@@ -133,4 +133,58 @@ public class SpeechTests
         Assert.NotNull(action);
         Assert.Equal("hello world", action!.Text);
     }
+
+    [Fact]
+    public void SpeechLine_QuotedWithTrailingAddressee_PicksAddressee()
+    {
+        // the LLM's natural paraphrase: Say: "..." to X (speech first)
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a");
+        engine.World.CreateObject("carol", "room_a", "Carol");
+        engine.World.AddModule("carol", "agent");
+        engine.World.AddModule("carol", "can_speak");
+        var alice = engine.World.GetObject("alice");
+
+        var withColon = PlanExecutor.MatchAvailableOrPotential(engine, alice, "Say: \"Hello there\" to Carol");
+        Assert.NotNull(withColon);
+        Assert.Equal("carol", withColon!.TargetId);
+        Assert.Equal("Hello there", withColon.Text);
+
+        var noColon = PlanExecutor.MatchAvailableOrPotential(engine, alice, "Say \"Hello there\" to Carol");
+        Assert.NotNull(noColon);
+        Assert.Equal("carol", noColon!.TargetId);
+        Assert.Equal("Hello there", noColon.Text);
+    }
+
+    [Fact]
+    public void SpeechLine_QuotedTrailingAddressee_SingleOtherAgent_StaysUndirected()
+    {
+        // with one other agent present the say entries are undirected; the
+        // trailing addressee is parsed but doesn't disturb the speech
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a");
+        var alice = engine.World.GetObject("alice");
+
+        var action = PlanExecutor.MatchAvailableOrPotential(engine, alice, "Say: \"Hello\" to Bob");
+        Assert.NotNull(action);
+        Assert.Equal("alice", action!.TargetId);
+        Assert.Equal("Hello", action.Text);
+
+        var result = engine.TurnManager.PerformAction(alice, action, action.Text);
+        Assert.Equal("You say: \"Hello\"", result.Message);
+    }
+
+    [Fact]
+    public void SpeechLine_UnquotedTrailingTo_IsPartOfTheUtterance()
+    {
+        // without quotes "to X" can't be told apart from the words spoken
+        // ("say hello to Bob" is itself idiomatic speech) — it stays speech
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a");
+        var alice = engine.World.GetObject("alice");
+
+        var action = PlanExecutor.MatchAvailableOrPotential(engine, alice, "Say hello to Bob");
+        Assert.NotNull(action);
+        Assert.Equal("hello to Bob", action!.Text);
+    }
 }

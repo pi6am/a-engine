@@ -145,8 +145,11 @@ public sealed class PlanExecutor
     }
 
     /// <summary>
-    /// Parse a speech line: "Say [to X]: \"...\"", "Say: ...", "Say ...".
-    /// Quotation marks and the [to X] addressee are optional.
+    /// Parse a speech line: "Say [to X]: \"...\"", "Say: ...", "Say ..." —
+    /// and the speech-first variant "Say: \"...\" to X". Quotation marks
+    /// and the [to X] addressee are optional; the trailing "to X" form is
+    /// only recognized with quoted speech, where the closing quote
+    /// disambiguates it from the utterance itself.
     /// </summary>
     public static bool TryParseSpeech(string line, out string? addressee, out string speech)
     {
@@ -168,6 +171,22 @@ public sealed class PlanExecutor
         }
         if (rest.StartsWith(':'))
             rest = rest[1..].Trim();
+        if (rest.Length > 1 && rest[0] is '"' or '“')
+        {
+            var closeQuote = rest.IndexOfAny(['"', '”'], 1);
+            if (closeQuote > 0)
+            {
+                speech = rest[1..closeQuote].Trim();
+                var tail = rest[(closeQuote + 1)..].Trim();
+                if (tail.StartsWith("to ", StringComparison.OrdinalIgnoreCase) && tail.Length > 3)
+                {
+                    var name = tail[3..].Trim().Trim('"', '“', '”').TrimEnd('.').Trim();
+                    if (name.Length > 0)
+                        addressee ??= name;
+                }
+                return speech.Length > 0;
+            }
+        }
         speech = rest.Trim().Trim('"').Trim();
         return speech.Length > 0;
     }
