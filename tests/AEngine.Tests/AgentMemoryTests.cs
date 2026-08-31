@@ -88,6 +88,29 @@ public class AgentMemoryTests
     }
 
     [Fact]
+    public void Memory_NewSince_KeepsUpAcrossTheCapacityTrim()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var bob = engine.World.GetObject("bob");
+        engine.World.SetFieldOverride("bob", "agent", "memoryLength", World.ToJson(3));
+
+        engine.Memory.Record(bob, "event 1");
+        var (first, seen) = engine.Memory.NewSince("bob", 0);
+        Assert.Equal(["event 1"], first);
+
+        // the cap trims continuously; trimmed entries are gone from the
+        // feed, but the cursor must never get stuck
+        for (var i = 2; i <= 6; i++)
+            engine.Memory.Record(bob, $"event {i}");
+        var (second, seen2) = engine.Memory.NewSince("bob", seen);
+        Assert.Equal(["event 4", "event 5", "event 6"], second);
+
+        // the regression: an index-based cursor returns nothing here forever
+        engine.Memory.Record(bob, "event 7");
+        Assert.Equal(["event 7"], engine.Memory.NewSince("bob", seen2).Entries);
+    }
+
+    [Fact]
     public void Memory_CollapsesConsecutiveDuplicates()
     {
         var engine = TestWorlds.NewTwoRoomEngine();

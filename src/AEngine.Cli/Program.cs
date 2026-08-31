@@ -156,6 +156,8 @@ var timescale = 1.0;
 // auto-play (/auto): the AI policy drives the player character. Read on
 // the main thread and the world-clock timer, so use Interlocked.
 var autoPlay = 0;
+// printed-so-far memory sequence for the auto spectator feed
+var autoMemorySeenSeq = 0L;
 var output = new OutputSettings();
 var slash = new SlashCommandRegistry();
 slash.Register("showplan", [], "Control whether the plan is logged (/showplan on|off)", args =>
@@ -325,14 +327,16 @@ while (true)
     if (arrivalLook is not null)
         await PrintRoomAsync(arrivalRoomId!, arrivalRoomName!, arrivalLook);
 
-    // sensory signals from other agents' actions (e.g. NPCs)
-    foreach (var signal in engine.SignalBus.Drain(player.Id))
-    {
-        if (NarrateActions())
-            eventBuffer.Add(RenderSignal(signal));
-        else
-            Console.WriteLine(RenderSignal(signal));
-    }
+    // sensory signals from other agents' actions (e.g. NPCs); in auto
+    // mode the memory spectator feed (AutoStep/DrainAutoFeed) owns this
+    if (!IsAuto())
+        foreach (var signal in engine.SignalBus.Drain(player.Id))
+        {
+            if (NarrateActions())
+                eventBuffer.Add(RenderSignal(signal));
+            else
+                Console.WriteLine(RenderSignal(signal));
+        }
     // safety net: a real-time race can land a signal here after the
     // action's own flush already ran
     await FlushEventsAsync();
@@ -718,6 +722,7 @@ void SetAuto(bool on)
         engine.World.SetFieldOverride(player.Id, "agent", "policy",
             AEngine.Core.World.World.ToJson(on ? "auto" : "player"));
         engine.TurnManager.DrainOutcomes(player.Id); // discard pre-auto spectating backlog
+        autoMemorySeenSeq = engine.Memory.LatestSeq(player.Id); // start the feed fresh
     }
     if (on)
         Console.WriteLine("Auto mode on: the AI is playing your character — press ESC to take back control." +
@@ -727,25 +732,40 @@ void SetAuto(bool on)
 }
 
 // One hands-off auto-play step: NPC turns (the auto-played player among
-// them) and reaction resolution, then live spectator output — the
-// player's own outcomes (signals never reach the actor, so they ride a
-// separate queue) and observed signals. Wakes the prompt when the world
-// has ended so the main loop can print the ending.
+// them) and reaction resolution, then live spectator output. The feed
+// comes from the player's MEMORY, not the signal queue: the player's own
+// policy drains that queue into its planning context (that's the replan
+// interrupt mechanism), which would swallow lines like an NPC's gift to
+// the player. Memory is recorded at delivery time, before any drain.
+// Wakes the prompt when the world has ended so the main loop can print
+// the ending.
 void AutoStep()
 {
     RunNpcTurnsAndResolve();
     bool gameEnded;
+    IReadOnlyList<string> feed;
     lock (engine.SyncRoot)
     {
-        foreach (var message in engine.TurnManager.DrainOutcomes(player.Id))
-            PrintAutoLine(message);
-        foreach (var signal in engine.SignalBus.Drain(player.Id))
-            PrintAutoLine(RenderSignal(signal));
+        feed = DrainAutoFeed();
         gameEnded = engine.GameOver is not null ||
             Health.IsIncapacitated(engine.World, engine.ModuleRegistry, player);
     }
+    foreach (var line in feed)
+        PrintAutoLine(line);
     if (gameEnded)
         console.Wake();
+}
+
+// New entries in the player's memory since the last drain; the signal
+// queue is emptied for hygiene (its content is all in memory). Tracks by
+// sequence number: an index cursor goes stale once the memory cap trims
+// (the list stops growing, so "skip N" sees nothing new forever).
+IReadOnlyList<string> DrainAutoFeed()
+{
+    var (entries, lastSeq) = engine.Memory.NewSince(player.Id, autoMemorySeenSeq);
+    autoMemorySeenSeq = lastSeq;
+    engine.SignalBus.Drain(player.Id);
+    return entries;
 }
 
 void PrintAutoLine(string message)
@@ -793,13 +813,17 @@ void ResolvePendingReactions()
 // the arena duelist for 6 damage.") — signals never reach the actor
 void PrintResolvedOutcomes()
 {
+    // in auto mode the memory spectator feed shows these; just discard
+    if (IsAuto())
+    {
+        engine.Reactions.DrainResolved();
+        return;
+    }
     foreach (var (actorId, message) in engine.Reactions.DrainResolved())
         if (actorId == player.Id)
         {
             if (NarrateActions())
                 eventBuffer.Add(message);
-            else if (IsAuto() && !Console.IsInputRedirected)
-                console.WriteAbove(message); // the auto ReadLine owns the bottom rows
             else
                 Console.WriteLine(message);
         }
@@ -866,7 +890,7 @@ async Task RealTimeLoop(CancellationToken ct)
             {
                 IReadOnlyList<Signal> signals;
                 IReadOnlyList<(string ActorId, string Message)> resolved;
-                IReadOnlyList<string> autoOutcomes = [];
+                IReadOnlyList<string> autoFeed = [];
                 string? status;
                 string? arrival = null;
                 string? arrivalRoomId = null;
@@ -887,12 +911,21 @@ async Task RealTimeLoop(CancellationToken ct)
                     // would never notice — wake it so it prints the ending
                     gameOver = engine.GameOver is not null ||
                         Health.IsIncapacitated(engine.World, engine.ModuleRegistry, player);
-                    signals = engine.SignalBus.Drain(player.Id);
-                    resolved = engine.Reactions.DrainResolved();
-                    // auto-play: the player's own action results (signals
-                    // never reach the actor, so they ride a separate queue)
+                    // auto-play: the spectator feed comes from the player's
+                    // memory (their own policy drains the signal queue into
+                    // its planning context — see DrainAutoFeed)
                     if (auto)
-                        autoOutcomes = engine.TurnManager.DrainOutcomes(player.Id);
+                    {
+                        autoFeed = DrainAutoFeed();
+                        engine.Reactions.DrainResolved(); // in memory already
+                        signals = [];
+                        resolved = [];
+                    }
+                    else
+                    {
+                        signals = engine.SignalBus.Drain(player.Id);
+                        resolved = engine.Reactions.DrainResolved();
+                    }
                     // the player arrived somewhere new without acting
                     // (e.g. carried): print the room description
                     var room = engine.World.RoomOf(player.Id);
@@ -916,7 +949,7 @@ async Task RealTimeLoop(CancellationToken ct)
                     console.SetStatus(status);
                 if (!gameOver &&
                     arrival is null && signals.Count == 0 && resolved.Count == 0 &&
-                    autoOutcomes.Count == 0 && pendingEvents.Count == 0)
+                    autoFeed.Count == 0 && pendingEvents.Count == 0)
                     continue;
                 var sb = new StringBuilder();
                 if (arrival is not null)
@@ -949,7 +982,7 @@ async Task RealTimeLoop(CancellationToken ct)
                 foreach (var (actorId, message) in resolved)
                     if (actorId == player.Id)
                         eventLines.Add(message);
-                eventLines.AddRange(autoOutcomes);
+                eventLines.AddRange(autoFeed);
                 if (NarrateActions() && !gameOver)
                 {
                     // batch over a short window: a burst of world activity

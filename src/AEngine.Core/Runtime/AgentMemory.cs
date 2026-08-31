@@ -21,15 +21,18 @@ public sealed class AgentMemory
     public const int DefaultCapacity = 25;
 
     private readonly ModuleRegistry _modules;
-    private readonly Dictionary<string, List<(string? Key, string Text)>> _entries =
+    private readonly Dictionary<string, List<(long Seq, string? Key, string Text)>> _entries =
         new(StringComparer.Ordinal);
+    private readonly Dictionary<string, long> _nextSeq = new(StringComparer.Ordinal);
 
     public AgentMemory(ModuleRegistry modules) => _modules = modules;
 
     /// <summary>
     /// Append an event, truncating the oldest beyond the agent's configured
     /// capacity. A <paramref name="snapshotKey"/> marks a state snapshot:
-    /// the previous entry with the same key is removed first.
+    /// the previous entry with the same key is removed first. Each entry
+    /// gets a per-agent sequence number so tooling can track new entries
+    /// even while the capacity trim drops old ones.
     /// </summary>
     public void Record(WorldObject agent, string entry, string? snapshotKey = null)
     {
@@ -39,7 +42,9 @@ public sealed class AgentMemory
             list.RemoveAll(e => e.Key == snapshotKey);
         else if (list.Count > 0 && list[^1].Text == entry)
             return; // consecutive duplicate — nothing new to remember
-        list.Add((snapshotKey, entry));
+        var seq = _nextSeq.TryGetValue(agent.Id, out var n) ? n + 1 : 1;
+        _nextSeq[agent.Id] = seq;
+        list.Add((seq, snapshotKey, entry));
         var capacity = CapacityOf(agent);
         while (list.Count > capacity)
             list.RemoveAt(0);
@@ -50,6 +55,25 @@ public sealed class AgentMemory
         _entries.TryGetValue(agentId, out var list)
             ? list.Select(e => e.Text).ToArray()
             : [];
+
+    /// <summary>The highest sequence number recorded for the agent (0 = none).</summary>
+    public long LatestSeq(string agentId) =>
+        _nextSeq.TryGetValue(agentId, out var n) ? n : 0;
+
+    /// <summary>
+    /// Entries recorded after <paramref name="afterSeq"/>, oldest first,
+    /// with the newest sequence — a cursor that survives the capacity trim
+    /// (an index-based cursor goes stale once the list is full and its
+    /// length stops growing).
+    /// </summary>
+    public (IReadOnlyList<string> Entries, long LastSeq) NewSince(string agentId, long afterSeq)
+    {
+        if (!_entries.TryGetValue(agentId, out var list))
+            return ([], afterSeq);
+        var fresh = list.Where(e => e.Seq > afterSeq).ToArray();
+        return (fresh.Select(e => e.Text).ToArray(),
+                fresh.Length > 0 ? fresh[^1].Seq : afterSeq);
+    }
 
     /// <summary>Forget everything (e.g. the agent was destroyed).</summary>
     public void Clear(string agentId) => _entries.Remove(agentId);
