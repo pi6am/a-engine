@@ -498,7 +498,9 @@
         { "module": "beverage", "overrides": {
           "alcohol": 0.25,
           "volume": 0.2,
-          "taste": "Bitter, smoky, and better than it has any right to be."
+          "taste": "Bitter, smoky, and better than it has any right to be.",
+          "emptyName": "empty mug",
+          "emptyDescription": "A chipped mug, drained to the last drop."
         } }
       ]
     },
@@ -511,7 +513,9 @@
         { "module": "beverage", "overrides": {
           "alcohol": 0.55,
           "volume": 0.1,
-          "taste": "It burns going down and keeps burning after that."
+          "taste": "It burns going down and keeps burning after that.",
+          "emptyName": "empty shot glass",
+          "emptyDescription": "A spent shot glass with a thin amber ring."
         } }
       ]
     },
@@ -524,7 +528,9 @@
         { "module": "beverage", "overrides": {
           "alcohol": 0.3,
           "volume": 0.15,
-          "taste": "Cold, bright, and faintly sad."
+          "taste": "Cold, bright, and faintly sad.",
+          "emptyName": "empty wine glass",
+          "emptyDescription": "A glass that once held something brighter."
         } }
       ]
     },
@@ -536,7 +542,9 @@
         "portable",
         { "module": "food", "overrides": {
           "sobering": 0.1,
-          "taste": "Hot, salty, exactly what the night needed."
+          "taste": "Hot, salty, exactly what the night needed.",
+          "emptyName": "basket of crumbs",
+          "emptyDescription": "A basket of cold crumbs and salt."
         } }
       ]
     },
@@ -548,7 +556,9 @@
         "portable",
         { "module": "food", "overrides": {
           "sobering": 0.2,
-          "taste": "Rich, peppery, and reassuringly hot."
+          "taste": "Rich, peppery, and reassuringly hot.",
+          "emptyName": "empty bowl",
+          "emptyDescription": "A bowl scraped clean."
         } }
       ]
     }

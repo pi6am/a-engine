@@ -134,6 +134,12 @@ public sealed class TurnManager
             var holderBefore = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
                 ? _engine.World.GetObject(action.TargetId).Parent
                 : null;
+            // and its name before the handler runs — a handler may rename
+            // its target (a consumed drink becoming "empty mug"), and
+            // observers should hear what it WAS
+            var targetNameBefore = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+                ? _engine.World.GetObject(action.TargetId).Name
+                : null;
             var result = gateFailure
                          ?? EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb,
@@ -148,7 +154,7 @@ public sealed class TurnManager
             if (result.Outcome == ActionOutcome.Noop)
                 return result;
             if (result.Success)
-                EmitSignals(agent, action, text, departureRoomId, holderBefore);
+                EmitSignals(agent, action, text, departureRoomId, holderBefore, targetNameBefore);
             else
                 EmitFailSignals(agent, action);
             var duration = BusyDuration(agent, action, result);
@@ -301,6 +307,12 @@ public sealed class TurnManager
             }
             var departureRoomId = _engine.World.RoomOf(agent.Id).Id;
             var defender = _engine.World.GetObject(pending.DefenderId);
+            // the target's pre-handler name, for the same reason as
+            // PerformAction: handlers may rename what they touch
+            var targetNameBefore =
+                pending.Action.TargetId is not null && _engine.World.HasObject(pending.Action.TargetId)
+                    ? _engine.World.GetObject(pending.Action.TargetId).Name
+                    : null;
             // the choice itself is otherwise invisible to the actor (their
             // own signals never reach them): report it ahead of the outcome
             if (option.Report is not null)
@@ -329,7 +341,8 @@ public sealed class TurnManager
             if (result.Outcome == ActionOutcome.Noop)
                 return;
             if (result.Success)
-                EmitSignals(agent, pending.Action, pending.Text, departureRoomId);
+                EmitSignals(agent, pending.Action, pending.Text, departureRoomId,
+                    targetName: targetNameBefore);
             else
                 EmitFailSignals(agent, pending.Action);
         }
@@ -582,7 +595,7 @@ public sealed class TurnManager
     /// <summary>Emit the affordance's signal specs for a successful action.</summary>
     private void EmitSignals(
         WorldObject agent, AvailableAction action, string? text,
-        string departureRoomId, string? holderBefore = null)
+        string departureRoomId, string? holderBefore = null, string? targetName = null)
     {
         if (!_engine.ModuleRegistry.Has(action.ModuleId))
             return;
@@ -595,7 +608,7 @@ public sealed class TurnManager
             : null;
         var traversal = BuildTraversal(agent, action, target, departureRoomId);
         _engine.SignalBus.Emit(agent, target, affordance.Signals, text, traversal,
-            Extras(holderBefore, action.AuxTargetId));
+            Extras(holderBefore, action.AuxTargetId), targetName);
     }
 
     /// <summary>

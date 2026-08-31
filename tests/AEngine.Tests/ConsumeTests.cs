@@ -25,7 +25,9 @@ public class ConsumeTests
           { "name": "volume", "type": "number", "default": 0.0 },
           { "name": "empty", "type": "bool", "default": false },
           { "name": "destroyOnConsume", "type": "bool", "default": false },
-          { "name": "taste", "type": "string", "default": "" }
+          { "name": "taste", "type": "string", "default": "" },
+          { "name": "emptyName", "type": "string", "default": "" },
+          { "name": "emptyDescription", "type": "string", "default": "" }
         ],
         "affordances": [
           {
@@ -66,6 +68,8 @@ public class ConsumeTests
         world.SetFieldOverride("ale", "beverage", "alcohol", CoreWorld.ToJson(0.3));
         world.SetFieldOverride("ale", "beverage", "volume", CoreWorld.ToJson(0.25));
         world.SetFieldOverride("ale", "beverage", "taste", CoreWorld.ToJson("The ale is bitter and cold."));
+        world.SetFieldOverride("ale", "beverage", "emptyName", CoreWorld.ToJson("empty mug"));
+        world.SetFieldOverride("ale", "beverage", "emptyDescription", CoreWorld.ToJson("A mug, drained."));
 
         world.CreateObject("pill", "room_a", "sobering pill");
         world.AddModule("pill", "food");
@@ -114,7 +118,51 @@ public class ConsumeTests
         // ...but a direct handler call noops rather than failing
         var again = engine.TurnManager.Execute(alice, "consume", "ale", verb: "drink");
         Assert.Equal(ActionOutcome.Noop, again.Outcome);
-        Assert.Equal("The mug of ale is empty.", again.Message);
+        Assert.Equal("There's nothing left in the empty mug.", again.Message);
+    }
+
+    [Fact]
+    public void Drinking_RenamesTheVesselToItsEmptyIdentity()
+    {
+        var engine = NewEngine();
+        var alice = engine.World.GetObject("alice");
+        engine.TurnManager.Execute(alice, "consume", "ale", verb: "drink");
+        var mug = engine.World.GetObject("ale");
+        Assert.Equal("empty mug", mug.Name);
+        Assert.Equal("A mug, drained.", mug.Description);
+        // menus name the empty vessel, and there is nothing left to drink
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(alice),
+            a => a.Verb == "drink" && a.TargetId == "ale");
+    }
+
+    [Fact]
+    public void Observers_SeeThePreConsumptionName()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var alice = world.GetObject("alice");
+        world.CreateObject("carol", "room_a", "Carol");
+        world.AddModule("carol", "agent");
+
+        engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "drink", "ale"));
+
+        // the signal names what was drunk, not the empty mug it became
+        Assert.Contains(engine.SignalBus.Drain("carol"),
+            s => s.Text == "Alice drinks the mug of ale.");
+    }
+
+    [Fact]
+    public void BlanketRename_SkippedWhenEmptyNameUnset()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        world.CreateObject("water", "room_a", "jug of water");
+        world.AddModule("water", "beverage");
+        var alice = world.GetObject("alice");
+        engine.TurnManager.Execute(alice, "consume", "water", verb: "drink");
+        // no emptyName: the vessel keeps its original name
+        Assert.Equal("jug of water", world.GetObject("water").Name);
     }
 
     [Fact]

@@ -143,7 +143,10 @@ public class TavernPlaythroughTests
         var drink = Do(engine, "drink", ale);
         Assert.Equal(ActionOutcome.Success, drink.Outcome);
         Assert.Equal("You drink the mug of Green Gullet ale.", drink.Message);
-        // the mug stays behind, empty; clearing is offered, drinking isn't
+        // the mug visibly becomes an empty mug — the state is legible,
+        // not hidden in a field
+        Assert.Equal("empty mug", engine.World.GetObject(ale).Name);
+        // the vessel stays behind, empty; clearing is offered, drinking isn't
         var player = engine.World.GetObject("player");
         Assert.DoesNotContain(engine.ActionResolver.Resolve(player),
             a => a.Verb == "drink" && a.TargetId == ale);

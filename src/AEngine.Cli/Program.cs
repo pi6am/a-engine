@@ -427,7 +427,7 @@ while (true)
         }
         if (plan.Count == 0)
         {
-            Console.WriteLine("The LLM returned no usable actions.");
+            Console.WriteLine("You can't do that.");
             continue;
         }
         if (output.ShowPlan)

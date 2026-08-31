@@ -55,12 +55,16 @@ public sealed class SignalBus
     /// Format and deliver the given specs for an action performed by
     /// <paramref name="actor"/>. <paramref name="extra"/> supplies
     /// additional template placeholders (e.g. {container} naming the holder
-    /// the target was taken from).
+    /// the target was taken from). <paramref name="targetName"/> overrides
+    /// how {target} renders — the target's name as it was BEFORE the
+    /// handler ran, when a handler renames its target (a consumed drink
+    /// becoming "empty mug"): observers should hear what was drunk, not
+    /// what it became.
     /// </summary>
     public void Emit(
         WorldObject actor, WorldObject? target, IReadOnlyList<SignalSpec> specs,
         string? arg = null, TraversalContext? traversal = null,
-        IReadOnlyDictionary<string, string>? extra = null)
+        IReadOnlyDictionary<string, string>? extra = null, string? targetName = null)
     {
         if (specs.Count == 0)
             return;
@@ -80,7 +84,8 @@ public sealed class SignalBus
             if (observer.Id == actor.Id || !observer.HasModule("agent"))
                 continue;
             var best = BestReceivable(
-                observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg, extra);
+                observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg, extra,
+                targetName);
             if (best is null)
                 continue;
             Enqueue(observer, best);
@@ -178,7 +183,7 @@ public sealed class SignalBus
         WorldObject observer, string originRoomId, string? otherSideRoomId,
         WorldObject actor, WorldObject? target,
         IReadOnlyList<SignalSpec> specs, string? arg,
-        IReadOnlyDictionary<string, string>? extra = null)
+        IReadOnlyDictionary<string, string>? extra = null, string? targetName = null)
     {
         var observerRoomId = _world.RoomOf(observer.Id).Id;
         WorldObject? portalSide = null;
@@ -208,7 +213,7 @@ public sealed class SignalBus
                 continue;
             if (best is null || spec.Priority > best.Priority)
             {
-                var text = Format(spec.Text, actor, target, arg, extra, observer);
+                var text = Format(spec.Text, actor, target, arg, extra, observer, targetName);
                 if (observerSide is not null && !SameDoor(target, observerSide))
                     text = text.TrimEnd('.') + Suffix(observerSide);
                 best = new Signal(
@@ -292,7 +297,8 @@ public sealed class SignalBus
 
     private static string Format(
         string template, WorldObject actor, WorldObject? target, string? arg,
-        IReadOnlyDictionary<string, string>? extra = null, WorldObject? observer = null)
+        IReadOnlyDictionary<string, string>? extra = null, WorldObject? observer = null,
+        string? targetName = null)
     {
         var text = template
             .Replace("{agent}", actor.Name, StringComparison.Ordinal)
@@ -303,7 +309,7 @@ public sealed class SignalBus
         if (target is not null && observer is not null && target.Id == observer.Id)
             text = ReplaceTargetAsYou(text);
         else
-            text = text.Replace("{target}", target?.Name ?? "", StringComparison.Ordinal);
+            text = text.Replace("{target}", targetName ?? target?.Name ?? "", StringComparison.Ordinal);
         if (extra is not null)
             foreach (var (placeholder, value) in extra)
                 text = text.Replace(placeholder, value, StringComparison.Ordinal);

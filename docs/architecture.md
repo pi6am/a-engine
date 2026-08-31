@@ -289,8 +289,10 @@ vessel flag (and optional `taste`, sent to the drinker as a private
 sensation); a `food` module carries `sobering`. The `consume` handler
 serves both verbs (drink/eat — phrasing comes from the affordance):
 beverages add to the drinker's metabolism and leave the empty vessel
-behind for clearing; food burns alcohol off and may
-`destroyOnConsume`. The `clear` handler destroys an empty vessel
+behind for clearing, visibly renamed to its `emptyName`/
+`emptyDescription` when authored ("mug of Green Gullet ale" → "empty
+mug") so spent vessels are legible in menus instead of hiding their
+state in a field; food burns alcohol off and may `destroyOnConsume`. The `clear` handler destroys an empty vessel
 (handler-emitted signal, since the target is gone before
 affordance-level signals fire) — the barmaid's bus round. **Metabolism**
 is a module on agents: `alcohol`, `bladder` (numbers), `capacity`

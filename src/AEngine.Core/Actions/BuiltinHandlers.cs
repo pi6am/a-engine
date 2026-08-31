@@ -1051,7 +1051,11 @@ public static class BuiltinHandlers
             if (moduleId is null)
                 return ActionResult.Fail($"You can't consume {Perception.WithDefiniteArticle(target.Name)}.");
             if (ctx.Modules.ResolveBool(target, moduleId, "empty"))
-                return ActionResult.Noop($"{Capitalize(Perception.WithDefiniteArticle(target.Name))} is empty.");
+                return ActionResult.Noop(
+                    $"There's nothing left in {Perception.WithDefiniteArticle(target.Name)}.");
+            // the result message names what was consumed, not the empty
+            // vessel it becomes
+            var consumedName = target.Name;
 
             var verb = ctx.Verb ?? "consume";
             var taste = Field(ctx, target, moduleId, "taste");
@@ -1078,10 +1082,19 @@ public static class BuiltinHandlers
             if (ctx.Modules.ResolveBool(target, moduleId, "destroyOnConsume"))
                 ctx.World.DestroyObject(target.Id);
             else
+            {
                 ctx.World.SetFieldOverride(target.Id, moduleId, "empty", World.World.ToJson(true));
+                // a finished vessel visibly becomes an empty one — the state
+                // is legible in names, menus, and listings, not hidden in a
+                // field ("mug of Green Gullet ale" -> "empty mug")
+                if (Field(ctx, target, moduleId, "emptyName") is { } emptyName)
+                    target.Name = emptyName;
+                if (Field(ctx, target, moduleId, "emptyDescription") is { } emptyDescription)
+                    target.Description = emptyDescription;
+            }
             if (taste is not null)
                 ctx.Signals.SendTo(ctx.Agent, taste);
-            return ActionResult.Ok($"You {verb} {Perception.WithDefiniteArticle(target.Name)}.");
+            return ActionResult.Ok($"You {verb} {Perception.WithDefiniteArticle(consumedName)}.");
         }
     }
 

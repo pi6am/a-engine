@@ -294,7 +294,9 @@
         { "name": "volume", "type": "number", "default": 0.15 },
         { "name": "empty", "type": "bool", "default": false },
         { "name": "destroyOnConsume", "type": "bool", "default": false },
-        { "name": "taste", "type": "string", "default": "" }
+        { "name": "taste", "type": "string", "default": "" },
+        { "name": "emptyName", "type": "string", "default": "" },
+        { "name": "emptyDescription", "type": "string", "default": "" }
       ],
       "affordances": [
         {
@@ -331,7 +333,9 @@
         { "name": "sobering", "type": "number", "default": 0.0 },
         { "name": "empty", "type": "bool", "default": false },
         { "name": "destroyOnConsume", "type": "bool", "default": false },
-        { "name": "taste", "type": "string", "default": "" }
+        { "name": "taste", "type": "string", "default": "" },
+        { "name": "emptyName", "type": "string", "default": "" },
+        { "name": "emptyDescription", "type": "string", "default": "" }
       ],
       "affordances": [
         {
