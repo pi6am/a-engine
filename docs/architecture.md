@@ -163,7 +163,8 @@ origin room** transmits it (`portal` fields `transmitVisual`/
 farther rooms get nothing. One-way propagation (e.g. a one-way mirror) is
 pure data on the two sides. Signals delivered through a portal get a
 directional suffix naming the side in the observer's room ("… through the
-wooden door to the south."), suppressed when the signal's target is that
+wooden door to the south." — vertical portals read "to the floor
+above/below", not the ungrammatical "to the up/down"), suppressed when the signal's target is that
 same door ("the cook opens the wooden door."), and are flagged
 `ThroughPortal` (traversal reports too): the CLI keeps the
 "You see: …"/"You hear: …" framing only for signals that crossed a portal —

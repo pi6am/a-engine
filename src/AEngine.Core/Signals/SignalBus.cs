@@ -115,9 +115,9 @@ public sealed class SignalBus
         var extra = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["{exitPortal}"] = traversal.ExitSide.Name,
-            ["{exitDirection}"] = DirectionOf(traversal.ExitSide),
+            ["{exitDirection}"] = DirectionPhrase(DirectionOf(traversal.ExitSide)),
             ["{entryPortal}"] = traversal.EntrySide?.Name ?? traversal.ExitSide.Name,
-            ["{entryDirection}"] = DirectionOf(traversal.EntrySide ?? traversal.ExitSide),
+            ["{entryDirection}"] = DirectionPhrase(DirectionOf(traversal.EntrySide ?? traversal.ExitSide)),
         };
         foreach (var observer in _world.Objects.Values)
         {
@@ -240,12 +240,24 @@ public sealed class SignalBus
     {
         var direction = DirectionOf(observerSide);
         return direction.Length > 0
-            ? $" through the {observerSide.Name} to the {direction}."
+            ? $" through the {observerSide.Name} to the {DirectionPhrase(direction)}."
             : $" through the {observerSide.Name}.";
     }
 
     private string DirectionOf(WorldObject portalSide) =>
         _modules.ResolveString(portalSide, "portal", "direction") ?? "";
+
+    /// <summary>
+    /// A direction rendered for "to the ..." phrasing: up/down are not
+    /// cardinals ("to the up" is not English), so they render as relative
+    /// floors ("to the floor above").
+    /// </summary>
+    private static string DirectionPhrase(string direction) => direction switch
+    {
+        "up" => "floor above",
+        "down" => "floor below",
+        _ => direction,
+    };
 
     private bool Transmits(WorldObject portalSide, SignalSense sense)
     {

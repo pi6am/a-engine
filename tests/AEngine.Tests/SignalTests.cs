@@ -320,4 +320,23 @@ public class SignalTests
         var entry = Assert.Single(engine.SignalBus.Drain("alice"));
         Assert.Equal("Bob enters from the wooden door to the north.", entry.Text);
     }
+
+    [Fact]
+    public void Go_UpDownTraversal_PhrasesAsFloors()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        // repoint the door as a stairwell: up from room_a, down from room_b
+        engine.World.SetFieldOverride("door_a", "portal", "direction", Core.World.World.ToJson("up"));
+        engine.World.SetFieldOverride("door_b", "portal", "direction", Core.World.World.ToJson("down"));
+        var bob = engine.World.GetObject("bob");
+
+        engine.TurnManager.PerformAction(bob, TestWorlds.Find(engine, "bob", "open", "door_b"));
+        engine.SignalBus.Drain("alice");
+        var go = TestWorlds.Find(engine, "bob", "go", "door_b");
+        Assert.True(engine.TurnManager.PerformAction(bob, go).Success);
+
+        // "to the up" is not English: vertical traversals name the floor
+        var entry = Assert.Single(engine.SignalBus.Drain("alice"));
+        Assert.Equal("Bob enters from the wooden door to the floor above.", entry.Text);
+    }
 }
