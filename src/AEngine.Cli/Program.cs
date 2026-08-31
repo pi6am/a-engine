@@ -139,6 +139,15 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
 
 // Slash commands are meta actions: they never consume a turn.
 var console = new ConsolePrompt();
+// Unix terminals: if the process exits while the console driver has the
+// tty in a raw/no-echo mode (a ReadKey/KeyAvailable path, an exception,
+// Ctrl+C), the user's shell is left blind — typed characters stop
+// displaying. Restore sanity on every exit path.
+if (!Console.IsInputRedirected)
+{
+    AppDomain.CurrentDomain.ProcessExit += (_, _) => RestoreTerminal();
+    Console.CancelKeyPress += (_, _) => RestoreTerminal();
+}
 CancellationTokenSource? realTimeCts = null;
 // real-time clock speed: 1.0 = one game second per real second; 0.5 makes
 // a 2s action take 4s of real time, 2.0 takes 1s. Read/written across
@@ -676,6 +685,22 @@ void RunNpcTurnsAndResolve()
 }
 
 bool IsAuto() => Interlocked.CompareExchange(ref autoPlay, 0, 0) == 1;
+
+// Best-effort tty restore for the ProcessExit/CancelKeyPress handlers
+// (see the registration above): stty sane re-enables echo and canonical
+// mode. No-op when there's no tty or stty is missing.
+void RestoreTerminal()
+{
+    try
+    {
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+            "stty", "sane -F /dev/tty") { UseShellExecute = false })?.WaitForExit(500);
+    }
+    catch
+    {
+        // best effort — the process is exiting anyway
+    }
+}
 
 // /auto on|off: hand the player character to the AI ("auto" policy —
 // llm when an endpoint is configured, random otherwise) or take back
