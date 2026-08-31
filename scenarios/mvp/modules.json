@@ -28,6 +28,7 @@
         {
           "verb": "say",
           "handler": "say",
+          "speech": true,
           "prompt": "Say what?",
           "signals": [
             { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },

@@ -383,16 +383,26 @@ public static class BuiltinHandlers
 
     private sealed class SayHandler : IActionHandler
     {
-        // speaking takes time proportional to the words: base 1s plus a
-        // per-character factor (a 60-char sentence takes about 4s)
-        public const double SecondsPerChar = 0.05;
+        // speaking takes time proportional to the words: a base cost plus a
+        // per-character factor, tunable via the scenario's rules module
+        // (sayBaseSeconds / sayMillisPerChar; defaults 2s + 100ms/char, so a
+        // 60-char sentence takes about 8s — listeners get time to respond)
+        public const int DefaultBaseSeconds = 2;
+        public const int DefaultMillisPerChar = 100;
 
         public string Id => "say";
 
         public ActionResult Execute(ActionContext ctx)
         {
             var text = ctx.Args.TryGetValue("text", out var t) ? t : "";
-            var duration = 1 + (int)(text.Length * SecondsPerChar);
+            var rulesHost = Checks.RulesHost(ctx.World);
+            var baseSeconds = rulesHost is null
+                ? DefaultBaseSeconds
+                : ctx.Modules.ResolveInt(rulesHost, "rules", "sayBaseSeconds", DefaultBaseSeconds);
+            var millisPerChar = rulesHost is null
+                ? DefaultMillisPerChar
+                : ctx.Modules.ResolveInt(rulesHost, "rules", "sayMillisPerChar", DefaultMillisPerChar);
+            var duration = baseSeconds + (int)(text.Length * millisPerChar / 1000.0);
             return ActionResult.Ok($"You say: \"{text}\"", duration);
         }
     }

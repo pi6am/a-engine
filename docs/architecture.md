@@ -34,7 +34,14 @@ sensory signals emitted on success; its optional `duration` (seconds/turns,
 default 1) is how long the action takes — the actor is busy for that many
 turns. Handlers may override the duration dynamically via
 `ActionResult.Duration` — `say` scales with the length of the speech
-(1s + 0.05s/char, so a 60-char sentence takes ~4s). Idle verbs (look, wait)
+(rules module `sayBaseSeconds` + `sayMillisPerChar`, defaults 2s +
+100ms/char, so a 60-char sentence takes ~8s — slow enough that listeners
+have time to respond before the speaker acts again). Busy time is tracked
+on two independent tracks: the **action track** (everything; gates NPC
+policy selection) and the **speech track** (affordances with
+`speech: true`, e.g. say) — talking paces itself without blocking
+movement or attacks, so an agent can travel or fight mid-monologue.
+Idle verbs (look, wait)
 carry `repeatBackoff`: each consecutive repeat doubles the duration up to
 `repeatBackoffCap` (default 30), so a bored agent idles instead of
 thrashing its policy with LLM calls; the backoff is interruptible — a

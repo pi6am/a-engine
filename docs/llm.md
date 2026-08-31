@@ -42,7 +42,12 @@ discards the plan remainder and re-plans next selection. New observed
 signals (anything pending in the agent's signal queue — it is drained into
 the context whenever a plan is made) interrupt the cached plan and trigger
 an immediate re-plan, so agents respond to being spoken to instead of
-carrying out a stale plan.
+carrying out a stale plan. The one exception: while the agent's speech
+track is busy (a Say is still playing out — see the speech/action tracks
+in `docs/architecture.md`), interruptions wait — the signals stay pending
+— and cached non-speech steps keep executing, so a long utterance doesn't
+strand the rest of the plan ("Say …, Go up" still goes up) and agents
+don't talk over themselves.
 
 ## Room narration
 

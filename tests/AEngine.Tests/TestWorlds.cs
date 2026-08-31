@@ -30,7 +30,7 @@ internal static class TestWorlds
         "fields": [],
         "affordances": [
           {
-            "verb": "say", "handler": "say", "prompt": "Say what?",
+            "verb": "say", "handler": "say", "speech": true, "prompt": "Say what?",
             "signals": [
               { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
               { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }

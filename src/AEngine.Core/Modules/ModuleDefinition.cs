@@ -62,6 +62,12 @@ public sealed class AffordanceDefinition
     /// </summary>
     public bool TargetOthers { get; init; }
     public int Duration { get; init; } = 1;
+    /// <summary>
+    /// Speech-track affordance (say, and future vocalizations like shout
+    /// or whisper): the action occupies the agent's speech track instead
+    /// of the action track, so talking doesn't block movement or attacks.
+    /// </summary>
+    public bool Speech { get; init; }
     public bool RepeatBackoff { get; init; }
     public int RepeatBackoffCap { get; init; } = 30;
     public List<string>? Postures { get; init; }

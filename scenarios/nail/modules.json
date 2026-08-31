@@ -11,7 +11,9 @@
         { "name": "blowBands", "type": "map", "default": {} },
         { "name": "conditionBands", "type": "map", "default": {} },
         { "name": "shockThreshold", "type": "int", "default": 0 },
-        { "name": "npcLodFactor", "type": "int", "default": 10 }
+        { "name": "npcLodFactor", "type": "int", "default": 10 },
+        { "name": "sayBaseSeconds", "type": "int", "default": 2 },
+        { "name": "sayMillisPerChar", "type": "int", "default": 100 }
       ],
       "affordances": []
     },
@@ -200,6 +202,7 @@
         {
           "verb": "say",
           "handler": "say",
+          "speech": true,
           "prompt": "Say what?",
           "signals": [
             { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },

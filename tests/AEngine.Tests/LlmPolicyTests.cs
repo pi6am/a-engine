@@ -165,4 +165,52 @@ public class LlmPolicyTests
         Assert.Contains("Recent observations and actions", llm.LastMessages![1].Content);
         Assert.Contains("Hey cook!", llm.LastMessages[1].Content);
     }
+
+    [Fact]
+    public void Speech_CachedActionStep_ExecutesWhileSpeechPlaysOut()
+    {
+        var llm = new FakeLlmClient();
+        llm.Enqueue("""
+            Say: "What a fine day it is, indeed!"
+            Open the cupboard
+            """);
+        var engine = NewEngine(llm);
+
+        RunTurns(engine, 2); // cook plans (LLM call 1) and says the line
+        Assert.True(engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn("cook"));
+
+        // the cached non-speech step pops and executes mid-utterance —
+        // talking doesn't block doing
+        RunTurns(engine, 2);
+        Assert.True(engine.ModuleRegistry.ResolveBool(
+            engine.World.GetObject("cupboard"), "openable", "open"));
+        Assert.Equal(0, llm.Remaining); // no new LLM call was needed
+    }
+
+    [Fact]
+    public void Speech_InterruptionWaitsForSpeechTrack_ThenReplans()
+    {
+        var llm = new FakeLlmClient();
+        llm.Enqueue("Say: \"What a fine day it is, indeed!\"");
+        llm.Enqueue("Take the loaf of bread");
+        var engine = NewEngine(llm);
+
+        RunTurns(engine, 2); // cook plans (LLM call 1) and says the line
+        Assert.True(engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn("cook"));
+
+        // the guest speaks; the observation is pending while the cook is
+        // mid-utterance — it does NOT interrupt yet (no new LLM call)
+        var player = engine.World.GetObject("player");
+        var say = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
+        Assert.True(engine.TurnManager.PerformAction(player, say, "Hey cook!").Success);
+        RunTurns(engine, 4); // even count: no dangling in-flight selection
+        Assert.Equal(1, llm.Remaining);
+
+        // once the speech track clears, the pending signal interrupts as usual
+        PassTurns(engine, 3);
+        RunTurns(engine, 2);
+        Assert.Equal(0, llm.Remaining);
+        Assert.Equal("cook", engine.World.GetObject("bread").Parent);
+        Assert.Contains("Hey cook!", llm.LastMessages![1].Content);
+    }
 }

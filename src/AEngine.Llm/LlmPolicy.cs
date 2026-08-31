@@ -15,7 +15,11 @@ namespace AEngine.Llm;
 /// (anything pending in the agent's signal queue — the queue is drained
 /// into the context each time a plan is made) interrupt the cached plan
 /// and trigger an immediate re-plan, so agents stay responsive to being
-/// spoken to or otherwise interrupted.
+/// spoken to or otherwise interrupted — but only once the agent's speech
+/// track is clear: while a Say is still playing out, interruptions wait
+/// (the signals stay pending) and cached non-speech steps keep executing,
+/// so a long utterance doesn't strand the rest of the plan ("Say …, Go
+/// up" still goes up) and conversation turn-taking emerges naturally.
 /// </summary>
 public sealed class LlmPolicy : IAgentPolicy
 {
@@ -30,6 +34,22 @@ public sealed class LlmPolicy : IAgentPolicy
         GameEngine engine, WorldObject agent,
         IReadOnlyList<AvailableAction> actions, CancellationToken ct)
     {
+        // mid-utterance: no re-planning (pending signals keep) and no new
+        // speech, but cached non-speech steps still execute
+        if (engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn(agent.Id))
+        {
+            if (_cachedPlans.TryGetValue(agent.Id, out var talking) && talking.Count > 0 &&
+                !PlanExecutor.TryParseSpeech(talking.Peek(), out _, out _))
+            {
+                var line = talking.Dequeue();
+                var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);
+                if (match is not null)
+                    return match;
+                _cachedPlans.Remove(agent.Id); // stale — re-plan once speech clears
+            }
+            return null;
+        }
+
         var interrupted = engine.SignalBus.Peek(agent.Id).Count > 0;
         if (_cachedPlans.TryGetValue(agent.Id, out var steps))
         {

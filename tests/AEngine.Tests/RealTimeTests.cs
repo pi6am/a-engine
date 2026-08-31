@@ -93,12 +93,32 @@ public class RealTimeTests
         var say = TestWorlds.Find(engine, "bob", "say");
 
         Assert.True(engine.TurnManager.PerformAction(bob, say, "hi").Success);
-        Assert.Equal(1, engine.TurnManager.BusyUntilTurn("bob")); // base: 1 turn
+        Assert.Equal(2, engine.TurnManager.SpeechBusyUntilTurn("bob")); // speech track: base 2 turns
+        Assert.Equal(0, engine.TurnManager.BusyUntilTurn("bob")); // action track stays free
 
-        // 100 chars: 1 + (int)(100 * 0.05) = 6 turns busy
+        // 100 chars: 2 + (int)(100 * 100ms) = 12 turns busy
         var turn = engine.TurnManager.Turn;
         Assert.True(engine.TurnManager.PerformAction(bob, say, new string('x', 100)).Success);
-        Assert.Equal(turn + 6, engine.TurnManager.BusyUntilTurn("bob"));
+        Assert.Equal(turn + 12, engine.TurnManager.SpeechBusyUntilTurn("bob"));
+    }
+
+    [Fact]
+    public void Say_SpeechTrack_DoesNotBlockActions()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var bob = engine.World.GetObject("bob");
+        // open the door so Bob can move
+        var door = TestWorlds.Find(engine, "bob", "open", "door_b");
+        Assert.True(engine.TurnManager.PerformAction(bob, door).Success);
+
+        Assert.True(engine.TurnManager.PerformAction(
+            bob, TestWorlds.Find(engine, "bob", "say"), new string('x', 100)).Success);
+        Assert.True(engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn("bob"));
+
+        // mid-monologue, Bob can still act: he walks through the door
+        var go = TestWorlds.Find(engine, "bob", "go", "door_b");
+        Assert.True(engine.TurnManager.PerformAction(bob, go).Success);
+        Assert.Equal("room_a", engine.World.GetObject("bob").Parent);
     }
 
     [Fact]

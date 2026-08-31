@@ -24,8 +24,18 @@ public sealed class TurnManager
     private readonly Dictionary<string, Task<AvailableAction?>> _inFlightSelections =
         new(StringComparer.Ordinal);
 
-    /// <summary>Per-agent busy-until turn, from action durations.</summary>
+    /// <summary>
+    /// Per-agent busy-until turn for the action track, from action
+    /// durations. Gates policy selection (see <see cref="RunNpcTurns"/>).
+    /// </summary>
     private readonly Dictionary<string, int> _busyUntil = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Per-agent busy-until turn for the speech track (affordances with
+    /// `speech: true`, e.g. say). Talking paces itself but doesn't block
+    /// the action track — an agent can move or fight mid-monologue.
+    /// </summary>
+    private readonly Dictionary<string, int> _speechBusyUntil = new(StringComparer.Ordinal);
 
     /// <summary>Per-agent consecutive-repeat streaks for backoff affordances (idle verbs).</summary>
     private readonly Dictionary<string, (string Verb, int Count)> _repeatStreaks =
@@ -110,7 +120,12 @@ public sealed class TurnManager
             else
                 EmitFailSignals(agent, action);
             var duration = BusyDuration(agent, action, result);
-            _busyUntil[agent.Id] = Turn + duration;
+            // speech rides its own track: it paces talking (and replanning,
+            // see LlmPolicy) without blocking movement or attacks
+            if (affordance?.Speech == true)
+                _speechBusyUntil[agent.Id] = Turn + duration;
+            else
+                _busyUntil[agent.Id] = Turn + duration;
             if (_engine.TimeMode == TimeMode.TurnBased)
             {
                 // ambient time passes with the actor's own activity, so NPC
@@ -535,6 +550,10 @@ public sealed class TurnManager
     /// <summary>The turn until which the agent is busy with its current action (0 = free). For tooling/tests.</summary>
     public int BusyUntilTurn(string agentId) =>
         _busyUntil.TryGetValue(agentId, out var until) ? until : 0;
+
+    /// <summary>The turn until which the agent's speech track is busy (0 = free). For policies/tooling/tests.</summary>
+    public int SpeechBusyUntilTurn(string agentId) =>
+        _speechBusyUntil.TryGetValue(agentId, out var until) ? until : 0;
 
     /// <summary>
     /// Evaluate the affordance's stat/skill check, if any. Returns null
