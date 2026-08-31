@@ -253,7 +253,7 @@
     {
       "id": "alley",
       "name": "Candlewick Alley",
-      "description": "Candlewick Alley, narrow and shadowed. A pale moonpetal bloom grows from a crack in the wall. A trapdoor in the cobbles leads down to the old smugglers' cellar; the narrow passage back to the market lies east.",
+      "description": "Candlewick Alley, narrow and shadowed. Weeds grow from a crack in the wall. A trapdoor in the cobbles leads down to the old smugglers' cellar; the narrow passage back to the market lies east.",
       "modules": ["room"],
       "children": [
         {
@@ -439,7 +439,7 @@
     {
       "id": "tower_study",
       "name": "Tower Study",
-      "description": "A circular study lined with books and humming instruments. The sorcerer broods over a brazier. The beaded curtain leads down.",
+      "description": "A circular study lined with books and humming instruments. A brazier smolders in the center. The beaded curtain leads down.",
       "modules": ["room"],
       "children": [
         {
