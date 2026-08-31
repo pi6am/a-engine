@@ -528,7 +528,8 @@
       "id": "ware",
       "name": "Ware",
       "fields": [
-        { "name": "wants", "type": "ref", "default": null }
+        { "name": "wants", "type": "ref", "default": null },
+        { "name": "refusal", "type": "string", "default": "" }
       ],
       "affordances": [
         {

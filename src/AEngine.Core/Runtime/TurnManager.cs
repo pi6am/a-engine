@@ -289,6 +289,8 @@ public sealed class TurnManager
             {
                 World = _engine.World,
                 Modules = _engine.ModuleRegistry,
+                Signals = _engine.SignalBus,
+                Memory = _engine.Memory,
                 Agent = agent,
                 Target = targetId is null ? null : _engine.World.GetObject(targetId),
                 AuxTarget = auxTargetId is not null && _engine.World.HasObject(auxTargetId)

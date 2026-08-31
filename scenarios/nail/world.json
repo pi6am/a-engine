@@ -235,7 +235,7 @@
               "description": "A waxed pouch of brick-red salt, warm to the touch. A ritual reagent.",
               "modules": [
                 "portable",
-                { "module": "ware", "overrides": { "wants": "moonpetal" } }
+                { "module": "ware", "overrides": { "wants": "moonpetal", "refusal": "Ah-ah! That salt's worth a moonpetal bloom, dear. Bring me the bloom and we'll talk." } }
               ]
             }
           ]

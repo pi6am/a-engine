@@ -54,7 +54,11 @@ phrasing the verb can't produce, like "Ask the sorcerer to remove the
 dragon-mark". `trade` is the barter verb: the affordance lives on a `ware`
 item another agent holds (the resolver's held-by-other allowlist covers
 it), and the handler swaps it for the item id named by the ware's `wants`
-field, failing with the wanted item's name when the actor lacks it.
+field. When the actor lacks the wanted item the holder refuses: with a
+`refusal` line on the ware this is real speech — the holder says it
+aloud (audible to the room and remembered by the holder) while the actor
+gets "You try to barter for..."; without one, a generic message names
+the wanted item.
 `ritual` is a requirements-gated service on the host's `ritual` module:
 required item ids (held by host or supplicant), consumed items (destroyed),
 modules removed from the supplicant, an `epilogue`, and `endsGame`. It runs

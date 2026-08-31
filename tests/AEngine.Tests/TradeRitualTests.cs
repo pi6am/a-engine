@@ -15,7 +15,10 @@ public class TradeRitualTests
     [
       {
         "id": "ware", "name": "Ware",
-        "fields": [ { "name": "wants", "type": "string", "default": "" } ],
+        "fields": [
+          { "name": "wants", "type": "string", "default": "" },
+          { "name": "refusal", "type": "string", "default": "" }
+        ],
         "affordances": [
           {
             "verb": "trade", "handler": "trade", "label": "Barter for the {target}",
@@ -101,6 +104,28 @@ public class TradeRitualTests
         Assert.False(result.Success);
         Assert.Equal("Bob wants the moonpetal bloom in exchange.", result.Message);
         Assert.Equal("bob", engine.World.GetObject("salt").Parent);
+    }
+
+    [Fact]
+    public void Trade_Refusal_SpeaksInTheHoldersVoice()
+    {
+        var engine = NewEngine();
+        AddItem(engine, "moonpetal", "moonpetal bloom", "room_a"); // on the floor
+        MakeWare(engine, "salt", "ember salt", "bob", "moonpetal");
+        engine.World.SetFieldOverride("salt", "ware", "refusal",
+            Core.World.World.ToJson("No bloom, no salt, friend."));
+
+        var result = engine.TurnManager.PerformAction(engine.World.GetObject("alice"),
+            TestWorlds.Find(engine, "alice", "trade", "salt"));
+        Assert.False(result.Success);
+        Assert.Equal("You try to barter for the ember salt.", result.Message);
+        Assert.Equal("bob", engine.World.GetObject("salt").Parent);
+        // the refusal is real speech: the actor hears it (and remembers
+        // it), and so does the holder
+        Assert.Contains(engine.SignalBus.Drain("alice"),
+            s => s.Text == "Bob says: \"No bloom, no salt, friend.\"");
+        Assert.Contains(engine.Memory.Recall("bob"),
+            m => m == "You say: \"No bloom, no salt, friend.\"");
     }
 
     [Fact]

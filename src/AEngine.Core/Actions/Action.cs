@@ -8,6 +8,10 @@ public sealed class ActionContext
 {
     public required World.World World { get; init; }
     public required ModuleRegistry Modules { get; init; }
+    /// <summary>Signal delivery — handlers can emit observable outcomes beyond the affordance's declared specs (a trader's spoken refusal).</summary>
+    public required Signals.SignalBus Signals { get; init; }
+    /// <summary>Agent memory — handlers can record outcomes for agents other than the actor (a trader remembering their own refusal).</summary>
+    public required Runtime.AgentMemory Memory { get; init; }
     public required WorldObject Agent { get; init; }
     public WorldObject? Target { get; init; }
     /// <summary>

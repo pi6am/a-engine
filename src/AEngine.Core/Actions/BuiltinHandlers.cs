@@ -875,7 +875,9 @@ public static class BuiltinHandlers
 
     // barter: the target is a ware another agent holds; the ware module's
     // `wants` field names the item id the trader wants in exchange — the
-    // two items swap inventories
+    // two items swap inventories. A missing offer is a real outcome, not
+    // a silent failure: when the ware declares a `refusal` line the holder
+    // speaks it aloud (audible to the room, remembered by the holder).
     private sealed class TradeHandler : IActionHandler
     {
         public string Id => "trade";
@@ -896,8 +898,26 @@ public static class BuiltinHandlers
             // the wanted item counts whether the actor still holds it or has
             // already handed it over (a gift ahead of the barter)
             if (wants.Parent != ctx.Agent.Id && wants.Parent != holder.Id)
+            {
+                // a data-driven refusal is real speech, not a narrator
+                // aside: the holder says it aloud (the room hears it, the
+                // actor included) and remembers saying it
+                if (ctx.Modules.ResolveString(ware, "ware", "refusal") is { Length: > 0 } refusal)
+                {
+                    ctx.Memory.Record(holder, $"You say: \"{refusal}\"");
+                    ctx.Signals.Emit(holder, null,
+                        [new Signals.SignalSpec
+                        {
+                            Sense = Signals.SignalSense.Audible, Priority = 10,
+                            Text = "{agent} says: \"{arg}\"",
+                        }],
+                        refusal);
+                    return ActionResult.Fail(
+                        $"You try to barter for {Perception.WithDefiniteArticle(ware.Name)}.");
+                }
                 return ActionResult.Fail(
                     $"{Capitalize(holder.Name)} wants {Perception.WithDefiniteArticle(wants.Name)} in exchange.");
+            }
             ctx.World.MoveObject(wants.Id, holder.Id);
             ctx.World.MoveObject(ware.Id, ctx.Agent.Id);
             return ActionResult.Ok(
