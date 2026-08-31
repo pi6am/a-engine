@@ -931,10 +931,13 @@ public static class BuiltinHandlers
                 return ActionResult.Fail(
                     $"{Capitalize(holder.Name)} wants {Perception.WithDefiniteArticle(wants.Name)} in exchange.");
             }
+            // in the gift-ahead case the actor gives nothing now, so say so
+            var wantsInHand = wants.Parent == ctx.Agent.Id;
             ctx.World.MoveObject(wants.Id, holder.Id);
             ctx.World.MoveObject(ware.Id, ctx.Agent.Id);
-            return ActionResult.Ok(
-                $"You trade {Perception.WithDefiniteArticle(wants.Name)} for {Perception.WithDefiniteArticle(ware.Name)}.");
+            return ActionResult.Ok(wantsInHand
+                ? $"You trade {Perception.WithDefiniteArticle(wants.Name)} for {Perception.WithDefiniteArticle(ware.Name)}."
+                : $"{Capitalize(holder.Name)} hands you {Perception.WithDefiniteArticle(ware.Name)}.");
         }
     }
 
@@ -969,8 +972,12 @@ public static class BuiltinHandlers
             {
                 var names = missing.Select(id =>
                     ctx.World.HasObject(id) ? ctx.World.GetObject(id).Name : id);
-                return ActionResult.Fail(
-                    $"{Capitalize(host.Name)} shakes their head — the rite still needs: {string.Join(", ", names)}.");
+                var lack = $"{Capitalize(host.Name)} shakes their head — the rite still needs: {string.Join(", ", names)}.";
+                // the ask direction reads as an answer to the question;
+                // otherwise the refusal appears with no visible trigger
+                return ActionResult.Fail(ReferenceEquals(host, ctx.Agent)
+                    ? lack
+                    : $"You ask {host.Name} for the rite. {lack}");
             }
             foreach (var id in ctx.Modules.ResolveStringList(host, "ritual", "consumesItems") ?? [])
                 if (IsAtHand(id))

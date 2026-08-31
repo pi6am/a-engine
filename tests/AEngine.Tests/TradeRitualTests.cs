@@ -203,6 +203,8 @@ public class TradeRitualTests
         var result = engine.TurnManager.PerformAction(engine.World.GetObject("alice"),
             TestWorlds.Find(engine, "alice", "trade", "salt"));
         Assert.True(result.Success);
+        // the gift was already handed over, so the actor gives nothing now
+        Assert.Equal("Bob hands you the ember salt.", result.Message);
         Assert.Equal("alice", engine.World.GetObject("salt").Parent);
         Assert.Equal("bob", engine.World.GetObject("moonpetal").Parent);
     }
@@ -248,7 +250,7 @@ public class TradeRitualTests
         var result = engine.TurnManager.PerformAction(engine.World.GetObject("alice"),
             TestWorlds.Find(engine, "alice", "unbrand", "bob"));
         Assert.False(result.Success);
-        Assert.Equal("Bob shakes their head — the rite still needs: ember salt.", result.Message);
+        Assert.Equal("You ask Bob for the rite. Bob shakes their head — the rite still needs: ember salt.", result.Message);
         Assert.True(engine.World.GetObject("alice").HasModule("cursed"));
         Assert.Null(engine.GameOver);
     }
