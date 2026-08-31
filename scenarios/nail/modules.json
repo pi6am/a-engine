@@ -542,7 +542,19 @@
           "label": "Barter for the {target}",
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} barters for the {target}." }
-          ]
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 5, "text": "{agent}'s barter offer is refused." }
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} offers to barter for the {target}.",
+            "actorText": "You offer to barter for the {target}.",
+            "options": [
+              { "id": "accept", "label": "Accept", "noResist": true, "default": true, "text": "You accept the offer." },
+              { "id": "decline", "label": "Decline", "text": "You decline the offer." }
+            ]
+          }
         }
       ]
     },

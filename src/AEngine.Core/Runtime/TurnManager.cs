@@ -82,12 +82,11 @@ public sealed class TurnManager
         {
             var affordance = LookupAffordance(action);
             // quick-time reactions: an action targeting another agent with a
-            // reaction spec telegraphs and parks until the defender responds
+            // reaction spec telegraphs and parks until the defender responds.
+            // The defender is the target agent — or, for an item-targeted
+            // action (bartering for a held ware), the agent holding it.
             if (affordance?.Reaction is { Window: > 0 } reaction &&
-                action.TargetId is not null && _engine.World.HasObject(action.TargetId) &&
-                _engine.World.GetObject(action.TargetId) is { } defender &&
-                defender.HasModule("agent") && defender.Id != agent.Id &&
-                !Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, defender))
+                ResolveReactionDefender(agent, action) is { } defender)
             {
                 var options = reaction.Options.Where(o =>
                     o.RequiresWornModule is null ||
@@ -138,6 +137,27 @@ public sealed class TurnManager
     }
 
     /// <summary>
+    /// The agent who may react to an action: the target when it's an agent
+    /// (shove, hug, give), else the agent holding the target item (bartering
+    /// for a held ware — the holder consents or declines). Null when no
+    /// (non-incapacitated, non-actor) agent qualifies.
+    /// </summary>
+    private WorldObject? ResolveReactionDefender(WorldObject agent, AvailableAction action)
+    {
+        if (action.TargetId is null || !_engine.World.HasObject(action.TargetId))
+            return null;
+        var target = _engine.World.GetObject(action.TargetId);
+        WorldObject? defender = target.HasModule("agent") ? target : null;
+        if (defender is null && target.Parent.Length > 0 && _engine.World.HasObject(target.Parent) &&
+            _engine.World.GetObject(target.Parent) is { } holder && holder.HasModule("agent"))
+            defender = holder;
+        return defender is null || defender.Id == agent.Id ||
+            Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, defender)
+            ? null
+            : defender;
+    }
+
+    /// <summary>
     /// Telegraph a reaction-eligible action: the attempt is observable and
     /// the actor is committed (busy, turn spent), but the check and handler
     /// wait for the defender's reaction — chosen via the UI (player), the
@@ -149,13 +169,27 @@ public sealed class TurnManager
         Modules.ReactionSpec spec, WorldObject defender, List<Modules.ReactionOptionSpec> options)
     {
         var telegraph = spec.Telegraph ?? $"{{agent}} tries to {action.Verb} {{target}}.";
-        _engine.SignalBus.Emit(agent, defender,
+        // {target} is the action's target (for barter: the ware, not the
+        // defending holder); "you" substitutions apply only when the
+        // defender IS the target
+        var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+            ? _engine.World.GetObject(action.TargetId)
+            : null;
+        _engine.SignalBus.Emit(agent, target,
             [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 10, Text = telegraph }],
             text, extra: Extras(null, action.AuxTargetId));
         var announcement = telegraph
-            .Replace("{agent}", agent.Name, StringComparison.Ordinal)
-            .Replace("the {target}", "you", StringComparison.Ordinal)
-            .Replace("{target}", "you", StringComparison.Ordinal)
+            .Replace("{agent}", agent.Name, StringComparison.Ordinal);
+        announcement = target is not null && target.Id == defender.Id
+            ? announcement
+                .Replace("the {target}", "you", StringComparison.Ordinal)
+                .Replace("{target}", "you", StringComparison.Ordinal)
+            : announcement
+                .Replace("the {target}", target is null ? "" : Perception.WithDefiniteArticle(target.Name),
+                    StringComparison.Ordinal)
+                .Replace("{target}", target is null ? "" : Perception.WithDefiniteArticle(target.Name),
+                    StringComparison.Ordinal);
+        announcement = announcement
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         var pending = _engine.Reactions.Add(
             agent.Id, defender.Id, action, text, announcement, options, Turn + spec.Window);
@@ -170,7 +204,10 @@ public sealed class TurnManager
         var actorText = (spec.ActorText ?? "You {verb} {target}.")
             .Replace("{verb}", action.Verb, StringComparison.Ordinal)
             .Replace("{agent}", agent.Name, StringComparison.Ordinal)
-            .Replace("{target}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal)
+            .Replace("the {target}", Perception.WithDefiniteArticle(
+                (target ?? defender).Name), StringComparison.Ordinal)
+            .Replace("{target}", Perception.WithDefiniteArticle(
+                (target ?? defender).Name), StringComparison.Ordinal)
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         _engine.Memory.Record(agent, actorText);
         var parkDuration = BusyDuration(agent, action, ActionResult.Ok(actorText));

@@ -220,7 +220,7 @@
               "overrides": {
                 "policy": "auto",
                 "character": "Mira, a round, cheerful herbalist with ink-stained fingers and an eye for rare reagents.",
-                "goals": "Sell your remedies. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — you won't give it away except in exchange for a moonpetal bloom or something else equally valuable.",
+                "goals": "Sell your remedies. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — you won't give it away except in exchange for a moonpetal bloom or something else equally valuable. Once you've sold the ember salt, the deal is done — never barter to get it back.",
                 "traits": "You are a shrewd trader and your wares are NEVER gifts. You love to gossip: cultists smuggle relics through the smugglers' cellar below Candlewick Alley, and the sorcerer Rath Cinderstorm keeps to his tower north of the market."
               }
             },

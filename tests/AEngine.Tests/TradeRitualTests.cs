@@ -128,6 +128,71 @@ public class TradeRitualTests
             m => m == "You say: \"No bloom, no salt, friend.\"");
     }
 
+    private const string ConsentWareJson = """
+    [
+      {
+        "id": "ware", "name": "Ware",
+        "fields": [
+          { "name": "wants", "type": "string", "default": "" },
+          { "name": "refusal", "type": "string", "default": "" }
+        ],
+        "affordances": [
+          {
+            "verb": "trade", "handler": "trade", "label": "Barter for the {target}",
+            "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} barters for the {target}." } ],
+            "reaction": {
+              "window": 3,
+              "telegraph": "{agent} offers to barter for the {target}.",
+              "actorText": "You offer to barter for the {target}.",
+              "options": [
+                { "id": "accept", "label": "Accept", "noResist": true, "default": true, "text": "You accept the offer." },
+                { "id": "decline", "label": "Decline", "text": "You decline the offer." }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+    """;
+
+    [Fact]
+    public void Trade_ConsentGated_HolderDeclinesAndAccepts()
+    {
+        var engine = NewEngine();
+        engine.World.SetFieldOverride("bob", "agent", "policy", Core.World.World.ToJson("player"));
+        // a consent-gated trade variant: the holder reacts to the offer
+        engine.ModuleRegistry.Update(Assert.Single(
+            Core.Modules.ModuleRegistry.ParseJson(ConsentWareJson)));
+        AddItem(engine, "moonpetal", "moonpetal bloom", "alice");
+        MakeWare(engine, "salt", "ember salt", "bob", "moonpetal");
+        var alice = engine.World.GetObject("alice");
+
+        // the offer telegraphs against the holder and parks — no swap yet
+        var trade = engine.ActionResolver.Resolve(alice).First(a => a.Verb == "trade" && a.TargetId == "salt");
+        var offered = engine.TurnManager.PerformAction(alice, trade);
+        Assert.True(offered.Success);
+        Assert.Equal("You offer to barter for the ember salt.", offered.Message);
+        Assert.Equal("bob", engine.World.GetObject("salt").Parent);
+        Assert.Equal("Alice offers to barter for the ember salt.",
+            Assert.Single(engine.SignalBus.Drain("bob")).Text);
+        var pending = Assert.Single(engine.Reactions.Pending);
+        Assert.Equal("bob", pending.DefenderId);
+
+        // declined: the trade fails and nothing moves
+        engine.Reactions.Choose(pending.Id, "decline");
+        Assert.Equal("bob", engine.World.GetObject("salt").Parent);
+        Assert.Equal("alice", engine.World.GetObject("moonpetal").Parent);
+        Assert.Contains(engine.Memory.Recall("alice"),
+            m => m == "Bob declines the offer.");
+
+        // accepted: the swap goes through
+        offered = engine.TurnManager.PerformAction(alice, trade);
+        Assert.True(offered.Success);
+        engine.Reactions.Choose(Assert.Single(engine.Reactions.Pending).Id, "accept");
+        Assert.Equal("alice", engine.World.GetObject("salt").Parent);
+        Assert.Equal("bob", engine.World.GetObject("moonpetal").Parent);
+    }
+
     [Fact]
     public void Trade_WantedItemAlreadyGifted_StillTrades()
     {

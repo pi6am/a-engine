@@ -67,6 +67,10 @@ public class NailPlaythroughTests
         Assert.NotNull(action); // the action must be listed at this point in the route
         var result = engine.TurnManager.PerformAction(player, action);
         Assert.True(result.Success, $"{verb} {targetId}: {result.Message}");
+        // consent-gated actions (barter) park until the holder reacts —
+        // resolve with the default (accept) to keep the route deterministic
+        foreach (var pending in engine.Reactions.Pending.ToList())
+            engine.Reactions.ForceDefault(pending.Id);
     }
 
     private static void AssertRoom(GameEngine engine, string roomId) =>

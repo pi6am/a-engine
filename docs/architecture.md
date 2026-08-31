@@ -61,7 +61,12 @@ phrasing the verb can't produce, like "Ask the sorcerer to remove the
 dragon-mark". `trade` is the barter verb: the affordance lives on a `ware`
 item another agent holds (the resolver's held-by-other allowlist covers
 it), and the handler swaps it for the item id named by the ware's `wants`
-field. When the actor lacks the wanted item the holder refuses: with a
+field. Barter is consent-gated like `give`: the offer telegraphs and the
+ware's holder (the reaction's defender — for item-targeted reactions the
+holder, not the target item) accepts (default) or declines; a decline
+fails the trade and nothing moves. This stops agents from unilaterally
+reverse-bartering a sold ware back out of the buyer's hands. When the
+actor lacks the wanted item the holder refuses: with a
 `refusal` line on the ware this is real speech — the holder says it
 aloud (audible to the room and remembered by the holder) while the actor
 gets "You try to barter for..."; without one, a generic message names
