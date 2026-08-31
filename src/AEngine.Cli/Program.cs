@@ -144,6 +144,9 @@ CancellationTokenSource? realTimeCts = null;
 // a 2s action take 4s of real time, 2.0 takes 1s. Read/written across
 // threads (the timer loop), so use Interlocked.
 var timescale = 1.0;
+// auto-play (/auto): the AI policy drives the player character. Read on
+// the main thread and the world-clock timer, so use Interlocked.
+var autoPlay = 0;
 var output = new OutputSettings();
 var slash = new SlashCommandRegistry();
 slash.Register("showplan", [], "Control whether the plan is logged (/showplan on|off)", args =>
@@ -214,6 +217,16 @@ slash.Register("timescale", ["ts"], "Set the real-time clock speed (1.0 = normal
     Interlocked.Exchange(ref timescale, factor);
     Console.WriteLine($"Timescale set to {factor}x — one real second advances {factor}s of game time." +
         (engine.TimeMode == TimeMode.TurnBased ? " (Takes effect in real-time mode.)" : ""));
+    return false;
+});
+slash.Register("auto", [], "Let the AI play your character (/auto on|off; ESC cancels)", args =>
+{
+    if (args.Length == 1 && args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+        SetAuto(true);
+    else if (args.Length == 1 && args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+        SetAuto(false);
+    else
+        Console.WriteLine($"Auto mode is {(IsAuto() ? "on" : "off")}. Usage: /auto on|off");
     return false;
 });
 slash.Register("quit", ["exit"], "Leave the game", _ => true);
@@ -314,6 +327,30 @@ while (true)
     // safety net: a real-time race can land a signal here after the
     // action's own flush already ran
     await FlushEventsAsync();
+
+    // auto mode (/auto on): the AI plays the player character for testing.
+    // Input is disabled except ESC (cancel); turn-based stepping runs from
+    // the prompt's idle callback, real-time from the world clock — the
+    // time mode itself is untouched.
+    if (IsAuto())
+    {
+        if (Console.IsInputRedirected)
+        {
+            // headless auto-play: step until the world ends (the loop top
+            // prints signals and the ending)
+            AutoStep();
+            Thread.Sleep(50);
+            continue;
+        }
+        console.ReadLine("> ", completions: false,
+            autoStatus: "Auto mode: press ESC to cancel",
+            onIdle: engine.TimeMode == TimeMode.TurnBased ? AutoStep : (Action?)null);
+        if (console.WasWoken)
+            continue; // the world ended mid-play — the loop top prints it
+        if (console.WasAutoCancel)
+            SetAuto(false);
+        continue;
+    }
 
     var input = console.ReadLine("> ");
     if (input is null) // EOF (e.g. piped input exhausted) — exit cleanly
@@ -638,6 +675,62 @@ void RunNpcTurnsAndResolve()
     ResolvePendingReactions();
 }
 
+bool IsAuto() => Interlocked.CompareExchange(ref autoPlay, 0, 0) == 1;
+
+// /auto on|off: hand the player character to the AI ("auto" policy —
+// llm when an endpoint is configured, random otherwise) or take back
+// control. The time mode is not changed.
+void SetAuto(bool on)
+{
+    if (on == IsAuto())
+    {
+        Console.WriteLine($"Auto mode is already {(on ? "on" : "off")}.");
+        return;
+    }
+    Interlocked.Exchange(ref autoPlay, on ? 1 : 0);
+    lock (engine.SyncRoot)
+    {
+        engine.World.SetFieldOverride(player.Id, "agent", "policy",
+            AEngine.Core.World.World.ToJson(on ? "auto" : "player"));
+        engine.TurnManager.DrainOutcomes(player.Id); // discard pre-auto spectating backlog
+    }
+    if (on)
+        Console.WriteLine("Auto mode on: the AI is playing your character — press ESC to take back control." +
+            (planner is null ? " (No LLM endpoint configured — the random policy will play.)" : ""));
+    else
+        Console.WriteLine("Auto mode off: you are back in control.");
+}
+
+// One hands-off auto-play step: NPC turns (the auto-played player among
+// them) and reaction resolution, then live spectator output — the
+// player's own outcomes (signals never reach the actor, so they ride a
+// separate queue) and observed signals. Wakes the prompt when the world
+// has ended so the main loop can print the ending.
+void AutoStep()
+{
+    RunNpcTurnsAndResolve();
+    bool gameEnded;
+    lock (engine.SyncRoot)
+    {
+        foreach (var message in engine.TurnManager.DrainOutcomes(player.Id))
+            PrintAutoLine(message);
+        foreach (var signal in engine.SignalBus.Drain(player.Id))
+            PrintAutoLine(RenderSignal(signal));
+        gameEnded = engine.GameOver is not null ||
+            Health.IsIncapacitated(engine.World, engine.ModuleRegistry, player);
+    }
+    if (gameEnded)
+        console.Wake();
+}
+
+void PrintAutoLine(string message)
+{
+    if (Console.IsInputRedirected)
+        Console.WriteLine(message);
+    else
+        console.WriteAbove(message); // the auto ReadLine owns the bottom rows
+}
+
 void ResolvePendingReactions()
 {
     while (true)
@@ -647,7 +740,9 @@ void ResolvePendingReactions()
         lock (engine.SyncRoot)
         {
             engine.Reactions.PollPolicies();
-            playerPending = engine.Reactions.PendingFor(player.Id);
+            // in auto mode the player's own reactions go through their
+            // policy like any NPC — never the inline prompt
+            playerPending = IsAuto() ? null : engine.Reactions.PendingFor(player.Id);
             npcPending = engine.Reactions.Pending
                 .FirstOrDefault(p => p.PolicySelection is { IsCompleted: false });
         }
@@ -678,6 +773,8 @@ void PrintResolvedOutcomes()
         {
             if (NarrateActions())
                 eventBuffer.Add(message);
+            else if (IsAuto() && !Console.IsInputRedirected)
+                console.WriteAbove(message); // the auto ReadLine owns the bottom rows
             else
                 Console.WriteLine(message);
         }
@@ -744,11 +841,13 @@ async Task RealTimeLoop(CancellationToken ct)
             {
                 IReadOnlyList<Signal> signals;
                 IReadOnlyList<(string ActorId, string Message)> resolved;
+                IReadOnlyList<string> autoOutcomes = [];
                 string? status;
                 string? arrival = null;
                 string? arrivalRoomId = null;
                 string? arrivalRoomName = null;
                 bool gameOver;
+                var auto = IsAuto();
                 lock (engine.SyncRoot)
                 {
                     pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
@@ -765,6 +864,10 @@ async Task RealTimeLoop(CancellationToken ct)
                         Health.IsIncapacitated(engine.World, engine.ModuleRegistry, player);
                     signals = engine.SignalBus.Drain(player.Id);
                     resolved = engine.Reactions.DrainResolved();
+                    // auto-play: the player's own action results (signals
+                    // never reach the actor, so they ride a separate queue)
+                    if (auto)
+                        autoOutcomes = engine.TurnManager.DrainOutcomes(player.Id);
                     // the player arrived somewhere new without acting
                     // (e.g. carried): print the room description
                     var room = engine.World.RoomOf(player.Id);
@@ -776,15 +879,19 @@ async Task RealTimeLoop(CancellationToken ct)
                         arrival = engine.TurnManager.Execute(player, "look", player.Id).Message;
                     }
                     // announce a pending quick-time reaction on the status line
-                    status = engine.Reactions.PendingFor(player.Id) is { } pr
+                    // (skipped in auto mode: the policy reacts, and the auto
+                    // ReadLine owns the status row)
+                    status = !auto && engine.Reactions.PendingFor(player.Id) is { } pr
                         ? $"{pr.Announcement} F2 to react " +
                           $"(default: {engine.Reactions.EffectiveDefault(pr).Label}, " +
                           $"{Math.Max(0, pr.DeadlineTurn - engine.TurnManager.Turn)}s)"
                         : null;
                 }
-                console.SetStatus(status);
+                if (!auto)
+                    console.SetStatus(status);
                 if (!gameOver &&
-                    arrival is null && signals.Count == 0 && resolved.Count == 0 && pendingEvents.Count == 0)
+                    arrival is null && signals.Count == 0 && resolved.Count == 0 &&
+                    autoOutcomes.Count == 0 && pendingEvents.Count == 0)
                     continue;
                 var sb = new StringBuilder();
                 if (arrival is not null)
@@ -817,6 +924,7 @@ async Task RealTimeLoop(CancellationToken ct)
                 foreach (var (actorId, message) in resolved)
                     if (actorId == player.Id)
                         eventLines.Add(message);
+                eventLines.AddRange(autoOutcomes);
                 if (NarrateActions() && !gameOver)
                 {
                     // batch over a short window: a burst of world activity

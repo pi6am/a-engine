@@ -50,6 +50,17 @@ public sealed class TurnManager
     /// <summary>Agents whose current busy spell is idle backoff — interruptible by new signals.</summary>
     private readonly HashSet<string> _busyInterruptible = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Per-agent queues of their own action-outcome messages (bounded), for
+    /// tooling: signals never reach the actor, so an auto-played character's
+    /// actions would otherwise be invisible to a spectator. Parked-action
+    /// resolutions ride <see cref="ReactionManager.DrainResolved"/> instead.
+    /// Drained via <see cref="DrainOutcomes"/>.
+    /// </summary>
+    private readonly Dictionary<string, Queue<string>> _outcomes = new(StringComparer.Ordinal);
+
+    private const int MaxQueuedOutcomes = 50;
+
     public TurnManager(GameEngine engine) => _engine = engine;
 
     public int Turn { get; private set; }
@@ -112,6 +123,7 @@ public sealed class TurnManager
             // verbose to store verbatim; look/examine are state snapshots —
             // only the freshest of each survives in memory)
             RecordOutcome(agent, action, result.Message);
+            QueueOutcome(agent.Id, result.Message);
             if (result.Outcome == ActionOutcome.Noop)
                 return result;
             if (result.Success)
@@ -210,6 +222,7 @@ public sealed class TurnManager
                 (target ?? defender).Name), StringComparison.Ordinal)
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         _engine.Memory.Record(agent, actorText);
+        QueueOutcome(agent.Id, actorText);
         var parkDuration = BusyDuration(agent, action, ActionResult.Ok(actorText));
         _busyUntil[agent.Id] = Turn + parkDuration;
         if (_engine.TimeMode == TimeMode.TurnBased)
@@ -591,6 +604,25 @@ public sealed class TurnManager
     /// <summary>The turn until which the agent's speech track is busy (0 = free). For policies/tooling/tests.</summary>
     public int SpeechBusyUntilTurn(string agentId) =>
         _speechBusyUntil.TryGetValue(agentId, out var until) ? until : 0;
+
+    /// <summary>Return and clear the agent's queued action-outcome messages (their own results, for auto-play spectating).</summary>
+    public IReadOnlyList<string> DrainOutcomes(string agentId)
+    {
+        if (!_outcomes.TryGetValue(agentId, out var queue) || queue.Count == 0)
+            return [];
+        var drained = queue.ToArray();
+        queue.Clear();
+        return drained;
+    }
+
+    private void QueueOutcome(string agentId, string message)
+    {
+        if (!_outcomes.TryGetValue(agentId, out var queue))
+            _outcomes[agentId] = queue = new Queue<string>();
+        if (queue.Count >= MaxQueuedOutcomes)
+            queue.Dequeue();
+        queue.Enqueue(message);
+    }
 
     /// <summary>
     /// Evaluate the affordance's stat/skill check, if any. Returns null

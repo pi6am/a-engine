@@ -122,6 +122,23 @@ public class RealTimeTests
     }
 
     [Fact]
+    public void Outcomes_AreQueuedForSpectating_AndDrainClears()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var alice = engine.World.GetObject("alice");
+
+        // the actor's own results are queued (signals never reach the
+        // actor — auto-play spectating rides this queue)
+        engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wait"));
+        engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "say"), "hello");
+        Assert.Equal(
+            new[] { "You wait.", "You say: \"hello\"" },
+            engine.TurnManager.DrainOutcomes("alice"));
+        Assert.Empty(engine.TurnManager.DrainOutcomes("alice"));
+    }
+
+    [Fact]
     public void RepeatBackoff_DoublesConsecutiveIdleDuration_AndResetsOnOtherVerb()
     {
         var engine = TestWorlds.NewTwoRoomEngine();

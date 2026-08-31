@@ -60,6 +60,13 @@ public sealed class ConsolePrompt
     public bool WasWoken { get; private set; }
 
     /// <summary>
+    /// True when the last ReadLine returned because the user pressed ESC
+    /// while in auto mode (autoStatus was set) — the caller turns auto
+    /// mode off instead of exiting.
+    /// </summary>
+    public bool WasAutoCancel { get; private set; }
+
+    /// <summary>
     /// Interrupt a blocked ReadLine (from another thread — the real-time
     /// world clock): the call returns null promptly with WasWoken set.
     /// </summary>
@@ -69,8 +76,18 @@ public sealed class ConsolePrompt
             _wakePending = true;
     }
 
-    /// <summary>Prompt and read one line of input. Null on EOF (redirected input only).</summary>
-    public string? ReadLine(string prompt = "> ", bool completions = true)
+    /// <summary>
+    /// Prompt and read one line of input. Null on EOF (redirected input
+    /// only), on <see cref="Wake"/>, or on ESC in auto mode. When
+    /// <paramref name="autoStatus"/> is set, the prompt is input-disabled:
+    /// the status line shows it (e.g. "Auto mode: press ESC to cancel"),
+    /// all keys except ESC are ignored, and <paramref name="onIdle"/> runs
+    /// on every poll iteration (outside the write lock) so the caller can
+    /// keep the world moving while waiting.
+    /// </summary>
+    public string? ReadLine(
+        string prompt = "> ", bool completions = true,
+        string? autoStatus = null, Action? onIdle = null)
     {
         if (Console.IsInputRedirected)
         {
@@ -89,8 +106,19 @@ public sealed class ConsolePrompt
             _popupDismissed = false;
             _completionsEnabled = completions;
             WasWoken = false;
+            WasAutoCancel = false;
             _reading = true;
-            Console.Write(prompt);
+            if (autoStatus is not null)
+            {
+                // the status row sits directly above the input row (same
+                // layout SetStatus maintains)
+                _status = autoStatus;
+                Console.Write(autoStatus + "\n" + prompt);
+            }
+            else
+            {
+                Console.Write(prompt);
+            }
         }
         try
         {
@@ -124,10 +152,29 @@ public sealed class ConsolePrompt
                 }
                 if (!Console.KeyAvailable)
                 {
+                    // auto mode's world stepping hook (turn-based auto-play);
+                    // runs outside the write lock (it touches the engine)
+                    onIdle?.Invoke();
                     Thread.Sleep(15);
                     continue;
                 }
                 var key = Console.ReadKey(intercept: true);
+                // auto mode: input is disabled; only ESC (cancel) applies
+                if (autoStatus is not null)
+                {
+                    if (key.Key == ConsoleKey.Escape)
+                    {
+                        lock (_writeLock)
+                        {
+                            WasAutoCancel = true;
+                            _status = null;
+                            Console.Write("\x1b[1A\r\x1b[2K\x1b[M"); // delete the status row
+                            Console.Write("\r\x1b[2K"); // clear the input row
+                        }
+                        return null;
+                    }
+                    continue;
+                }
                 // menu provider/callback invocations happen outside the lock
                 // (they take engine locks; the timer thread calls SetStatus
                 // holding them — avoid a lock-ordering deadlock)

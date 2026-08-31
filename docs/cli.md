@@ -46,6 +46,26 @@ narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
 (`/tb`), `/timescale N` (`/ts`), `/quit` (`/exit`), `/help`. Output
 toggles live in `OutputSettings`.
 
+## Auto mode (AI self-play)
+
+`/auto on|off` (default off) hands the player character to the AI — the
+`agent.policy` field flips between `player` and `auto` (llm with an
+endpoint, random otherwise), so the character plans and acts exactly like
+an NPC. A testing harness for "can the LLM beat this scenario?"; the
+scenario should give the player object diegetic `character`/`goals`
+fields to play from (the nail scenario does — deliberately without a
+walkthrough). The time mode is untouched: in real-time mode the world
+clock drives the character like any NPC; in turn-based mode the prompt's
+idle callback steps `RunNpcTurns` while the prompt shows "Auto mode:
+press ESC to cancel" (input disabled; ESC or `/auto off` restores
+control). Input-disabled also means headless runs work: with piped input,
+auto mode just steps until the game ends. Spectator output prints live:
+observed signals plus the character's own action results, which signals
+never deliver to the actor — those ride a bounded per-agent queue in
+`TurnManager` (`DrainOutcomes`; parked-action resolutions already flow
+through `Reactions.DrainResolved`). The player's quick-time reactions go
+through their policy like any NPC's (no inline prompt, no F2 banner).
+
 ## Real-time mode
 
 `--real-time` (or `/realtime`; `/turnbased` switches back) runs a
