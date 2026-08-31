@@ -73,7 +73,8 @@ public sealed class LlmPolicy : IAgentPolicy
         var plan = await _planner.CreatePlanAsync(
             agent,
             "Choose your next actions. If someone spoke to you recently, consider responding " +
-            "with Say. When you have nothing to do, prefer Wait over Look around.",
+            "with Say. When you have nothing to do, prefer Wait over Look around. Don't " +
+            "repeat an Examine you already remember unless something has changed.",
             npc: true, ct).ConfigureAwait(false);
         if (plan.Count == 0)
             return null;
