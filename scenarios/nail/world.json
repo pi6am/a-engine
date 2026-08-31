@@ -221,7 +221,7 @@
               "module": "agent",
               "overrides": {
                 "policy": "auto",
-                "character": "Mira, a round, cheerful herbalist with ink-stained fingers and an eye for rare reagents.",
+                "character": "Mira, a round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
                 "goals": "Sell your remedies. Stay at your stall — you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action — a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done — you have the bloom you wanted and nothing left to sell, so never barter to get it back and stop asking customers for moonpetals.",
                 "traits": "You are a shrewd trader and your wares are NEVER gifts. You love to gossip: cultists smuggle relics through the smugglers' cellar below Candlewick Alley, and the sorcerer Rath Cinderstorm keeps to his tower north of the market."
               }
@@ -472,7 +472,7 @@
                 "requiresItems": ["dragonmark", "talon_blade", "ember_salt", "focus_crystal"],
                 "consumesItems": ["ember_salt", "focus_crystal", "dragonmark"],
                 "endsGame": true,
-                "epilogue": "Rhindicar's talon blazes in your hand as Rath Cinderstorm traces the unbinding sigils. The dragon-mark sears, shudders — and slides off your arm like dead ash. Somewhere across the ocean, a mad tyrant's grip on you snaps. Rath slumps into his chair, smiling faintly. 'There. Give my old friend my regards.' You are free. (Thanks for playing!)"
+                "epilogue": "Rhindicar's talon blazes in your hand as Rath Cinderstorm traces the unbinding sigils. The dragon-mark sears, shudders — and slides off your arm like ash. Somewhere across the ocean, a mad tyrant's grip on you snaps. Rath slumps into his chair, smiling faintly. 'There. Give my old friend my regards.' You are free. (Thanks for playing!)"
               }
             }
           ]

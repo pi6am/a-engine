@@ -7,25 +7,29 @@ repository-root `AGENTS.md`; RPG systems have their own doc
 
 ## World model
 
-`WorldObject`s form a single tree rooted at `world`; a flat id→object index
-lives in `World`. Objects exist exactly once. Cross-cutting state (e.g. a
-door's open/locked flags) lives in its own object and is referenced **by
-id** from other objects (e.g. two `portal` door-sides share one `doorstate`
-object via their `stateRef` field). Attribute values are `JsonElement`; a
-string holding another object's id is a reference by convention (`ref`-typed
-module fields).
+`WorldObject`s form a single tree rooted at `world`; a flat id→object
+index lives in `World`. Objects exist exactly once. Cross-cutting state
+(e.g. a door's open/locked flags) lives in its own object and is
+referenced **by id** from other objects (e.g. two `portal` door-sides
+share one `doorstate` object via their `stateRef` field). Attribute
+values are `JsonElement`; a string holding another object's id is a
+reference by convention (`ref`-typed module fields).
 
 **Runtime mutation** — `World` exposes `CreateObject`, `DestroyObject`
 (recursive), `MoveObject` (cycle-checked), `AddModule`, `RemoveModule`,
-`SetAttribute`, `SetFieldOverride`. All are safe to call mid-game.
+`SetAttribute`, `SetFieldOverride`, and `CloneTree` (a deep clone with
+modules, overrides, attributes, and children — the
+runtime-instantiation primitive behind prefab spawning and condition
+attachment). All are safe to call mid-game.
 
 ## Modules
 
 Composable, data-driven types (`scenarios/mvp/modules.json`):
 `{ id, name, fields: [{name, type, default}], affordances: [{verb, handler,
 prompt?, signals?, duration?, repeatBackoff?, repeatBackoffCap?, postures?,
-sameSupport?}] }`. Field types: `string | int | bool | ref | list` (list =
-string array; tolerates a comma-separated string). Field resolution:
+sameSupport?}] }`. Field types: `string | int | number | bool | ref | list`
+(list = string array; tolerates a comma-separated string) `| map`
+(string→int, e.g. stats). Field resolution:
 per-object override → module default. `ModuleRegistry` supports
 register/update/unregister at runtime. An affordance's optional `prompt`
 marks the verb as taking a free-text argument (surfaced to the handler as
@@ -55,7 +59,8 @@ extension seam). Built-ins: basic (flavor verbs, interpolates the verb into
 its message), look, go, open, close, take, drop, put, give, unlock, lock,
 pick, inventory, say, wait (`wait` just passes the turn; it is quiet — no
 signals), sit, lie, stand, wear, remove, shove, steal, examine, trade,
-ritual. An affordance may declare a `label` to override the verb-generated
+ritual, consume (drink/eat), spawn (prefab instances), clear (bus empty
+vessels), relieve (use a toilet), leave (end the game). An affordance may declare a `label` to override the verb-generated
 menu text (`{target}` substitutes the target's name verbatim) — for
 phrasing the verb can't produce, like "Ask the sorcerer to remove the
 dragon-mark". `trade` is the barter verb: the affordance lives on a `ware`
@@ -107,7 +112,23 @@ still resolves (and noops at runtime). Results are three-valued
 (`ActionOutcome.Success | Noop | Failure`): redundant attempts whose end
 state already holds are **noops** (no turn consumed, no signals, not a
 failure — plan executors skip over them), wrong-state/missing-key attempts
-are failures (turn consumed). `look` exits show `open`/`closed` only
+are failures (turn consumed). Affordances are gated three ways, all
+data-driven: **`requires`** (comma-separated condition kinds, ANY of which
+the actor must carry — any-of because condition kinds are often exclusive
+tiers like tipsy/drunk) and **`excludes`** (any listed kind suppresses the
+verb) hide the action from menus and policies in
+`ActionResolver.Applies`; **`when`** specs (`{module, field, equals |
+min | max, on: target|actor}`) hide it on observable state — "Drink the
+ale" vanishes once the vessel is `empty`, "Clear the mug" appears only
+then; and **`gates`** are execution-time prerequisites evaluated in
+`PerformAction` BEFORE reaction parking and the check roll: a blocked
+gate fails the attempt with its `failText` (turn consumed, failSignals
+fire) while the action stays listed, so agents can still try and be told
+why not ("Your bladder is bursting — not another drop."). Gate kinds
+resolve by string id through a `GateRegistry` (built-ins `condition`,
+`field`; register new kinds like handlers — the extensible hook seam).
+The `spawn` handler is capacity-gated by the resolver: its affordance
+hides while the host spawner holds `maxChildren` items (default 1). `look` exits show `open`/`closed` only
 (never "locked"). `Perception` (Core/Actions) is the shared
 observable-rendering helper used by `look`, `open`, and the LLM context
 builder: openables get ` (closed)` / ` (open)` annotations and an open
@@ -232,6 +253,85 @@ compact; `look` (and the LLM context) adds a dressed line per *other*
 agent ("the old cook is wearing an apron." — your own outfit stays off
 the room description), and `inventory` splits "You are wearing: …" from
 "You are carrying: …".
+
+## Conditions
+
+A condition (buff/debuff) is a **child object** of an agent carrying a
+`condition` module — the body-part pattern applied to states: fields
+`kind` (unique id, e.g. `tipsy`), `label` (display word, default the
+kind), `visible` (default true), `selfText` (the holder's felt line,
+"You feel tipsy."), `clearText` (the leaving line), `traits`/`goals`
+(additive text), `statMods` (string→int map). Like body parts,
+conditions are part of the agent, not belongings: listings, pocket
+scans, and inventory skip them, and examine shows visible ones ("Nix
+the goblin looks tipsy."). Conditions attach by **cloning a scenario
+template object** (`Conditions.Attach` — templates live top-level,
+outside the room tree like shared doorstate, so they are never
+reachable) and are idempotent per kind. Effects flow through existing
+choke points: `statMods` sum into `Checks.Bonus` on top of stats and
+skills (drunk: agility −2, brawling +1 — every check re-reads them
+live); `traits`/`goals` append to the agent's own in the LLM NPC
+context (tipsy → "flirty, loose-tongued" — the behavior shift for
+LLM-driven agents); `requires`/`excludes` and the `condition` gate kind
+consume kinds for affordance gating (see Actions above); visible
+conditions render in room listings alongside posture ("the elf (drunk,
+sitting in the booth)") and in `look`/`inventory` self lines. Stage 2
+plans: one-shot conditions attached by handlers, `duration`/`onExpire`
+timers evaluated by the metabolism upkeep pass (chains like vomit →
+hungover), and per-agent condition variation.
+
+## Consumables, metabolism & spawning
+
+Developed in `scenarios/tavern/` (the Green Gullet dive bar), all
+opt-in module conventions like the RPG systems. **Consumables**: a
+`beverage` module carries `alcohol`/`volume` units plus an `empty`
+vessel flag (and optional `taste`, sent to the drinker as a private
+sensation); a `food` module carries `sobering`. The `consume` handler
+serves both verbs (drink/eat — phrasing comes from the affordance):
+beverages add to the drinker's metabolism and leave the empty vessel
+behind for clearing; food burns alcohol off and may
+`destroyOnConsume`. The `clear` handler destroys an empty vessel
+(handler-emitted signal, since the target is gone before
+affordance-level signals fire) — the barmaid's bus round. **Metabolism**
+is a module on agents: `alcohol`, `bladder` (numbers), `capacity`
+(per-race: the tavern's troll 4.0, orc 2.5, human 1.0, halfling 0.7,
+elf 0.8, goblin 0.6), decay rates, and `stages`/`bladderStages` —
+exclusive threshold bands (`[{min, condition}, …]`) as fractions of
+capacity. `Metabolism.Advance` is the **world-clock upkeep pass**:
+alcohol decays per second and the burned amount flows into the bladder;
+bands re-evaluate, attaching/detaching condition templates with private
+sensations on transitions ("You feel tipsy." / "The buzz softens.").
+Time semantics: turn-based mode advances everyone by each performed
+action's duration (player AND NPC actions — time passes for the whole
+tavern); real-time ticks advance one second each. A zero-second pass
+re-evaluates bands only — the loader runs it once after a scenario
+loads, so agents start with the conditions their initial field values
+imply (the drunk elf is drunk on turn 0). **Spawning**: a `spawner`
+module (fields `prefab` — a ref to a template object — `spawnTo` — a
+ref naming where clones land, usually a surface — and `maxChildren`,
+default 1) plus a phrasing module (`tap` pours, `stove` cooks — the
+affordance/verb/label, handler `spawn`) turn templates into live
+instances: `World.CloneTree` onto the spawn target with fresh
+`templateId_N` ids, hidden while the target already holds
+`maxChildren` clones *of that prefab* (the anti-flood rule — a random
+bartender can't pour forever, and an empty ale mug doesn't block the
+whiskey bottle; the drink must be taken first). The spawner host needs
+no container semantics — the tap isn't something you put things "into"
+or open. **Surfaces**: a `surface` module is an always-open holder that
+reads "on" instead of "in" — counters and tables. Items on a surface
+are reachable and takeable ("from the bar counter"), `put` reads "onto"
+(list label, handler message, and signals alike), look lists contents
+as "mug of ale (on bar counter)", and examine reports "There is a mug
+of ale on it." A surface offers `put` only when it also carries a
+`puttable` module (the affordance lives there, not on `surface`) —
+general tables get it, spawn-target counters don't, keeping menus lean
+for LLM consumers. The tavern pours onto the shared bar counter; the
+bartender's LLM traits make him furious when patrons pour their own. **Restrooms & endings**: a
+`toilet` module offers `use` (requires the bladder bands' condition
+kinds — any-of, so bursting still admits it) handled by `relieve`
+(resets the bladder; bands detach on the action's own upkeep), and an
+`exit` module offers `leave` (the street's "Go home"), which ends the
+game with the module's text.
 
 ## Reactions (quick-time events)
 

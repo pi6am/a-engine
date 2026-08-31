@@ -71,12 +71,15 @@ public static class Perception
             var entry = NameFor(observer, child) + Annotate(world, modules, child);
             // agent conditions gather into one parenthetical list:
             // "the arena duelist (prone, incapacitated)"; descriptive
-            // crunch adds the overall condition word ("wounded")
+            // crunch adds the overall condition word ("wounded"), and
+            // visible status conditions append theirs ("tipsy", "drunk")
             var conditions = new List<string>();
             if (Condition.Descriptive(world, modules) && child.HasModule("agent") &&
                 !Health.IsIncapacitated(world, modules, child) &&
                 Condition.Overall(world, modules, child) is { } condition)
                 conditions.Add(condition.Label);
+            if (child.HasModule("agent"))
+                conditions.AddRange(Conditions.VisibleWords(world, modules, child));
             if (child.HasModule("agent") &&
                 Postures.Of(world, modules, child) == Postures.Prone)
                 conditions.Add("prone");
@@ -90,8 +93,16 @@ public static class Perception
                 foreach (var inner in world.ChildrenOf(child.Id))
                     items.Add($"{inner.Name} (in {child.Name})");
             }
+            // a surface (counter, table) is always open: contents list as
+            // "on" rather than "in"
+            if (child.HasModule("surface"))
+            {
+                foreach (var inner in world.ChildrenOf(child.Id))
+                    items.Add($"{inner.Name} (on {child.Name})");
+            }
             // occupants of furniture (or of a carrier) list like container
-            // contents: "the old cook (sitting on the chair)"
+            // contents: "the old cook (sitting on the chair)" — visible
+            // status conditions ride along ("(sitting on the chair, drunk)")
             foreach (var occupant in world.ChildrenOf(child.Id))
             {
                 if (occupant.Id == agentId || !occupant.HasModule("agent"))
@@ -100,7 +111,9 @@ public static class Perception
                 var where = posture == Postures.Carried
                     ? $"carried by {child.Name}"
                     : $"{posture} on the {child.Name}";
-                items.Add($"{NameFor(observer, occupant)} ({where})");
+                var words = Conditions.VisibleWords(world, modules, occupant);
+                var suffix = words.Count > 0 ? ", " + string.Join(", ", words) : "";
+                items.Add($"{NameFor(observer, occupant)} ({where}{suffix})");
             }
         }
         // agents the observer is carrying (a grappled victim) list like
@@ -147,16 +160,17 @@ public static class Perception
     }
 
     /// <summary>
-    /// Sentence reporting a container's contents, for the open action:
-    /// "There is a brass key inside." / "It's empty."
+    /// Sentence reporting a container's/surface's contents, for the open
+    /// and examine verbs: "There is a brass key inside." / "It's empty."
+    /// A surface passes its own preposition ("on it").
     /// </summary>
-    public static string ContentsSentence(World.World world, WorldObject container)
+    public static string ContentsSentence(World.World world, WorldObject container, string prep = "inside")
     {
         var contents = world.ChildrenOf(container.Id).ToList();
         return contents.Count == 0
             ? "It's empty."
             : $"There {(contents.Count == 1 ? "is" : "are")} " +
-              string.Join(", ", contents.Select(c => WithArticle(c.Name))) + " inside.";
+              string.Join(", ", contents.Select(c => WithArticle(c.Name))) + $" {prep}.";
     }
 
     /// <summary>"brass key" -> "a brass key"; "apron" -> "an apron"; names with an article stay as-is.</summary>

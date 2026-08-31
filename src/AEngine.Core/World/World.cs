@@ -133,6 +133,39 @@ public sealed class World
         return attachment;
     }
 
+    /// <summary>
+    /// Deep-clone an object — modules with overrides, attributes, and
+    /// children — under a new parent. The runtime-instantiation primitive
+    /// behind prefab spawning and condition attachment: the source is a
+    /// template object (kept outside the room tree, like shared state
+    /// objects, so it is never reachable), the clone lands in the live
+    /// world under <paramref name="newId"/> (which must not exist);
+    /// children get "{newId}_{their template id}".
+    /// </summary>
+    public WorldObject CloneTree(string sourceId, string newParentId, string newId)
+    {
+        if (HasObject(newId))
+            throw new InvalidOperationException($"Object '{newId}' already exists.");
+        return CloneInto(GetObject(sourceId), newParentId, newId);
+    }
+
+    private WorldObject CloneInto(WorldObject source, string parentId, string newId)
+    {
+        var clone = CreateObject(newId, parentId, source.Name, source.Description);
+        foreach (var attr in source.Attributes)
+            clone.Attributes[attr.Key] = attr.Value;
+        foreach (var module in source.Modules)
+        {
+            var attachment = new ModuleAttachment { ModuleId = module.ModuleId };
+            foreach (var o in module.Overrides)
+                attachment.Overrides[o.Key] = o.Value;
+            clone.Modules.Add(attachment);
+        }
+        foreach (var childId in source.Children)
+            CloneInto(GetObject(childId), newId, $"{newId}_{childId}");
+        return clone;
+    }
+
     public void RemoveModule(string id, string moduleId)
     {
         var obj = GetObject(id);

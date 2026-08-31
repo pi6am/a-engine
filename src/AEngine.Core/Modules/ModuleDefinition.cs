@@ -1,4 +1,5 @@
 using System.Text.Json;
+using AEngine.Core.Actions;
 
 namespace AEngine.Core.Modules;
 
@@ -7,6 +8,7 @@ public enum FieldType
 {
     String,
     Int,
+    Number, // floating-point (e.g. alcohol level, bladder fill)
     Bool,
     Ref, // object-id reference
     List, // list of strings (e.g. body regions)
@@ -46,7 +48,37 @@ public sealed class AffordanceDefinition
     /// Rath to remove the dragon-mark"); {target} is substituted.
     /// </summary>
     public string? Label { get; init; }
+    /// <summary>
+    /// Condition kinds (comma-separated, ANY of which the actor must
+    /// currently carry) for the affordance to be listed or executed —
+    /// "use the urinal" while needing to pee or bursting. Any-of because
+    /// condition kinds are often exclusive tiers (tipsy/drunk). Enforced
+    /// by the resolver alongside Excludes and When.
+    /// </summary>
     public string? Requires { get; init; }
+    /// <summary>
+    /// Condition kinds (comma-separated; ANY present suppresses the
+    /// affordance) — the verb disappears from the actor's menu entirely.
+    /// For attemptable-but-doomed actions (drinking while bursting) use
+    /// an execution gate instead, so agents can still try and fail loudly.
+    /// </summary>
+    public string? Excludes { get; init; }
+    /// <summary>
+    /// Observable-state gates on a module field of the target (default) or
+    /// the actor: the affordance is only listed while every spec matches
+    /// (Equals literal, or Min/Max on a number). Hides "Drink the ale"
+    /// once the vessel is empty, shows "Clear the mug" only once it is.
+    /// </summary>
+    public List<WhenSpec>? When { get; init; }
+    /// <summary>
+    /// Execution-time gates, evaluated in TurnManager.PerformAction
+    /// BEFORE reaction parking and the check roll. Unlike
+    /// Requires/Excludes/When (which hide the action from menus and
+    /// policies), a blocked gate FAILS the attempt with its failText —
+    /// the action stays listed so agents can try and be told why not.
+    /// Kinds resolve through the GateRegistry ("condition", "field", ...).
+    /// </summary>
+    public List<GateSpec>? Gates { get; init; }
     /// <summary>Free-text prompt (the verb takes an argument).</summary>
     public string? Prompt { get; init; }
     /// <summary>
@@ -165,6 +197,23 @@ public sealed class OpposedSpec
 {
     public string? Stat { get; init; }
     public string? Skill { get; init; }
+}
+
+/// <summary>
+/// One observable-state gate on a module field: which object to test (On
+/// "target", the default, or "actor"), and the comparison the field must
+/// pass — Equals (a literal bool/number/string, compared verbatim) or
+/// Min/Max (numeric bounds). All specs on an affordance must match.
+/// </summary>
+public sealed class WhenSpec
+{
+    public required string Module { get; init; }
+    public required string Field { get; init; }
+    /// <summary>"target" (default) or "actor".</summary>
+    public string? On { get; init; }
+    public JsonElement? Equals { get; init; }
+    public double? Min { get; init; }
+    public double? Max { get; init; }
 }
 
 /// <summary>

@@ -100,6 +100,9 @@ public static class ScenarioLoader
         }
 
         BuildTree(engine.World, flat, order);
+        // initial upkeep sync: threshold-driven conditions (the drunk elf)
+        // match their starting field values from turn 0
+        engine.TurnManager.EvaluateUpkeep();
         return name;
     }
 

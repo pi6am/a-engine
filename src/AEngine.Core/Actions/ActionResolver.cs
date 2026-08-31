@@ -108,7 +108,7 @@ public sealed class ActionResolver
                     }
                 }
             }
-            if (child.HasModule("container") && IsOpenState(child))
+            if (child.HasModule("container") && IsOpenState(child) || child.HasModule("surface"))
             {
                 foreach (var innerId in child.Children)
                     AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered, others, examinable);
@@ -138,9 +138,10 @@ public sealed class ActionResolver
         List<AvailableAction> actions, WorldObject agent, WorldObject target, bool stateFiltered,
         IReadOnlyList<WorldObject> others, List<WorldObject> examinable)
     {
-        // body parts are anatomy, not items: no affordances, no pocket
-        // scans, no examine entries — they're wounded, not rummaged
-        if (target.HasModule("bodypart"))
+        // body parts are anatomy and conditions are states, not items: no
+        // affordances, no pocket scans, no examine entries — body parts get
+        // wounded, conditions get attached and detached
+        if (Conditions.IsInternal(target))
             return;
         examinable.Add(target);
         foreach (var attachment in target.Modules)
@@ -207,11 +208,12 @@ public sealed class ActionResolver
                     foreach (var itemId in agent.Children)
                     {
                         var item = _world.GetObject(itemId);
-                        if (!item.HasModule("portable") || item.HasModule("bodypart") ||
+                        if (!item.HasModule("portable") || Conditions.IsInternal(item) ||
                             Clothing.IsWorn(_modules, item))
                             continue;
+                        var prep = target.HasModule("surface") ? "onto" : "into";
                         actions.Add(new AvailableAction(
-                            "put", target.Id, $"Put {The(item)} into {The(target)}",
+                            "put", target.Id, $"Put {The(item)} {prep} {The(target)}",
                             affordance.Handler, attachment.ModuleId, affordance.Prompt)
                         { AuxTargetId = item.Id });
                     }
@@ -249,6 +251,36 @@ public sealed class ActionResolver
                            _world.GetObject(target.Parent).HasModule("agent");
         if (heldByOther && affordance.Verb is not ("steal" or "remove" or "trade"))
             return false;
+        // status conditions on the actor gate the affordance: Requires
+        // lists kinds the actor must have ("use the urinal" only while
+        // needing to pee), Excludes lists kinds that suppress the verb
+        if (!ConditionKindsApply(affordance.Requires, all: true, agent))
+            return false;
+        if (!ConditionKindsApply(affordance.Excludes, all: false, agent))
+            return false;
+        // observable state of the target (or actor): hide "Drink the ale"
+        // once the vessel is empty, show "Clear the mug" only once it is
+        if (!WhenApplies(affordance, agent, target))
+            return false;
+        // spawner slots: the spawn handler's affordance hides while the
+        // spawn target already holds maxChildren clones of the spawner's
+        // prefab (default 1) — the anti-flood rule; a new drink can only
+        // be drawn once the last one was picked up. The spawner host and
+        // the spawn target are decoupled (spawnTo), so a tap can pour
+        // onto the shared counter without being a container itself
+        if (affordance.Handler == "spawn")
+        {
+            if (!target.HasModule("spawner"))
+                return false;
+            var templateId = _modules.ResolveString(target, "spawner", "prefab");
+            if (templateId is not null)
+            {
+                var spawnTarget = Spawning.SpawnTarget(_world, _modules, target);
+                if (Spawning.CloneCount(_world, spawnTarget, templateId) >=
+                    _modules.ResolveInt(target, "spawner", "maxChildren", 1))
+                    return false;
+            }
+        }
         var applies = affordance.Verb switch
         {
             "look" => target.Id == agent.Id,
@@ -260,9 +292,11 @@ public sealed class ActionResolver
             // give: a held, unworn item (entries are emitted per recipient)
             "give" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
             // put: the open state of a container is observable — closed
-            // containers are listed only in the potential set, like "open"
-            "put" => target.HasModule("container") &&
-                     (!stateFiltered || !HasOpenState(target) || IsOpenState(target)),
+            // containers are listed only in the potential set, like "open";
+            // a surface is always open (no state to filter)
+            "put" => target.HasModule("surface") ||
+                     (target.HasModule("container") &&
+                      (!stateFiltered || !HasOpenState(target) || IsOpenState(target))),
             "steal" => heldByOther && !Clothing.IsWorn(_modules, target),
             // trade: barter for a ware another agent is holding; a ware
             // with a `trader` sells only through that agent — once sold,
@@ -298,6 +332,45 @@ public sealed class ActionResolver
             _ => true,
         };
         return applies && Postures.CanUse(_world, _modules, affordance, agent, target);
+    }
+
+    /// <summary>
+    /// Evaluate a comma-separated condition-kind list on the actor: with
+    /// all=true the actor carries at least ONE listed kind (Requires —
+    /// any-of, since condition kinds are often exclusive tiers like
+    /// tipsy/drunk); with all=false none may be present (Excludes —
+    /// any-listed blocks). An empty/null list always passes.
+    /// </summary>
+    private bool ConditionKindsApply(string? kinds, bool all, WorldObject agent)
+    {
+        if (string.IsNullOrWhiteSpace(kinds))
+            return true;
+        var split = kinds.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return all
+            ? split.Any(kind => Conditions.Has(_world, _modules, agent, kind))
+            : split.All(kind => !Conditions.Has(_world, _modules, agent, kind));
+    }
+
+    /// <summary>
+    /// Evaluate an affordance's When specs: observable module-field state
+    /// of the target (default) or the actor. Every spec must match —
+    /// comparison semantics are shared with field gates (FieldMatch).
+    /// </summary>
+    private bool WhenApplies(
+        Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
+    {
+        if (affordance.When is not { Count: > 0 } specs)
+            return true;
+        foreach (var spec in specs)
+        {
+            var obj = spec.On == "actor" ? agent : target;
+            if (!obj.HasModule(spec.Module))
+                return false;
+            var value = _modules.ResolveField(obj, spec.Module, spec.Field);
+            if (!FieldMatch.Matches(value, spec.Equals, spec.Min, spec.Max))
+                return false;
+        }
+        return true;
     }
 
     private bool HasOpenState(WorldObject target) => PortalOrSelf(target) is not null;

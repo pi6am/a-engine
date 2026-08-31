@@ -13,6 +13,7 @@ dotnet build          # build the solution (a-engine.slnx, .NET 10 XML format)
 dotnet test           # run all xUnit tests
 dotnet run --project src/AEngine.Cli   # play the MVP scenario (text-first REPL)
 dotnet run --project src/AEngine.Cli -- scenarios/npc   # play the NPC demo scenario
+dotnet run --project src/AEngine.Cli -- scenarios/tavern # play the tavern sim (drinks, conditions)
 dotnet run --project src/AEngine.Cli -- adventure.scen  # or a zip-packaged scenario (any extension)
 dotnet run --project src/AEngine.Cli -- rpg.png         # or an image card (png/jpeg metadata)
 dotnet run --project src/AEngine.Util -- card pack scenarios/rpg rpg.png   # pack a scenario into an image
@@ -37,6 +38,7 @@ src/AEngine.Llm/          # LLM harness: client, planner, parser, executor, LlmP
 client/                   # debug web client (Vue 3 + Vite + TypeScript, vue-only dep)
 scenarios/mvp/            # MVP scenario: two rooms, locked door, key in a drawer
 scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook
+scenarios/tavern/         # dive-bar sim: consumables, metabolism, conditions, prefab spawning
 scenarios/rpg/            # RPG systems demo: dueling arena, stats, combat, grappling, body parts
 scenarios/nail/           # full quest: barter, stealth/combat paths, persuasion-gated ritual, game over
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
@@ -75,6 +77,16 @@ working in that area, and update them when the behavior changes:
   placeholders.
 - **Posture & clothing** — containment-derived postures (sit/lie/prone/carried)
   gate affordances via data; garments wear onto data-driven body regions.
+- **Conditions** — buffs/debuffs as cloned child objects on agents
+  (`condition` module: traits/goals text, stat mods, visibility); they gate
+  affordances (resolver `requires`/`excludes`/`when`, execution-time
+  `gates` via `GateRegistry`), feed `Checks.Bonus`, and shift LLM behavior.
+- **Consumables & metabolism** — drinks/food as data (`beverage`/`food`
+  modules, `consume`/`clear` handlers), prefab spawning from templates
+  (`spawner` module, single-slot anti-flood), and a world-clock upkeep pass
+  (`metabolism` module) that burns alcohol into bladder across per-race
+  capacities and attaches threshold-band conditions (tipsy/drunk/…). See
+  `docs/architecture.md`.
 - **RPG systems** — staged, opt-in modules (stats/checks → opposed checks →
   health → combat → grappling → body parts + crunch levels); scenarios that
   don't reference them are unaffected. See `docs/rpg-systems.md`.
@@ -117,6 +129,16 @@ working in that area, and update them when the behavior changes:
   event narration; see `docs/llm.md`). Still planned: guided world
   expansion for *open* scenarios, speech variants (Shout/Whisper), provider
   config files, streaming, retries/backoff.
+- **Tavern stage 2** — one-shot/timed conditions with `onExpire` chains
+  (vomit → hungover, special drinks with timed buffs/crashes), bladder
+  failure accidents, per-agent condition variation (flirty/belligerent
+  flavor per NPC), condition-driven phrase pools for the random policy,
+  and conversation muting or room zones so cross-table chatter doesn't
+  muddle (stage 2/3).
+- **Label article doubling** — `Perception.WithDefiniteArticle` prepends
+  "the" to names that already embed one ("Nix the goblin" → "Examine the
+  Nix the goblin" in menu labels). Fix by detecting an embedded article
+  or reworking descriptive-name conventions.
 - **Autonomous agents** — NPCs act through policies; planned: perception-driven
   policies (the random policy ignores signals), agenda-driven NPCs,
   multi-player (multiple players controlling different agents).

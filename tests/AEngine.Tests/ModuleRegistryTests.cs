@@ -95,4 +95,44 @@ public class ModuleRegistryTests
         Assert.Equal("go", portal.Affordances[0].Handler);
         Assert.Equal("open", portal.Affordances[0].Requires);
     }
+
+    [Fact]
+    public void ResolveDouble_ReadsNumberField_OverrideWinsOverDefault()
+    {
+        const string json = """
+        [
+          {
+            "id": "metabolism",
+            "name": "Metabolism",
+            "fields": [
+              { "name": "alcohol", "type": "number", "default": 0.0 },
+              { "name": "capacity", "type": "number", "default": 1.0 }
+            ],
+            "affordances": []
+          }
+        ]
+        """;
+
+        var registry = new ModuleRegistry();
+        registry.LoadJson(json);
+        Assert.Equal(FieldType.Number, registry.Get("metabolism").GetField("alcohol")!.Type);
+
+        var world = new CoreWorld();
+        world.CreateObject("orc", CoreWorld.RootId);
+        world.AddModule("orc", "metabolism");
+        var orc = world.GetObject("orc");
+
+        Assert.Equal(0, registry.ResolveDouble(orc, "metabolism", "alcohol"));
+        Assert.Equal(1.0, registry.ResolveDouble(orc, "metabolism", "capacity"));
+
+        world.SetFieldOverride("orc", "metabolism", "alcohol", World.ToJson(0.75));
+        Assert.Equal(0.75, registry.ResolveDouble(orc, "metabolism", "alcohol"));
+
+        // integer literals are valid numbers too
+        world.SetFieldOverride("orc", "metabolism", "capacity", World.ToJson(2));
+        Assert.Equal(2.0, registry.ResolveDouble(orc, "metabolism", "capacity"));
+
+        // unset on an absent field falls back
+        Assert.Equal(0.5, registry.ResolveDouble(orc, "metabolism", "missing", 0.5));
+    }
 }

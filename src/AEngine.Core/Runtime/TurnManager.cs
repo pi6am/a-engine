@@ -66,6 +66,20 @@ public sealed class TurnManager
     public int Turn { get; private set; }
 
     /// <summary>
+    /// Re-evaluate upkeep-derived state (metabolism condition bands)
+    /// without advancing time — called once after a scenario loads so
+    /// agents start with the conditions their initial field values imply
+    /// (the drunk elf is drunk on turn 0).
+    /// </summary>
+    public void EvaluateUpkeep()
+    {
+        lock (_engine.SyncRoot)
+        {
+            Metabolism.Advance(_engine, 0);
+        }
+    }
+
+    /// <summary>
     /// Advance one turn and flush due scheduled actions. The real-time
     /// driver calls this on a wall-clock timer; in turn-based mode the
     /// turn advances per action instead (see <see cref="PerformAction"/>).
@@ -92,11 +106,17 @@ public sealed class TurnManager
         lock (_engine.SyncRoot)
         {
             var affordance = LookupAffordance(action);
+            // execution gates run first: prerequisites before quick-time
+            // reactions and dice — an action that can't happen shouldn't
+            // telegraph. A blocked gate fails with its failText and
+            // consumes the turn (the affordance's failSignals fire).
+            var gateFailure = EvaluateGates(agent, action, text, affordance);
             // quick-time reactions: an action targeting another agent with a
             // reaction spec telegraphs and parks until the defender responds.
             // The defender is the target agent — or, for an item-targeted
             // action (bartering for a held ware), the agent holding it.
-            if (affordance?.Reaction is { Window: > 0 } reaction &&
+            if (gateFailure is null &&
+                affordance?.Reaction is { Window: > 0 } reaction &&
                 ResolveReactionDefender(agent, action) is { } defender)
             {
                 var options = reaction.Options.Where(o =>
@@ -114,7 +134,8 @@ public sealed class TurnManager
             var holderBefore = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
                 ? _engine.World.GetObject(action.TargetId).Parent
                 : null;
-            var result = EvaluateCheck(agent, action)
+            var result = gateFailure
+                         ?? EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb,
                              auxTargetId: action.AuxTargetId);
             if (result.EndsGame)
@@ -140,8 +161,11 @@ public sealed class TurnManager
             if (_engine.TimeMode == TimeMode.TurnBased)
             {
                 // ambient time passes with the actor's own activity, so NPC
-                // count doesn't speed up emissions for the player
+                // count doesn't speed up emissions for the player; metabolism
+                // is a world clock — everyone's alcohol burns and bladder
+                // fills with the time this action took
                 AdvanceAmbient(duration, agent.Id);
+                Metabolism.Advance(_engine, duration);
                 AdvanceTurn();
             }
             return result;
@@ -228,6 +252,7 @@ public sealed class TurnManager
         if (_engine.TimeMode == TimeMode.TurnBased)
         {
             AdvanceAmbient(parkDuration, agent.Id);
+            Metabolism.Advance(_engine, parkDuration);
             AdvanceTurn();
         }
         return ActionResult.Ok(actorText);
@@ -291,7 +316,8 @@ public sealed class TurnManager
             // display; the actor sees the option's report instead
             if (option.Text is not null)
                 _engine.SignalBus.SendTo(defender, option.Text);
-            var result = EvaluateCheck(agent, pending.Action, option)
+            var result = EvaluateGates(agent, pending.Action, pending.Text, LookupAffordance(pending.Action))
+                         ?? EvaluateCheck(agent, pending.Action, option)
                          ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
                              pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId);
             if (result.EndsGame)
@@ -354,26 +380,60 @@ public sealed class TurnManager
         lock (_engine.SyncRoot)
         {
             var handler = _engine.HandlerRegistry.Get(handlerId);
-            var ctx = new ActionContext
-            {
-                World = _engine.World,
-                Modules = _engine.ModuleRegistry,
-                Signals = _engine.SignalBus,
-                Memory = _engine.Memory,
-                Agent = agent,
-                Target = targetId is null ? null : _engine.World.GetObject(targetId),
-                AuxTarget = auxTargetId is not null && _engine.World.HasObject(auxTargetId)
-                    ? _engine.World.GetObject(auxTargetId)
-                    : null,
-                Verb = verb,
-                Random = _engine.Random,
-                Reaction = reaction,
-                Args = text is null
-                    ? new Dictionary<string, string>()
-                    : new Dictionary<string, string> { ["text"] = text },
-            };
-            return handler.Execute(ctx);
+            return handler.Execute(BuildContext(agent, targetId, text, verb, auxTargetId, reaction));
         }
+    }
+
+    private ActionContext BuildContext(
+        WorldObject agent, string? targetId, string? text, string? verb,
+        string? auxTargetId, Modules.ReactionOptionSpec? reaction) =>
+        new()
+        {
+            World = _engine.World,
+            Modules = _engine.ModuleRegistry,
+            Signals = _engine.SignalBus,
+            Memory = _engine.Memory,
+            Agent = agent,
+            Target = targetId is not null && _engine.World.HasObject(targetId)
+                ? _engine.World.GetObject(targetId)
+                : null,
+            AuxTarget = auxTargetId is not null && _engine.World.HasObject(auxTargetId)
+                ? _engine.World.GetObject(auxTargetId)
+                : null,
+            Verb = verb,
+            Random = _engine.Random,
+            Reaction = reaction,
+            Args = text is null
+                ? new Dictionary<string, string>()
+                : new Dictionary<string, string> { ["text"] = text },
+        };
+
+    /// <summary>
+    /// Evaluate an affordance's execution gates. Returns null when there
+    /// are no gates or all pass; a blocked gate returns a Failure result
+    /// (failText to the actor, turn consumed via the caller's normal
+    /// failure tail, failSignals emitted). Gates run before reaction
+    /// parking and the check roll — prerequisites before dice.
+    /// </summary>
+    private ActionResult? EvaluateGates(
+        WorldObject agent, AvailableAction action, string? text,
+        Modules.AffordanceDefinition? affordance)
+    {
+        if (affordance?.Gates is not { Count: > 0 } specs)
+            return null;
+        var ctx = BuildContext(agent, action.TargetId, text, action.Verb, action.AuxTargetId, null);
+        foreach (var spec in specs)
+        {
+            var gate = _engine.GateRegistry.Get(spec.Kind);
+            if (!gate.Blocks(ctx, spec))
+                continue;
+            var targetName = ctx.Target is not null
+                ? $" {Perception.WithDefiniteArticle(ctx.Target.Name)}"
+                : "";
+            return ActionResult.Fail(
+                spec.FailText ?? $"You can't {action.Verb}{targetName} right now.");
+        }
+        return null;
     }
 
     /// <summary>
@@ -786,7 +846,10 @@ public sealed class TurnManager
         // turn-based mode ambient time is advanced per actor by
         // PerformAction (see AdvanceAmbient) so NPC count doesn't matter
         if (_engine.TimeMode == TimeMode.RealTime)
+        {
             AdvanceAmbient(1, onlyHolderId: null);
+            Metabolism.Advance(_engine, 1);
+        }
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))
         {
             if (!_engine.World.HasObject(scheduled.AgentId))

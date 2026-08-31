@@ -16,6 +16,7 @@ public sealed class GameEngine
     public ModuleRegistry ModuleRegistry { get; }
     public HandlerRegistry HandlerRegistry { get; }
     public PolicyRegistry PolicyRegistry { get; }
+    public GateRegistry GateRegistry { get; }
     public SignalBus SignalBus { get; }
     public AgentMemory Memory { get; }
     public Scheduler Scheduler { get; }
@@ -52,6 +53,7 @@ public sealed class GameEngine
         ModuleRegistry = new ModuleRegistry();
         HandlerRegistry = new HandlerRegistry();
         PolicyRegistry = new PolicyRegistry();
+        GateRegistry = new GateRegistry();
         Memory = new AgentMemory(ModuleRegistry);
         SignalBus = new SignalBus(World, ModuleRegistry, Memory);
         Scheduler = new Scheduler();
@@ -66,6 +68,8 @@ public sealed class GameEngine
         var engine = new GameEngine();
         foreach (var handler in BuiltinHandlers.All())
             engine.HandlerRegistry.Register(handler);
+        foreach (var gate in GateRegistry.Builtins())
+            engine.GateRegistry.Register(gate);
         engine.PolicyRegistry.Register(new RandomPolicy());
         engine.PolicyRegistry.Register(new AutoPolicy());
         return engine;

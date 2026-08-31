@@ -41,15 +41,20 @@ public static class Checks
                modules.ResolveInt(rulesHost, "rules", "diceSides", 20));
     }
 
-    /// <summary>The actor's bonus for a check: stat value + skill value.</summary>
-    public static int Bonus(ModuleRegistry modules, WorldObject actor, string? stat, string? skill)
+    /// <summary>
+    /// The actor's bonus for a check: stat value + skill value + active
+    /// condition modifiers (<see cref="Conditions.StatMod"/> — a drunk
+    /// brawler's agility penalty and brawling bonus apply live).
+    /// </summary>
+    public static int Bonus(World.World world, ModuleRegistry modules, WorldObject actor, string? stat, string? skill)
     {
         var bonus = 0;
         if (stat is not null && actor.HasModule("stats"))
             bonus += Stats.Get(modules, actor, "stats", stat);
         if (skill is not null && actor.HasModule("skills"))
             bonus += Stats.Get(modules, actor, "skills", skill);
-        return bonus;
+        return bonus + Conditions.StatMod(world, modules, actor, stat)
+                     + Conditions.StatMod(world, modules, actor, skill);
     }
 
     /// <summary>
@@ -61,7 +66,7 @@ public static class Checks
         WorldObject actor, CheckSpec spec)
     {
         var (count, sides) = DiceFormula(world, modules);
-        return RollDice(random, count, sides) + Bonus(modules, actor, spec.Stat, spec.Skill)
+        return RollDice(random, count, sides) + Bonus(world, modules, actor, spec.Stat, spec.Skill)
                - spec.Difficulty;
     }
 
@@ -80,15 +85,15 @@ public static class Checks
         ReactionOptionSpec? reaction = null)
     {
         var (count, sides) = DiceFormula(world, modules);
-        var attack = RollDice(random, count, sides) + Bonus(modules, actor, spec.Stat, spec.Skill);
+        var attack = RollDice(random, count, sides) + Bonus(world, modules, actor, spec.Stat, spec.Skill);
         var defend = reaction switch
         {
             { NoResist: true } => 0,
             not null => RollDice(random, count, sides) +
-                        Bonus(modules, defender, reaction.Stat, reaction.Skill) + reaction.Bonus,
+                        Bonus(world, modules, defender, reaction.Stat, reaction.Skill) + reaction.Bonus,
             _ when Health.IsIncapacitated(world, modules, defender) => 0,
             _ => RollDice(random, count, sides) +
-                 Bonus(modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill),
+                 Bonus(world, modules, defender, spec.Opposed?.Stat, spec.Opposed?.Skill),
         };
         return attack - defend - spec.Difficulty;
     }

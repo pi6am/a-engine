@@ -38,6 +38,11 @@ public static class BuiltinHandlers
         new ExamineHandler(),
         new TradeHandler(),
         new RitualHandler(),
+        new ConsumeHandler(),
+        new SpawnHandler(),
+        new ClearHandler(),
+        new RelieveHandler(),
+        new LeaveHandler(),
     ];
 
     /// <summary>A module's string field, or null when the module is absent or the field is empty.</summary>
@@ -79,6 +84,10 @@ public static class BuiltinHandlers
                 sb.AppendLine(room.Description);
             if (Perception.PostureLine(ctx.World, ctx.Modules, ctx.Agent) is { } posture)
                 sb.AppendLine(posture);
+            // felt status conditions ("You feel tipsy.") right after the
+            // posture line — the agent's own state, before the room
+            foreach (var line in Conditions.SelfLines(ctx.World, ctx.Modules, ctx.Agent))
+                sb.AppendLine(line);
 
             // openables report their state; open containers' contents list
             // as separate entries ("brass key (in desk drawer)")
@@ -192,13 +201,14 @@ public static class BuiltinHandlers
             }
             else if (target.Parent.Length > 0 && ctx.World.HasObject(target.Parent))
             {
-                // on furniture the target is reachable; inside a container
-                // in the room, the container must be open
+                // on furniture the target is reachable; on a surface (a
+                // counter, a table) always; inside a container in the
+                // room, the container must be open
                 holder = ctx.World.GetObject(target.Parent);
                 if (holder.Parent != room.Id)
                     return ActionResult.Fail($"You don't see the {target.Name} here.");
                 if (!holder.HasModule("sittable") && !holder.HasModule("lyable") &&
-                    !HandlerState.IsOpen(ctx, holder))
+                    !holder.HasModule("surface") && !HandlerState.IsOpen(ctx, holder))
                     return ActionResult.Fail($"The {target.Name} is inside the closed {holder.Name}.");
             }
             else
@@ -249,24 +259,26 @@ public static class BuiltinHandlers
 
         public ActionResult Execute(ActionContext ctx)
         {
-            var container = ctx.Target ?? throw new InvalidOperationException("put requires a target container.");
-            if (!container.HasModule("container"))
-                return ActionResult.Fail($"You can't put anything into the {container.Name}.");
+            var target = ctx.Target ?? throw new InvalidOperationException("put requires a target container.");
+            var surface = target.HasModule("surface");
+            if (!surface && !target.HasModule("container"))
+                return ActionResult.Fail($"You can't put anything onto the {target.Name}.");
+            var prep = surface ? "onto" : "into";
             var item = ctx.AuxTarget ?? throw new InvalidOperationException("put requires an item (aux target).");
-            if (item.Id == container.Id)
-                return ActionResult.Fail($"You can't put the {item.Name} into itself.");
+            if (item.Id == target.Id)
+                return ActionResult.Fail($"You can't put the {item.Name} {prep} itself.");
             if (item.Parent != ctx.Agent.Id)
                 return ActionResult.Noop($"You're not carrying the {item.Name}.");
             if (Clothing.IsWorn(ctx.Modules, item))
                 return ActionResult.Fail($"Take off the {item.Name} first.");
-            if (HandlerState.GetOpenState(ctx, container) is not null && !HandlerState.IsOpen(ctx, container))
-                return ActionResult.Fail($"The {container.Name} is closed.");
-            var capacity = ctx.Modules.ResolveInt(container, "container", "capacity", 10);
-            if (ctx.World.ChildrenOf(container.Id).Count() >= capacity)
-                return ActionResult.Fail($"The {container.Name} is full.");
-            ctx.World.MoveObject(item.Id, container.Id);
+            if (HandlerState.GetOpenState(ctx, target) is not null && !HandlerState.IsOpen(ctx, target))
+                return ActionResult.Fail($"The {target.Name} is closed.");
+            var capacity = ctx.Modules.ResolveInt(target, surface ? "surface" : "container", "capacity", 10);
+            if (ctx.World.ChildrenOf(target.Id).Count() >= capacity)
+                return ActionResult.Fail($"The {target.Name} is full.");
+            ctx.World.MoveObject(item.Id, target.Id);
             return ActionResult.Ok(
-                $"You put {Perception.WithDefiniteArticle(item.Name)} into {Perception.WithDefiniteArticle(container.Name)}.");
+                $"You put {Perception.WithDefiniteArticle(item.Name)} {prep} {Perception.WithDefiniteArticle(target.Name)}.");
         }
     }
 
@@ -358,8 +370,8 @@ public static class BuiltinHandlers
             var borne = new List<string>();
             foreach (var item in ctx.World.ChildrenOf(ctx.Agent.Id))
             {
-                if (item.HasModule("bodypart"))
-                    continue; // anatomy, not belongings
+                if (Conditions.IsInternal(item))
+                    continue; // anatomy and status conditions, not belongings
                 if (Clothing.IsWorn(ctx.Modules, item))
                     worn.Add(item.Name);
                 else if (item.HasModule("portable"))
@@ -377,6 +389,7 @@ public static class BuiltinHandlers
             if (borne.Count > 0)
                 parts.Add("You bear: " + string.Join(", ", borne.Select(Perception.WithArticle)));
             parts.AddRange(Condition.SelfLines(ctx.World, ctx.Modules, ctx.Agent));
+            parts.AddRange(Conditions.SelfLines(ctx.World, ctx.Modules, ctx.Agent));
             return ActionResult.Ok(string.Join("\n", parts));
         }
     }
@@ -566,6 +579,9 @@ public static class BuiltinHandlers
             {
                 if (Health.IsIncapacitated(ctx.World, ctx.Modules, target))
                     sb.AppendLine($"{target.Name} is incapacitated.");
+                var words = Conditions.VisibleWords(ctx.World, ctx.Modules, target);
+                if (words.Count > 0)
+                    sb.AppendLine($"{target.Name} looks {string.Join(" and ", words)}.");
                 foreach (var line in Condition.ExamineLines(ctx.World, ctx.Modules, target))
                     sb.AppendLine(line);
                 var posture = Postures.Of(ctx.World, ctx.Modules, target);
@@ -579,7 +595,7 @@ public static class BuiltinHandlers
                 if (worn.Count > 0)
                     sb.AppendLine($"Wearing: {string.Join(", ", worn.Select(w => Perception.WithArticle(w.Name)))}.");
                 var carried = ctx.World.ChildrenOf(target.Id)
-                    .Where(c => !c.HasModule("bodypart") && !Clothing.IsWorn(ctx.Modules, c)).ToList();
+                    .Where(c => !Conditions.IsInternal(c) && !Clothing.IsWorn(ctx.Modules, c)).ToList();
                 if (carried.Count > 0)
                     sb.AppendLine($"Carrying: {string.Join(", ", carried.Select(c => Perception.WithArticle(c.Name)))}.");
             }
@@ -587,7 +603,9 @@ public static class BuiltinHandlers
             {
                 if (HandlerState.GetOpenState(ctx, target) is not null)
                     sb.AppendLine(HandlerState.IsOpen(ctx, target) ? "It is open." : "It is closed.");
-                if (target.HasModule("container") && HandlerState.IsOpen(ctx, target))
+                if (target.HasModule("surface"))
+                    sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "on it"));
+                else if (target.HasModule("container") && HandlerState.IsOpen(ctx, target))
                     sb.AppendLine(Perception.ContentsSentence(ctx.World, target));
             }
             return ActionResult.Ok(sb.ToString().TrimEnd());
@@ -1010,6 +1028,159 @@ public static class BuiltinHandlers
             return ctx.Modules.ResolveBool(host, "ritual", "endsGame")
                 ? result with { EndsGame = true }
                 : result;
+        }
+    }
+
+    // consuming food and drink — the verb comes from the affordance
+    // ("drink" the ale, "eat" the fries). A `beverage` module carries
+    // `alcohol`/`volume` units applied to the consumer's `metabolism`
+    // (bladder fills, alcohol absorbs); a `food` module carries
+    // `sobering` units that burn alcohol off. The vessel (mug, plate)
+    // stays behind empty for the barmaid to clear, unless the data says
+    // destroyOnConsume (a swallowed pill, a gum wrapper world).
+    private sealed class ConsumeHandler : IActionHandler
+    {
+        public string Id => "consume";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("consume requires a target.");
+            var moduleId = target.HasModule("beverage") ? "beverage"
+                : target.HasModule("food") ? "food"
+                : null;
+            if (moduleId is null)
+                return ActionResult.Fail($"You can't consume {Perception.WithDefiniteArticle(target.Name)}.");
+            if (ctx.Modules.ResolveBool(target, moduleId, "empty"))
+                return ActionResult.Noop($"{Capitalize(Perception.WithDefiniteArticle(target.Name))} is empty.");
+
+            var verb = ctx.Verb ?? "consume";
+            var taste = Field(ctx, target, moduleId, "taste");
+            if (ctx.Agent.HasModule("metabolism"))
+            {
+                if (moduleId == "beverage")
+                {
+                    var alcohol = ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "alcohol") +
+                                   ctx.Modules.ResolveDouble(target, "beverage", "alcohol");
+                    var bladder = Math.Min(1.0,
+                        ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "bladder") +
+                        ctx.Modules.ResolveDouble(target, "beverage", "volume"));
+                    ctx.World.SetFieldOverride(ctx.Agent.Id, "metabolism", "alcohol", World.World.ToJson(alcohol));
+                    ctx.World.SetFieldOverride(ctx.Agent.Id, "metabolism", "bladder", World.World.ToJson(bladder));
+                }
+                else
+                {
+                    var alcohol = Math.Max(0,
+                        ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "alcohol") -
+                        ctx.Modules.ResolveDouble(target, "food", "sobering"));
+                    ctx.World.SetFieldOverride(ctx.Agent.Id, "metabolism", "alcohol", World.World.ToJson(alcohol));
+                }
+            }
+            if (ctx.Modules.ResolveBool(target, moduleId, "destroyOnConsume"))
+                ctx.World.DestroyObject(target.Id);
+            else
+                ctx.World.SetFieldOverride(target.Id, moduleId, "empty", World.World.ToJson(true));
+            if (taste is not null)
+                ctx.Signals.SendTo(ctx.Agent, taste);
+            return ActionResult.Ok($"You {verb} {Perception.WithDefiniteArticle(target.Name)}.");
+        }
+    }
+
+    // spawning a live instance from a prefab template: the `spawner`
+    // module on the host (an ale tap, a stove) names a template object
+    // (kept outside the room tree, like shared state) and where the clone
+    // lands (`spawnTo` — a counter or table, usually a surface; the host
+    // itself when unset), plus a slot capacity (default 1 — the
+    // anti-flood rule: a random bartender can't pour forever; the drink
+    // must be picked up first). The host doesn't need to be a container;
+    // the slot counts clones of this spawner's prefab on the target.
+    private sealed class SpawnHandler : IActionHandler
+    {
+        public string Id => "spawn";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("spawn requires a target.");
+            if (!target.HasModule("spawner"))
+                return ActionResult.Fail($"You can't draw anything from the {target.Name}.");
+            var templateId = ctx.Modules.ResolveString(target, "spawner", "prefab");
+            if (templateId is null || !ctx.World.HasObject(templateId))
+                return ActionResult.Fail($"The {target.Name} has run dry.");
+            var parent = Spawning.SpawnTarget(ctx.World, ctx.Modules, target);
+            var max = ctx.Modules.ResolveInt(target, "spawner", "maxChildren", 1);
+            if (Spawning.CloneCount(ctx.World, parent, templateId) >= max)
+                return ActionResult.Noop(
+                    $"{Capitalize(Perception.WithDefiniteArticle(parent.Name))} is already occupied.");
+            var id = templateId;
+            for (var n = 1; ctx.World.HasObject(id); n++)
+                id = $"{templateId}_{n}";
+            var clone = ctx.World.CloneTree(templateId, parent.Id, id);
+            var prep = parent.HasModule("surface") ? "on" : "at";
+            return ActionResult.Ok(
+                $"{Capitalize(Perception.WithArticle(clone.Name))} now sits {prep} {Perception.WithDefiniteArticle(parent.Name)}.");
+        }
+    }
+
+    // clearing away a finished vessel (an empty mug, a scraped plate) —
+    // the barmaid's bus tub. The affordance is data-gated to empty
+    // vessels (when: empty == true); the handler destroys the object and
+    // emits its own signal, since the target won't exist by the time
+    // affordance-level signals would fire.
+    private sealed class ClearHandler : IActionHandler
+    {
+        public string Id => "clear";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("clear requires a target.");
+            var moduleId = target.HasModule("beverage") ? "beverage"
+                : target.HasModule("food") ? "food"
+                : null;
+            if (moduleId is null)
+                return ActionResult.Fail($"You can't clear the {target.Name}.");
+            if (!ctx.Modules.ResolveBool(target, moduleId, "empty"))
+                return ActionResult.Noop(
+                    $"{Capitalize(Perception.WithDefiniteArticle(target.Name))} isn't finished yet.");
+            ctx.Signals.Emit(ctx.Agent, target,
+                [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 5, Text = "{agent} clears away the {target}." }]);
+            ctx.World.DestroyObject(target.Id);
+            return ActionResult.Ok($"You clear away the {target.Name}.");
+        }
+    }
+
+    // relieving oneself at a toilet or urinal: resets the bladder (the
+    // metabolism bands detach on the action's own upkeep pass, moments
+    // later). The affordance is requires-gated to agents carrying the
+    // bladder band condition.
+    private sealed class RelieveHandler : IActionHandler
+    {
+        public string Id => "relieve";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("relieve requires a target.");
+            if (!ctx.Agent.HasModule("metabolism") ||
+                ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "bladder") <= 0)
+                return ActionResult.Noop("You don't need to go.");
+            ctx.World.SetFieldOverride(
+                ctx.Agent.Id, "metabolism", "bladder", World.World.ToJson(0.0));
+            ctx.Signals.SendTo(ctx.Agent,
+                Field(ctx, target, "toilet", "reliefText") ?? "You feel enormously better.");
+            return ActionResult.Ok($"You use the {target.Name}.");
+        }
+    }
+
+    // leaving for good: an `exit` module on a street-side object offers
+    // the way out ("Go home") — the handler ends the game with the
+    // module's departure text.
+    private sealed class LeaveHandler : IActionHandler
+    {
+        public string Id => "leave";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("leave requires a target.");
+            var text = Field(ctx, target, "exit", "text") ?? "You leave.";
+            return ActionResult.Ok(text) with { EndsGame = true };
         }
     }
 }

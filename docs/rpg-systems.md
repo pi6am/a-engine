@@ -1,10 +1,10 @@
 # RPG systems
 
-Staged, opt-in RPG mechanics, developed in `scenarios/rpg/` (dueling
+Opt-in RPG mechanics, developed in `scenarios/rpg/` (dueling
 arena); simple scenarios never reference these modules. All data-driven —
 the engine never hardcodes the set of stats, skills, or body regions.
 
-## Stage 1: stats, skills, checks
+## Stats, skills, checks
 
 Stats/skills are map fields (`FieldType.Map`, string→int; `stats`/`skills`
 modules with a `values` map; undeclared names read as 0; `Stats.Get/Set`
@@ -17,7 +17,7 @@ top-level object) sets `diceCount`/`diceSides` (default 1d20; 0d0 is
 diceless — used for deterministic tests); `Checks.Evaluate` returns the
 margin. The `pick` handler unlocks without a key once its check passes.
 
-## Stage 2: opposed checks, prone, stealing
+## Opposed checks, prone, stealing
 
 Opposed checks (`check.opposed`: the defender — the target agent, or the
 agent holding the target item — rolls their own dice + stat/skill, actor
@@ -34,7 +34,7 @@ worn garments offer `remove` instead, an opposed pull rolled in the handler
 (combatant stats: strength/brawling vs agility) that lands the garment in
 the puller's inventory.
 
-## Stage 3: health
+## Health
 
 `health` module (`hp`/`maxHp`/`incapacitatedAt`, default threshold 0);
 `Damage.Apply` clamps hp at 0 and reports incapacitation once — a standing
@@ -45,7 +45,7 @@ and offers no resistance to opposed checks (`Checks.EvaluateOpposed` treats
 their defense as 0 — robbing or stripping a downed foe auto-succeeds unless
 the check has a difficulty).
 
-## Stage 4: combat
+## Combat
 
 `attackable` exposes `attack` (postures `["standing"]`); the attack handler
 rolls opposed in-code (the attacker's bonus depends on the wielded weapon —
@@ -63,7 +63,7 @@ observable ("{agent} swings at the {target} and misses."). The arena armory
 has a dagger (1d4), an arming sword (1d8), padded armor (protection 2), and
 the strongbox rapier (1d8+1).
 
-## Stage 5: grappling
+## Grappling
 
 `grappleable` exposes `grapple` (opposed, gated on the affordance): success
 hauls the victim into **forced carrying** — the carried-posture rules
@@ -74,7 +74,7 @@ The grappler gets `release` (set the victim down, standing) and `choke` (on
 `chokeable`) — a no-roll unarmed attack, combatant damage, armor ignored;
 victims choked unconscious stay in the grappler's grasp.
 
-## Stage 6: granular body parts and configurable crunch
+## Granular body parts and configurable crunch
 
 A body part is a **child object** of the agent with a `bodypart` module
 (`region` — the wear region that armor must cover to protect it; `vital`;

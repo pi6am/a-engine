@@ -1,0 +1,435 @@
+{
+  "name": "tavern-modules",
+  "modules": [
+    {
+      "id": "room",
+      "name": "Room",
+      "fields": [],
+      "affordances": []
+    },
+    {
+      "id": "rules",
+      "name": "Rules",
+      "fields": [
+        { "name": "sayBaseSeconds", "type": "int", "default": 2 },
+        { "name": "sayMillisPerChar", "type": "int", "default": 100 },
+        { "name": "npcLodFactor", "type": "int", "default": 6 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "agent",
+      "name": "Agent",
+      "fields": [
+        { "name": "policy", "type": "string", "default": "player" },
+        { "name": "character", "type": "string", "default": "" },
+        { "name": "goals", "type": "string", "default": "" },
+        { "name": "traits", "type": "string", "default": "" },
+        { "name": "memoryLength", "type": "int", "default": 25 },
+        { "name": "posture", "type": "string", "default": "standing" }
+      ],
+      "affordances": [
+        { "verb": "look", "handler": "look", "repeatBackoff": true },
+        { "verb": "inventory", "handler": "inventory" },
+        { "verb": "wait", "handler": "wait", "repeatBackoff": true }
+      ]
+    },
+    {
+      "id": "can_speak",
+      "name": "Can speak",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "say",
+          "handler": "say",
+          "speech": true,
+          "prompt": "Say what?",
+          "signals": [
+            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
+            { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "body",
+      "name": "Body",
+      "fields": [
+        { "name": "regions", "type": "list", "default": ["head", "top", "bottom", "feet"] }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "portal",
+      "name": "Portal (door side)",
+      "fields": [
+        { "name": "stateRef", "type": "ref", "default": null },
+        { "name": "direction", "type": "string", "default": "" },
+        { "name": "to", "type": "ref", "default": null },
+        { "name": "lockedBy", "type": "ref", "default": null },
+        { "name": "transmitVisual", "type": "string", "default": "whenOpen" },
+        { "name": "transmitAudio", "type": "string", "default": "always" }
+      ],
+      "affordances": [
+        {
+          "verb": "go",
+          "handler": "go",
+          "duration": 3,
+          "postures": ["standing"],
+          "signals": [
+            { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
+            { "sense": "audible", "priority": 5, "scope": "departure", "text": "{agent} leaving through the {exitPortal}." },
+            { "sense": "visual", "priority": 10, "scope": "arrival", "text": "{agent} enters from the {entryPortal} to the {entryDirection}." },
+            { "sense": "audible", "priority": 5, "scope": "arrival", "text": "footsteps approaching from the {entryPortal}." }
+          ]
+        },
+        {
+          "verb": "open",
+          "handler": "open",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
+            { "sense": "audible", "priority": 5, "text": "the sound of wood sliding on wood." }
+          ]
+        },
+        {
+          "verb": "close",
+          "handler": "close",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+            { "sense": "audible", "priority": 5, "text": "a door thudding shut." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "doorstate",
+      "name": "Shared door state",
+      "fields": [
+        { "name": "open", "type": "bool", "default": false },
+        { "name": "locked", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "openable",
+      "name": "Openable",
+      "fields": [
+        { "name": "open", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "open",
+          "handler": "open",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
+            { "sense": "audible", "priority": 5, "text": "something creaking open." }
+          ]
+        },
+        {
+          "verb": "close",
+          "handler": "close",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
+            { "sense": "audible", "priority": 5, "text": "something thudding shut." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "container",
+      "name": "Container",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 10 }
+      ],
+      "affordances": [
+        {
+          "verb": "put",
+          "handler": "put",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} puts the {item} into the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "surface",
+      "name": "Surface",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 10 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "puttable",
+      "name": "Puttable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "put",
+          "handler": "put",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} puts the {item} onto the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "portable",
+      "name": "Portable",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "take",
+          "handler": "take",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}{container}." }
+          ]
+        },
+        {
+          "verb": "drop",
+          "handler": "drop",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} drops the {target}." },
+            { "sense": "audible", "priority": 3, "text": "something hitting the floor." }
+          ]
+        },
+        {
+          "verb": "give",
+          "handler": "give",
+          "duration": 2,
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} gives the {item} to the {target}." }
+          ],
+          "failSignals": [
+            { "sense": "visual", "priority": 5, "text": "{target} declines the {item}." }
+          ],
+          "reaction": {
+            "window": 3,
+            "telegraph": "{agent} offers the {item} to the {target}.",
+            "actorText": "You offer the {item} to {target}.",
+            "options": [
+              { "id": "accept", "label": "Accept", "noResist": true, "default": true, "text": "You accept the gift." },
+              { "id": "decline", "label": "Decline", "text": "You decline the gift." }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "sittable",
+      "name": "Sittable",
+      "fields": [
+        { "name": "capacity", "type": "int", "default": 1 }
+      ],
+      "affordances": [
+        {
+          "verb": "sit",
+          "handler": "sit",
+          "duration": 2,
+          "postures": ["standing"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} sits down on the {target}." }
+          ]
+        },
+        {
+          "verb": "stand",
+          "handler": "stand",
+          "duration": 2,
+          "postures": ["sitting"],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} gets up from the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "condition",
+      "name": "Condition",
+      "fields": [
+        { "name": "kind", "type": "string", "default": "" },
+        { "name": "label", "type": "string", "default": "" },
+        { "name": "visible", "type": "bool", "default": true },
+        { "name": "selfText", "type": "string", "default": "" },
+        { "name": "clearText", "type": "string", "default": "" },
+        { "name": "traits", "type": "string", "default": "" },
+        { "name": "goals", "type": "string", "default": "" },
+        { "name": "statMods", "type": "map", "default": {} }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "metabolism",
+      "name": "Metabolism",
+      "fields": [
+        { "name": "alcohol", "type": "number", "default": 0.0 },
+        { "name": "bladder", "type": "number", "default": 0.0 },
+        { "name": "capacity", "type": "number", "default": 1.0 },
+        { "name": "alcoholDecayPerSec", "type": "number", "default": 0.002 },
+        { "name": "bladderFromAlcohol", "type": "number", "default": 1.0 },
+        { "name": "stages", "type": "list", "default": [
+          { "min": 0.25, "condition": "cond_tipsy" },
+          { "min": 0.5, "condition": "cond_drunk" },
+          { "min": 0.85, "condition": "cond_hammered" }
+        ] },
+        { "name": "bladderStages", "type": "list", "default": [
+          { "min": 0.7, "condition": "cond_pee" },
+          { "min": 0.95, "condition": "cond_bursting" }
+        ] }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "beverage",
+      "name": "Beverage",
+      "fields": [
+        { "name": "alcohol", "type": "number", "default": 0.0 },
+        { "name": "volume", "type": "number", "default": 0.15 },
+        { "name": "empty", "type": "bool", "default": false },
+        { "name": "destroyOnConsume", "type": "bool", "default": false },
+        { "name": "taste", "type": "string", "default": "" }
+      ],
+      "affordances": [
+        {
+          "verb": "drink",
+          "handler": "consume",
+          "duration": 5,
+          "label": "Drink the {target}",
+          "when": [ { "module": "beverage", "field": "empty", "equals": false } ],
+          "gates": [
+            {
+              "kind": "condition",
+              "args": { "excludes": ["bursting"] },
+              "failText": "Your bladder is bursting — you couldn't keep another drop down."
+            }
+          ],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} drinks the {target}." },
+            { "sense": "audible", "priority": 3, "text": "a throat working." }
+          ]
+        },
+        {
+          "verb": "clear",
+          "handler": "clear",
+          "duration": 2,
+          "label": "Clear away the {target}",
+          "when": [ { "module": "beverage", "field": "empty", "equals": true } ]
+        }
+      ]
+    },
+    {
+      "id": "food",
+      "name": "Food",
+      "fields": [
+        { "name": "sobering", "type": "number", "default": 0.0 },
+        { "name": "empty", "type": "bool", "default": false },
+        { "name": "destroyOnConsume", "type": "bool", "default": false },
+        { "name": "taste", "type": "string", "default": "" }
+      ],
+      "affordances": [
+        {
+          "verb": "eat",
+          "handler": "consume",
+          "duration": 15,
+          "label": "Eat the {target}",
+          "when": [ { "module": "food", "field": "empty", "equals": false } ],
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} eats the {target}." }
+          ]
+        },
+        {
+          "verb": "clear",
+          "handler": "clear",
+          "duration": 2,
+          "label": "Clear away the {target}",
+          "when": [ { "module": "food", "field": "empty", "equals": true } ]
+        }
+      ]
+    },
+    {
+      "id": "spawner",
+      "name": "Spawner",
+      "fields": [
+        { "name": "prefab", "type": "ref", "default": null },
+        { "name": "spawnTo", "type": "ref", "default": null },
+        { "name": "maxChildren", "type": "int", "default": 1 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "tap",
+      "name": "Tap",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "pour",
+          "handler": "spawn",
+          "duration": 4,
+          "label": "Pour a serving from the {target}",
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} pours a serving at the {target}." },
+            { "sense": "audible", "priority": 3, "text": "liquid splashing into glass." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stove",
+      "name": "Stove",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "cook",
+          "handler": "spawn",
+          "duration": 10,
+          "label": "Cook a plate at the {target}",
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} fixes a plate at the {target}." },
+            { "sense": "audible", "priority": 3, "text": "a sizzle and a clatter of crockery." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toilet",
+      "name": "Toilet",
+      "fields": [
+        { "name": "reliefText", "type": "string", "default": "" }
+      ],
+      "affordances": [
+        {
+          "verb": "use",
+          "handler": "relieve",
+          "duration": 20,
+          "label": "Use the {target}",
+          "requires": "needs_to_pee, bursting",
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} uses the {target}." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "exit",
+      "name": "Exit",
+      "fields": [
+        { "name": "text", "type": "string", "default": "" }
+      ],
+      "affordances": [
+        {
+          "verb": "leave",
+          "handler": "leave",
+          "duration": 5,
+          "label": "Go home"
+        }
+      ]
+    }
+  ]
+}

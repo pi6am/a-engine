@@ -31,6 +31,8 @@ public sealed class AgentContextBuilder
                 sb.AppendLine(room.Description);
             if (Perception.PostureLine(_engine.World, _engine.ModuleRegistry, agent) is { } posture)
                 sb.AppendLine(posture);
+            foreach (var line in Conditions.SelfLines(_engine.World, _engine.ModuleRegistry, agent))
+                sb.AppendLine(line);
 
             // same rendering as look: state annotations, open containers'
             // contents listed as separate entries
@@ -56,7 +58,7 @@ public sealed class AgentContextBuilder
             }
 
             var items = _engine.World.ChildrenOf(agent.Id)
-                .Where(i => !i.HasModule("bodypart")).ToList();
+                .Where(i => !Conditions.IsInternal(i)).ToList();
             sb.AppendLine(items.Count == 0
                 ? "You are carrying nothing."
                 : "You are carrying: " + string.Join(", ", items.Select(i => i.Name)));
@@ -69,11 +71,17 @@ public sealed class AgentContextBuilder
                 if (!string.IsNullOrWhiteSpace(character))
                     sb.AppendLine($"Character: {character}");
                 var goals = _engine.ModuleRegistry.ResolveString(agent, "agent", "goals");
-                if (!string.IsNullOrWhiteSpace(goals))
-                    sb.AppendLine($"Goals: {goals}");
+                var conditionGoals = Conditions.GoalText(_engine.World, _engine.ModuleRegistry, agent);
+                var allGoals = string.Join(" ", new[] { goals, conditionGoals }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+                if (allGoals.Length > 0)
+                    sb.AppendLine($"Goals: {allGoals}");
                 var traits = _engine.ModuleRegistry.ResolveString(agent, "agent", "traits");
-                if (!string.IsNullOrWhiteSpace(traits))
-                    sb.AppendLine($"Traits: {traits}");
+                var conditionTraits = Conditions.TraitText(_engine.World, _engine.ModuleRegistry, agent);
+                var allTraits = string.Join(" ", new[] { traits, conditionTraits }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+                if (allTraits.Length > 0)
+                    sb.AppendLine($"Traits: {allTraits}");
 
                 // signal delivery already recorded observations into
                 // memory; draining here just marks the pending queue as

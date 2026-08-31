@@ -96,6 +96,15 @@ public sealed class ModuleRegistry
             : fallback;
 
     /// <summary>
+    /// Resolve a floating-point field (tolerating an integer literal, which
+    /// JSON does not distinguish). Fallback when unset or non-numeric.
+    /// </summary>
+    public double ResolveDouble(WorldObject obj, string moduleId, string field, double fallback = 0) =>
+        ResolveField(obj, moduleId, field) is { } e && e.ValueKind == JsonValueKind.Number
+            ? e.GetDouble()
+            : fallback;
+
+    /// <summary>
     /// Resolve a list-of-strings field: a JSON array of strings, tolerantly
     /// also a comma-separated string. Null when neither exists.
     /// </summary>
