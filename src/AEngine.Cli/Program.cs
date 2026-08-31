@@ -230,14 +230,14 @@ slash.Register("timescale", ["ts"], "Set the real-time clock speed (1.0 = normal
         (engine.TimeMode == TimeMode.TurnBased ? " (Takes effect in real-time mode.)" : ""));
     return false;
 });
-slash.Register("auto", [], "Let the AI play your character (/auto on|off; ESC cancels)", args =>
+slash.Register("auto", [], "Let the AI play your character (ESC cancels)", args =>
 {
-    if (args.Length == 1 && args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+    if (args.Length == 0 || (args.Length == 1 && args[0].Equals("on", StringComparison.OrdinalIgnoreCase)))
         SetAuto(true);
     else if (args.Length == 1 && args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
         SetAuto(false);
     else
-        Console.WriteLine($"Auto mode is {(IsAuto() ? "on" : "off")}. Usage: /auto on|off");
+        Console.WriteLine($"Auto mode is {(IsAuto() ? "on" : "off")}. Usage: /auto");
     return false;
 });
 slash.Register("quit", ["exit"], "Leave the game", _ => true);

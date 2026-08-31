@@ -48,10 +48,11 @@ toggles live in `OutputSettings`.
 
 ## Auto mode (AI self-play)
 
-`/auto on|off` (default off) hands the player character to the AI — the
+`/auto` (or `/auto on`) hands the player character to the AI — the
 `agent.policy` field flips between `player` and `auto` (llm with an
 endpoint, random otherwise), so the character plans and acts exactly like
-an NPC. A testing harness for "can the LLM beat this scenario?"; the
+an NPC; ESC (or `/auto off`) restores control. A testing harness for
+"can the LLM beat this scenario?"; the
 scenario should give the player object diegetic `character`/`goals`
 fields to play from (the nail scenario does — deliberately without a
 walkthrough). The time mode is untouched: in real-time mode the world
