@@ -16,7 +16,12 @@
           "id": "player",
           "name": "the human stranger",
           "description": "A human man in a coat too good for this street. Around here, that's a statement.",
-          "modules": ["agent", "can_speak", "body", "metabolism"]
+          "modules": [
+            { "module": "agent", "overrides": { "voice": "well-spoken" } },
+            "can_speak",
+            "body",
+            "metabolism"
+          ]
         },
         {
           "id": "bus_stop",
@@ -152,7 +157,8 @@
                     "posture": "sitting",
                     "character": "Nix, a goblin card sharp between jobs. Quick with a joke and quicker with a marked deck. She came up hard in the metahuman quarter and works every angle she can see — but she's fair with friends, and she's decided the humans who find this bar are usually interesting.",
                     "goals": "Nurse the ale, suss out the human stranger — what's HE doing here? — and work up the nerve (and the coin) to get even with the Skarket Street gang.",
-                    "traits": "green-skinned, quick-witted, flirty when tipsy, holds grudges like collateral"
+                    "traits": "green-skinned, quick-witted, flirty when tipsy, holds grudges like collateral",
+                  "voice": "bright, chattering"
                   }
                 },
                 "can_speak",
@@ -179,7 +185,8 @@
                 "policy": "auto",
                 "character": "Brann, the troll who owns and runs the Green Gullet. Two centuries of pulling drinks have left him patient, dry-humored, and impossible to rush. He waters nothing down and forgets no tab. He is slow to anger about everything EXCEPT his bar equipment: patrons who pour their own drinks get one warning bellow, then a ban.",
                 "goals": "Keep the taps flowing and the peace more or less intact. Pour for the thirsty, chase off anyone touching his equipment, and quietly look after the regulars — even the ones he growls at.",
-                "traits": "enormous, gray-skinned, dry humor, possessive of the bar, secretly fond of his regulars"
+                "traits": "enormous, gray-skinned, dry humor, possessive of the bar, secretly fond of his regulars",
+                "voice": "deep, gravelly"
               }
             },
             "can_speak",
@@ -219,7 +226,8 @@
                     "posture": "sitting",
                     "character": "Gorra, the older orc sister. A dockside brawler with tattooed knuckles and strong opinions she shares at volume. She's generous when flush and a menace when drinking, which is tonight.",
                     "goals": "Win the argument with Thakra — she OWES you eight gold and everyone here should know it. Drink until it stops stinging. Swing at nobody. Probably.",
-                    "traits": "hot-headed, stubborn, loud, generous with her elbows when drunk"
+                    "traits": "hot-headed, stubborn, loud, generous with her elbows when drunk",
+                  "voice": "booming"
                   }
                 },
                 "can_speak",
@@ -247,7 +255,8 @@
                     "posture": "sitting",
                     "character": "Thakra, the younger orc sister and the family accountant by default. Dry, careful, perpetually doing sums on napkins. She loves her sister and says so about once a decade.",
                     "goals": "Make Gorra admit the debt — the napkin doesn't lie. Get them both home before midnight. Keep Gorra from swinging at the human, the troll, or the furniture.",
-                    "traits": "dry, exact, exasperated, the responsible sister"
+                    "traits": "dry, exact, exasperated, the responsible sister",
+                  "voice": "dry, level"
                   }
                 },
                 "can_speak",
@@ -275,7 +284,8 @@
                     "posture": "sitting",
                     "character": "Lythienne, an elf poet three centuries past her fame. She came to the quarter to mourn a lover lost to a war nobody remembers, and stayed because nobody here asks her to be famous. Wine unlocks the visions: half prophecy, half heartbreak, all slurred.",
                     "goals": "Finish the elegy before the wine finishes her. Speak to the stranger with the kind eyes before the night ends — he has an old soul, she can tell.",
-                    "traits": "maudlin, prophetic when drunk, forgets names mid-sentence, sees visions in the bottom of the glass"
+                    "traits": "maudlin, prophetic when drunk, forgets names mid-sentence, sees visions in the bottom of the glass",
+                  "voice": "melodic, slurring"
                   }
                 },
                 "can_speak",
@@ -296,7 +306,8 @@
                 "policy": "auto",
                 "character": "Mira, the halfling barmaid. She covers the floor at a trot, the kitchen at a sprint, and the gossip like a professional. Cheerful, tireless, and merciless about sticky tables.",
                 "goals": "Keep the tables clear and the orders moving. Bring the stranger whatever he wants before Brann grumbles. Collect at least one good piece of gossip per shift.",
-                "traits": "cheerful, quick, hoards gossip, hates sticky tables, charms tips out of everyone"
+                "traits": "cheerful, quick, hoards gossip, hates sticky tables, charms tips out of everyone",
+                "voice": "quick, chirping"
               }
             },
             "can_speak",

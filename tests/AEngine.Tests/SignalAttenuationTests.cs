@@ -286,9 +286,36 @@ public class SignalAttenuationTests
         // in-room listener: full fidelity
         Assert.Contains(engine.SignalBus.Drain("nix"),
             s => s.Text == "the human stranger says: \"anyone in here?\"");
-        // through the door: content-free, addressed to no one in particular
+        // through the door: anonymous — a voice texture, not a name
         Assert.Contains(engine.SignalBus.Drain("mira"),
-            s => s.Text == "you hear the human stranger saying something through the green door to the north.");
+            s => s.Text == "a well-spoken voice saying something through the green door to the north.");
+    }
+
+    [Fact]
+    public void VoicePlaceholder_FallsBackToMuffled_WhenUndeclared()
+    {
+        var engine = NewThreeRoomEngine();
+        engine.ModuleRegistry.LoadJson("""
+        [
+          { "id": "murmurer", "name": "Murmurer", "fields": [],
+            "affordances": [
+              { "verb": "mutter", "handler": "basic",
+                "signals": [ { "sense": "audible", "priority": 9,
+                               "text": "{agent} mutters: \"{arg}\"",
+                               "degrade": [ { "below": 1, "text": "a {voice} voice muttering" } ] } ] }
+            ] }
+        ]
+        """);
+        var world = engine.World;
+        world.CreateObject("stone", "room_a", "worry stone");
+        world.AddModule("stone", "murmurer");
+
+        engine.TurnManager.PerformAction(
+            world.GetObject("alice"), TestWorlds.Find(engine, "alice", "mutter", "stone"));
+
+        // TestWorlds agents declare no voice field: the fallback renders
+        Assert.Equal("a muffled voice muttering through the wooden door to the south.",
+            Assert.Single(engine.SignalBus.Drain("bob")).Text);
     }
 
     private static GameEngine LoadTavern()

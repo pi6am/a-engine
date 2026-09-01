@@ -30,7 +30,8 @@
         { "name": "traits", "type": "string", "default": "" },
         { "name": "memoryLength", "type": "int", "default": 25 },
         { "name": "memorySalienceBoost", "type": "int", "default": 8 },
-        { "name": "posture", "type": "string", "default": "standing" }
+        { "name": "posture", "type": "string", "default": "standing" },
+        { "name": "voice", "type": "string", "default": "" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },
@@ -53,11 +54,11 @@
             { "sense": "audible", "priority": 10, "audience": "onlyTarget", "salience": 16,
               "text": "{agent} says to you: \"{arg}\"",
               "degrade": [
-                { "below": 1, "text": "you hear {agent} saying something to you" }
+                { "below": 1, "text": "a {voice} voice saying something to you" }
               ] },
             { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"",
               "degrade": [
-                { "below": 1, "text": "you hear {agent} saying something" }
+                { "below": 1, "text": "a {voice} voice saying something" }
               ] },
             { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
           ]

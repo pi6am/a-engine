@@ -396,14 +396,17 @@ public sealed class SignalBus
         _memory.Record(observer, signal.Text, salience: salience);
     }
 
-    private static string Format(
+    private string Format(
         string template, WorldObject actor, WorldObject? target, string? arg,
         IReadOnlyDictionary<string, string>? extra = null, WorldObject? observer = null,
         string? targetName = null)
     {
         var text = template
             .Replace("{agent}", actor.Name, StringComparison.Ordinal)
-            .Replace("{arg}", arg ?? "", StringComparison.Ordinal);
+            .Replace("{arg}", arg ?? "", StringComparison.Ordinal)
+            // degraded renderings stay anonymous: who is speaking is
+            // exactly what a muffled voice through a door doesn't tell you
+            .Replace("{voice}", VoiceOf(actor), StringComparison.Ordinal);
         // observer-relative naming: every agent is the protagonist of their
         // own perception, so when the observer IS the target it renders as
         // "you" ("the old cook gives the bread to you"), never by name
@@ -420,6 +423,18 @@ public sealed class SignalBus
         text = text.Replace("{item}", "", StringComparison.Ordinal);
         return CollapseDoubledArticles(text);
     }
+
+    /// <summary>
+    /// The actor's voice texture (the agent module's `voice` field —
+    /// "gruff", "bright, chattering"), for renderings that identify
+    /// someone by sound alone; "muffled" when undeclared.
+    /// </summary>
+    private string VoiceOf(WorldObject actor) =>
+        actor.HasModule("agent")
+            ? _modules.ResolveString(actor, "agent", "voice") is { Length: > 0 } voice
+                ? voice
+                : "muffled"
+            : "muffled";
 
     /// <summary>
     /// Render {target} as the observing target itself: object/possessive

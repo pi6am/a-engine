@@ -229,7 +229,11 @@ away, a content-free murmur through solid doors — while placeholders
 still format and the portal suffix still applies. Ladders are pure
 opt-in: specs without them render full fidelity at any range, so quiet
 scenarios are unaffected (the tavern opts its speech in: anything heard
-through a doorway is content-free). Signals delivered through a
+through a doorway is content-free). Degraded renderings can stay
+anonymous with the `{voice}` placeholder — the actor's agent-module
+`voice` texture ("a deep, gravelly voice saying something"), falling
+back to "muffled" when undeclared — since who is speaking is exactly
+what a voice through a door doesn't tell you. Signals delivered through a
 portal get a
 directional suffix naming the side in the observer's room ("… through the
 wooden door to the south." — vertical portals read "to the floor
