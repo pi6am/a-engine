@@ -25,7 +25,8 @@
               "incognitoDescription": "A three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand coils around her left arm, suppressed but not broken.", "policy": "player",
               "memoryLength": 50,
               "character": "Nail — Nannan in your native tongue — a three-foot kobold refugee of the Xabrakkar warren, pink-scaled and purple-eyed. Hilezmaras' cult branded you with his dragon-mark; the red dragon Rhindicar, your tribe's patron, suppresses its compulsion through the talon he gifted you.",
-              "goals": "Rid yourself of Hilezmaras' dragon-mark before it grows strong enough to overwhelm Rhindicar's suppression. Rhindicar urged you to find his former master, the sorcerer Rath Cinderstorm — your only hope. You arrived in Fanne'Tar knowing no one; find Rath and persuade him to help you." } },
+              "goals": "Rid yourself of Hilezmaras' dragon-mark before it grows strong enough to overwhelm Rhindicar's suppression. Rhindicar urged you to find his former master, the sorcerer Rath Cinderstorm — your only hope. You arrived in Fanne'Tar knowing no one; find Rath and persuade him to help you.",
+              "traits": "Bold, friendly, intrepid. You love and respect Rhindicar and hate Hilezmaras. The dragon-talon blade is important to you and you will never willingly give it up. If someone takes it, get it back at any cost." } },
             "can_speak",
             "knowledge",
             "shoveable",
@@ -36,8 +37,8 @@
             "grappler",
             "chokeable",
             "huggable",
-            { "module": "stats", "overrides": { "values": { "strength": 8, "agility": 14, "charisma": 12, "perception": 11 } } },
-            { "module": "skills", "overrides": { "values": { "persuasion": 3, "lockpicking": 3, "pickpocket": 4, "blades": 4, "brawling": 1 } } }
+            { "module": "stats", "overrides": { "values": { "strength": 8, "agility": 15, "charisma": 12, "perception": 11 } } },
+            { "module": "skills", "overrides": { "values": { "persuasion": 3, "lockpicking": 3, "pickpocket": 4, "blades": 5, "brawling": 1 } } }
           ],
           "children": [
             {
@@ -136,7 +137,7 @@
               "incognitoDescription": "A leathery, sun-beaten dockhand who seems to know every rumor on the wharf.",
                 "policy": "auto",
                 "character": "Old Ferret, a leathery, sun-beaten dockhand who knows every rumor on the wharf.",
-                "goals": "Unload boats and gossip with newcomers. Tell anyone who asks: the sorcerer Rath Cinderstorm keeps to the tower north of the market square, and the herbalist Mira trades in rare reagents at her stall."
+                "goals": "Unload boats and gossip with newcomers. Tell anyone who asks: the sorcerer Rath Cinderstorm keeps to the tower north of the market square, and the herbalist Mira trades in rare reagents at her stall. There may be an entrance to old ruins west of the market, but it's dangerous. Only talk of the ruins if asked directly, and warn that they may be treacherous."
               }
             },
             "can_speak",
@@ -235,7 +236,7 @@
                 "policy": "auto",
                 "character": "Mira, a round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
                 "goals": "Sell your remedies. Stay at your stall — you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action — a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done — you have the bloom you wanted and nothing left to sell, so never barter to get it back and stop asking customers for moonpetals.",
-                "traits": "You are a shrewd trader and your wares are NEVER gifts. You love to gossip: cultists smuggle relics through the smugglers' cellar below Candlewick Alley, and the sorcerer Rath Cinderstorm keeps to his tower north of the market."
+                "traits": "You are a shrewd trader and your wares are NEVER gifts. You love to gossip: cultists smuggle relics through the smugglers' cellar below Candlewick Alley west of the market, and the sorcerer Rath Cinderstorm keeps to his tower north of the market."
               }
             },
             "can_speak",
@@ -476,7 +477,7 @@
                 "memoryLength": 50,
                 "character": "Rath Cinderstorm, a stooped, ash-haired sorcerer in self-imposed exile; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar, and he misses him.",
                 "goals": "Keep your solitude. Strangers get short shrift — turn them away. You can unbind Hilezmaras' dragon-marks, but you never offer, hint at, or perform the rite uninvited. A visitor bearing Rhindicar's talon and the rite's reagents (ember salt, a focus crystal) is NOT enough — the talon could be stolen, and you say so. Only after a visitor speaks of Rhindicar in a way that convinces you their bond is genuine (probe them: ask how they know him, what he is like) AND they actually ask for your help do you name the rite's price and perform it.",
-                "traits": "Gruff, suspicious, slow to trust; kindness shows only after trust is earned. You interrogate visitors who claim a connection to Rhindicar instead of taking objects as proof. You do not discuss your past with strangers."
+                "traits": "Gruff, suspicious, slow to trust; kindness shows only after trust is earned. You interrogate visitors who claim a connection to Rhindicar instead of taking objects as proof. You do not discuss your past with strangers. You know that Mira sometimes has rare reagents, and the focus crystal could perhaps be found in the old ruins."
               }
             },
             "can_speak",
