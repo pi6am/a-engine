@@ -122,6 +122,9 @@ working in that area, and update them when the behavior changes:
   explicitly by path — never batch unrelated changes into a single commit
   (`git add -A` after a long multi-feature session is how that happens).
 - Do not commit build artifacts (`bin/`, `obj/`, `*.dll`) — see `.gitignore`.
+- Watch for compiler warnings and fix them before committing — the build
+  should stay at zero warnings (`dotnet build` prints them; CI does not
+  gate on them yet, so it is on us).
 
 ## Future goals (NOT yet implemented — don't assume these exist)
 
