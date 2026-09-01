@@ -4,7 +4,10 @@
     {
       "id": "room",
       "name": "Room",
-      "fields": [],
+      "fields": [
+        { "name": "attenuateVisual", "type": "int", "default": 0 },
+        { "name": "attenuateAudio", "type": "int", "default": 0 }
+      ],
       "affordances": []
     },
     {
@@ -71,7 +74,9 @@
         { "name": "to", "type": "ref", "default": null },
         { "name": "lockedBy", "type": "ref", "default": null },
         { "name": "transmitVisual", "type": "string", "default": "whenOpen" },
-        { "name": "transmitAudio", "type": "string", "default": "always" }
+        { "name": "transmitAudio", "type": "string", "default": "always" },
+        { "name": "attenuateVisual", "type": "int", "default": 1 },
+        { "name": "attenuateAudio", "type": "int", "default": 1 }
       ],
       "affordances": [
         {

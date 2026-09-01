@@ -203,13 +203,28 @@ meets a name that already carries one ("opens the the strongbox" → "opens
 the strongbox"). Formatting is observer-relative: when the observer IS the
 target, `{target}` renders as "you" ("the old cook gives the bread to
 you"), and at sentence start the verb after it drops its third-person -s
-("{target} declines" → "you decline"). Propagation: same room → all
-senses; one portal away → a sense passes only if the portal **side in the
-origin room** transmits it (`portal` fields `transmitVisual`/
-`transmitAudio`: `always | whenOpen | never`, defaults `whenOpen`/`always`;
-`whenOpen` reads the shared doorstate via that side's own `stateRef`);
-farther rooms get nothing. One-way propagation (e.g. a one-way mirror) is
-pure data on the two sides. Signals delivered through a portal get a
+("{target} declines" → "you decline"). Propagation is **strength against
+attenuation** on a perceptual log scale (decibel-like), so attenuation
+adds: a signal spec declares `strength` (default 1); each portal side
+carries per-sense `attenuateVisual`/`attenuateAudio` (default 1) and
+each room the same fields (default 0); crossing a portal costs its
+attenuation plus the average of the two rooms'
+(`portalAtt + (srcRoomAtt + dstRoomAtt) / 2`). A signal is
+imperceptible at negative remaining strength, and same-room listeners
+never pay room attenuation — so the defaults (1/1/0) reproduce the
+classic behavior exactly: every sense in the room, audible (or an open
+door's visual) one room away at remaining 0, nothing farther. Loud
+events (`strength` 4, a gunshot) carry several rooms along the cheapest
+path; whispers (0) stay put. The transmit gates compose as hard edges:
+a side's `transmitVisual`/`transmitAudio` (`always | whenOpen | never`,
+defaults `whenOpen`/`always`; `whenOpen` reads the shared doorstate via
+that side's own `stateRef`) blocks that sense outright regardless of
+strength — closed doors still stop vision cold. One-way propagation
+(e.g. a one-way mirror) is pure data on the two sides. The delivered
+`Signal` carries its remaining `strength` — the hook for degrading a
+representation at range (speech fading to "you hear someone talking"
+through a solid door; not yet implemented). Signals delivered through a
+portal get a
 directional suffix naming the side in the observer's room ("… through the
 wooden door to the south." — vertical portals read "to the floor
 above/below", not the ungrammatical "to the up/down"), suppressed when the signal's target is that

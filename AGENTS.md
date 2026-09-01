@@ -158,11 +158,11 @@ working in that area, and update them when the behavior changes:
   actions yet.
 - **Signals in the debug web client** — a `GET /api/signals?agentId=` peek
   endpoint + panel would slot in (`SignalBus.Peek` already exists).
-- **Signal intensity & attenuation** — generalize transmission: emitters get an
-  `intensity` (audible and visual), transmitters (portal sides) get an
-  `attenuation` (abstract decibels). Loud sounds (gunshots) carry several rooms;
-  soft sounds may not leave the room. Signal specs could declare multiple
-  representations chosen by surviving intensity — full fidelity up close
-  ("the old cook says: "Hm, where did I put it?""), degraded at range
-  ("someone says something"). Propagation would extend beyond adjacent rooms,
-  attenuating per hop.
+- **Signal representation degradation** — strength/attenuation is live
+  (specs declare `strength` on a log scale; portal sides and rooms carry
+  per-sense `attenuateVisual`/`attenuateAudio`; a signal dies at negative
+  remaining strength — see `docs/architecture.md`). Still planned: signal
+  specs declaring multiple representations chosen by surviving strength —
+  full fidelity up close ("the old cook says: "Hm, where did I put
+  it?""), degraded at range ("someone says something"), e.g. directed
+  speech becoming a content-free murmur through solid closed doors.

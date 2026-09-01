@@ -79,13 +79,22 @@ public sealed class SignalBus
         // happened in their room, transmission rules notwithstanding.
         var otherSideRoomId = OtherSideRoom(target, originRoomId);
         var normalSpecs = specs.Where(s => s.Scope == SignalScope.None).ToList();
+        // per-sense room reach: the minimum attenuation cost from the origin
+        // to every room (spec strength pays that cost at delivery)
+        var reachCache = new Dictionary<SignalSense, Dictionary<string, RoomHop>>();
+        Dictionary<string, RoomHop> ReachFor(SignalSense sense)
+        {
+            if (!reachCache.TryGetValue(sense, out var reach))
+                reachCache[sense] = reach = RoomReach(originRoomId, otherSideRoomId, sense);
+            return reach;
+        }
         foreach (var observer in _world.Objects.Values)
         {
             if (observer.Id == actor.Id || !observer.HasModule("agent"))
                 continue;
             var best = BestReceivable(
-                observer, originRoomId, otherSideRoomId, actor, target, normalSpecs, arg, extra,
-                targetName);
+                observer, originRoomId, actor, target, normalSpecs, arg, extra,
+                targetName, ReachFor);
             if (best is null)
                 continue;
             Enqueue(observer, best);
@@ -148,7 +157,7 @@ public sealed class SignalBus
                             ? traversal.DepartureRoomId
                             : traversal.ArrivalRoomId,
                         traversal.ExitSide.Id,
-                        ThroughPortal: true, Salience: spec.Salience);
+                        ThroughPortal: true, Salience: spec.Salience, Strength: spec.Strength);
                 }
             }
             if (best is not null)
@@ -181,32 +190,98 @@ public sealed class SignalBus
             SignalSense.Visual, 0, text, _world.RoomOf(observer.Id).Id),
             _memory.SalienceBoostOf(observer));
 
+    /// <summary>
+    /// The cheapest attenuation cost from the origin to each reachable
+    /// room, for one sense — a small Dijkstra over portal edges. Crossing
+    /// a portal side costs its per-sense attenuation plus the average of
+    /// the two rooms' per-sense attenuation (room attenuation is NOT
+    /// applied to listeners in the origin room — that's reserved for a
+    /// future spatial refinement). The transmit gates
+    /// (always/whenOpen/never) are hard edges: a closed door's visual
+    /// never becomes a cost, it blocks the edge outright. A portal action
+    /// manifests at full strength on both sides of its door, so the other
+    /// side's room seeds at cost 0.
+    /// </summary>
+    private Dictionary<string, RoomHop> RoomReach(
+        string originRoomId, string? otherSideRoomId, SignalSense sense)
+    {
+        var reach = new Dictionary<string, RoomHop>(StringComparer.Ordinal)
+        {
+            [originRoomId] = new RoomHop(0, null),
+        };
+        if (otherSideRoomId is not null && !reach.ContainsKey(otherSideRoomId))
+            reach[otherSideRoomId] = new RoomHop(0, null);
+        // (cost, room) pairs pending relaxation — rooms are few, a linear
+        // scan for the minimum keeps this dependency-free and simple
+        var pending = new List<(int Cost, string Room)>(reach.Select(r => (r.Value.Cost, r.Key)));
+        while (pending.Count > 0)
+        {
+            var best = pending[0];
+            for (var i = 1; i < pending.Count; i++)
+                if (pending[i].Cost < best.Cost)
+                    best = pending[i];
+            pending.Remove(best);
+            if (best.Cost > reach.GetValueOrDefault(best.Room).Cost)
+                continue; // a cheaper path already settled
+            var room = _world.GetObject(best.Room);
+            foreach (var side in _world.ChildrenOf(best.Room).Where(c => c.HasModule("portal")))
+            {
+                var toRoom = _modules.ResolveString(side, "portal", "to");
+                if (toRoom is null || toRoom == best.Room || !_world.HasObject(toRoom))
+                    continue;
+                if (!Transmits(side, sense))
+                    continue; // hard gate: closed to this sense outright
+                var crossing = Math.Max(0, PortalAttenuation(side, sense) +
+                    (RoomAttenuation(best.Room, sense) + RoomAttenuation(toRoom, sense)) / 2);
+                var cost = best.Cost + crossing;
+                if (reach.TryGetValue(toRoom, out var known) && known.Cost <= cost)
+                    continue;
+                reach[toRoom] = new RoomHop(cost, EntrySideIn(side, best.Room, toRoom));
+                pending.Add((cost, toRoom));
+            }
+        }
+        return reach;
+    }
+
+    /// <summary>
+    /// The portal side a signal enters a room through — used for the
+    /// directional suffix ("through the wooden door to the south"): the
+    /// side living in the entered room that shares the crossed side's
+    /// doorstate (or points back), or the crossed side itself for one-way
+    /// portals with no return side.
+    /// </summary>
+    private WorldObject EntrySideIn(WorldObject crossed, string fromRoomId, string toRoomId) =>
+        _world.ChildrenOf(toRoomId).FirstOrDefault(p =>
+            p.HasModule("portal") &&
+            (SameDoor(p, crossed) ||
+             _modules.ResolveString(p, "portal", "to") == fromRoomId))
+        ?? crossed;
+
+    private int PortalAttenuation(WorldObject side, SignalSense sense) =>
+        _modules.ResolveInt(side, "portal",
+            sense == SignalSense.Visual ? "attenuateVisual" : "attenuateAudio", 1);
+
+    private int RoomAttenuation(string roomId, SignalSense sense)
+    {
+        var room = _world.GetObject(roomId);
+        return room.HasModule("room")
+            ? _modules.ResolveInt(room, "room",
+                sense == SignalSense.Visual ? "attenuateVisual" : "attenuateAudio", 0)
+            : 0;
+    }
+
+    /// <summary>How a signal entered a room: the accumulated cost, and the portal side it came through.</summary>
+    private sealed record RoomHop(int Cost, WorldObject? EntrySide);
+
     private Signal? BestReceivable(
-        WorldObject observer, string originRoomId, string? otherSideRoomId,
+        WorldObject observer, string originRoomId,
         WorldObject actor, WorldObject? target,
         IReadOnlyList<SignalSpec> specs, string? arg,
-        IReadOnlyDictionary<string, string>? extra = null, string? targetName = null)
+        IReadOnlyDictionary<string, string>? extra = null, string? targetName = null,
+        Func<SignalSense, Dictionary<string, RoomHop>>? reach = null)
     {
         var observerRoomId = _world.RoomOf(observer.Id).Id;
-        WorldObject? portalSide = null;
-        WorldObject? observerSide = null;
-        if (observerRoomId != originRoomId && observerRoomId != otherSideRoomId)
-        {
-            // adjacent-room observer: find the portal side in the origin
-            // room leading toward the observer — that side's transmission
-            // fields decide what gets through (one-way by data).
-            if (!_world.HasObject(originRoomId))
-                return null;
-            portalSide = _world.ChildrenOf(originRoomId).FirstOrDefault(c =>
-                c.HasModule("portal") &&
-                _modules.ResolveString(c, "portal", "to") == observerRoomId);
-            if (portalSide is null)
-                return null; // not adjacent
-            // the side in the observer's own room, for the directional suffix
-            observerSide = _world.ChildrenOf(observerRoomId).FirstOrDefault(c =>
-                c.HasModule("portal") &&
-                _modules.ResolveString(c, "portal", "to") == originRoomId);
-        }
+        var throughPortal = observerRoomId != originRoomId;
 
         Signal? best = null;
         foreach (var spec in specs)
@@ -220,16 +295,22 @@ public sealed class SignalBus
             if (spec.Audience == SignalAudience.ExceptTarget &&
                 target is not null && target.Id == observer.Id)
                 continue;
-            if (portalSide is not null && !Transmits(portalSide, spec.Sense))
+            // attenuation: the spec's strength pays the cheapest cost to
+            // the observer's room; a negative remainder is imperceptible
+            var hop = reach is not null
+                ? reach(spec.Sense).GetValueOrDefault(observerRoomId)
+                : observerRoomId == originRoomId ? new RoomHop(0, null) : null;
+            if (hop is null || spec.Strength - hop.Cost < 0)
                 continue;
             if (best is null || spec.Priority > best.Priority)
             {
                 var text = Format(spec.Text, actor, target, arg, extra, observer, targetName);
-                if (observerSide is not null && !SameDoor(target, observerSide))
-                    text = text.TrimEnd('.') + Suffix(observerSide);
+                if (throughPortal && hop.EntrySide is not null && !SameDoor(target, hop.EntrySide))
+                    text = text.TrimEnd('.') + Suffix(hop.EntrySide);
                 best = new Signal(
                     spec.Sense, spec.Priority, text, originRoomId, target?.Id,
-                    ThroughPortal: observerSide is not null, Salience: spec.Salience);
+                    ThroughPortal: throughPortal, Salience: spec.Salience,
+                    Strength: spec.Strength - hop.Cost);
             }
         }
         return best;

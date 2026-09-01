@@ -65,6 +65,15 @@ public sealed class SignalSpec
     /// faster than ambient chatter. See AgentMemory's aging eviction.
     /// </summary>
     public int Salience { get; init; }
+    /// <summary>
+    /// Perceptual strength on a log scale (decibel-like), so attenuation
+    /// adds up. A signal is perceivable while its remaining strength is
+    /// non-negative: with the default strength 1, portal attenuation 1,
+    /// and room attenuation 0, a signal carries exactly one room away.
+    /// Loud events (a gunshot 4) carry several rooms; whispers (0) stay
+    /// in the room they were uttered in.
+    /// </summary>
+    public int Strength { get; init; } = 1;
     public required string Text { get; init; }
 }
 
@@ -74,8 +83,12 @@ public sealed class SignalSpec
 /// traversal departure/arrival report) — renderers use it to keep the
 /// "You hear:" framing for remote sounds while printing same-room speech
 /// bare. Salience rides along into the observer's memory (combined there
-/// with the addressed-to-you boost).
+/// with the addressed-to-you boost). Strength is the signal's remaining
+/// perceptual strength at delivery — what's left after the attenuation
+/// of the path it took (the hook for degrading a representation: speech
+/// fading to "you hear someone talking" through a solid door).
 /// </summary>
 public sealed record Signal(
     SignalSense Sense, int Priority, string Text, string OriginRoomId,
-    string? TargetId = null, bool ThroughPortal = false, int Salience = 0);
+    string? TargetId = null, bool ThroughPortal = false, int Salience = 0,
+    int Strength = 1);
