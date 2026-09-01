@@ -307,7 +307,8 @@ public class MemorySalienceTests
 
         var action = PlanExecutor.MatchAvailableOrPotential(
             engine, player, "Say to Nix the goblin: \"Hey Nix, what's up?\"");
-        engine.TurnManager.PerformAction(player, action!, action.Text);
+        Assert.NotNull(action);
+        engine.TurnManager.PerformAction(player, action, action.Text);
 
         // speaker's own line: affordance-level salience 24
         Assert.Contains(engine.Memory.RecallDetailed("player"),

@@ -50,8 +50,15 @@
           "prompt": "Say what?",
           "salience": 24,
           "signals": [
-            { "sense": "audible", "priority": 10, "audience": "onlyTarget", "salience": 16, "text": "{agent} says to you: \"{arg}\"" },
-            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
+            { "sense": "audible", "priority": 10, "audience": "onlyTarget", "salience": 16,
+              "text": "{agent} says to you: \"{arg}\"",
+              "degrade": [
+                { "below": 1, "text": "you hear {agent} saying something to you" }
+              ] },
+            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"",
+              "degrade": [
+                { "below": 1, "text": "you hear {agent} saying something" }
+              ] },
             { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
           ]
         }

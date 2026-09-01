@@ -142,7 +142,10 @@ working in that area, and update them when the behavior changes:
   so quiet scenarios like `nail` are unaffected; the tavern opts in);
   `shout` (room-wide, crosses portals) and `whisper` (addressee only)
   join as siblings so attention can be demanded and eavesdropping stays
-  a deliberate act.
+  a deliberate act. (Range-based degradation is live: the tavern's say
+  specs already degrade to "you hear X saying something" through
+  doorways via `degrade` ladders; shout/whisper build on
+  strength/attenuation the same way.)
 - **Label article doubling** — `Perception.WithDefiniteArticle` prepends
   "the" to names that already embed one ("Nix the goblin" → "Examine the
   Nix the goblin" in menu labels). Fix by detecting an embedded article
@@ -158,11 +161,3 @@ working in that area, and update them when the behavior changes:
   actions yet.
 - **Signals in the debug web client** — a `GET /api/signals?agentId=` peek
   endpoint + panel would slot in (`SignalBus.Peek` already exists).
-- **Signal representation degradation** — strength/attenuation is live
-  (specs declare `strength` on a log scale; portal sides and rooms carry
-  per-sense `attenuateVisual`/`attenuateAudio`; a signal dies at negative
-  remaining strength — see `docs/architecture.md`). Still planned: signal
-  specs declaring multiple representations chosen by surviving strength —
-  full fidelity up close ("the old cook says: "Hm, where did I put
-  it?""), degraded at range ("someone says something"), e.g. directed
-  speech becoming a content-free murmur through solid closed doors.

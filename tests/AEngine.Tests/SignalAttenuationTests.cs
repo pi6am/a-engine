@@ -2,6 +2,7 @@ using AEngine.Core.Actions;
 using AEngine.Core.Runtime;
 using AEngine.Core.Signals;
 using AEngine.Core.World;
+using AEngine.Llm;
 using CoreWorld = AEngine.Core.World.World;
 
 namespace AEngine.Tests;
@@ -188,5 +189,125 @@ public class SignalAttenuationTests
 
         Assert.Contains(engine.SignalBus.Drain("bob"),
             s => s.Text.Contains("opens the wooden door"));
+    }
+
+    [Fact]
+    public void DegradationLadder_RendersBySurvivingStrength()
+    {
+        var engine = NewThreeRoomEngine();
+        // strength 4, default doors: remaining 4 in-room, 3 next door,
+        // 2 two doors away — degrading one rung below 3
+        engine.ModuleRegistry.LoadJson("""
+        [
+          { "id": "shouter", "name": "Shouter", "fields": [],
+            "affordances": [
+              { "verb": "shout", "handler": "basic",
+                "signals": [ { "sense": "audible", "priority": 9, "strength": 4,
+                               "text": "{agent} shouts: \"{arg}\"",
+                               "degrade": [
+                                 { "below": 3, "text": "you hear {agent} shouting something" },
+                                 { "below": 2, "text": "a distant commotion" }
+                               ] } ] }
+            ] }
+        ]
+        """);
+        var world = engine.World;
+        world.CreateObject("megaphone", "room_a", "megaphone");
+        world.AddModule("megaphone", "shouter");
+
+        engine.TurnManager.PerformAction(
+            world.GetObject("alice"), TestWorlds.Find(engine, "alice", "shout", "megaphone"));
+
+        // same room: full fidelity
+        Assert.Equal("Alice shouts: \"\"", Assert.Single(engine.SignalBus.Drain("dave")).Text);
+        // one hop (remaining 3): still full — the rung needs below 3
+        Assert.Equal("Alice shouts: \"\"",
+            Assert.Single(engine.SignalBus.Drain("bob")).Text.Split(" through the ")[0]);
+        // two hops (remaining 2): the closest applicable rung, with the
+        // portal suffix appended and placeholders still formatted
+        var toCarol = Assert.Single(engine.SignalBus.Drain("carol"));
+        Assert.Equal("you hear Alice shouting something through the stone door to the west.",
+            toCarol.Text);
+        Assert.Equal(2, toCarol.Strength);
+    }
+
+    [Fact]
+    public void DegradationLadder_FallsToTheFloor()
+    {
+        var engine = NewThreeRoomEngine();
+        // a heavy second door: two hops leave remaining 0 — the floor rung
+        engine.World.SetFieldOverride("door_bc_side", "portal", "attenuateAudio",
+            CoreWorld.ToJson(3));
+        engine.World.SetFieldOverride("door_cb_side", "portal", "attenuateAudio",
+            CoreWorld.ToJson(3));
+        engine.ModuleRegistry.LoadJson("""
+        [
+          { "id": "shouter", "name": "Shouter", "fields": [],
+            "affordances": [
+              { "verb": "shout", "handler": "basic",
+                "signals": [ { "sense": "audible", "priority": 9, "strength": 4,
+                               "text": "{agent} shouts: \"{arg}\"",
+                               "degrade": [
+                                 { "below": 3, "text": "you hear {agent} shouting something" },
+                                 { "below": 2, "text": "a distant commotion" }
+                               ] } ] }
+            ] }
+        ]
+        """);
+        var world = engine.World;
+        world.CreateObject("megaphone", "room_a", "megaphone");
+        world.AddModule("megaphone", "shouter");
+
+        engine.TurnManager.PerformAction(
+            world.GetObject("alice"), TestWorlds.Find(engine, "alice", "shout", "megaphone"));
+
+        // remaining 0: both rungs qualify, the closest threshold wins
+        var toCarol = Assert.Single(engine.SignalBus.Drain("carol"));
+        Assert.Equal("a distant commotion through the stone door to the west.", toCarol.Text);
+        Assert.Equal(0, toCarol.Strength);
+    }
+
+    [Fact]
+    public void Tavern_SpeechDegradesThroughDoorways()
+    {
+        var engine = LoadTavern();
+        var world = engine.World;
+        var player = world.GetObject("player");
+        world.MoveObject("player", "tavern");
+        // Mira steps out to the street: the player's broadcast reaches her
+        // through the (closed) front door at remaining 0 — the tavern's
+        // say specs declare a murmur rung
+        world.MoveObject("mira", "street");
+
+        var action = PlanExecutor.MatchAvailableOrPotential(
+            engine, player, "Say: anyone in here?");
+        engine.TurnManager.PerformAction(player, action!, action.Text);
+
+        // in-room listener: full fidelity
+        Assert.Contains(engine.SignalBus.Drain("nix"),
+            s => s.Text == "the human stranger says: \"anyone in here?\"");
+        // through the door: content-free, addressed to no one in particular
+        Assert.Contains(engine.SignalBus.Drain("mira"),
+            s => s.Text == "you hear the human stranger saying something through the green door to the north.");
+    }
+
+    private static GameEngine LoadTavern()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, "scenarios", "tavern");
+            if (File.Exists(Path.Combine(candidate, "world.json")))
+            {
+                var engine = GameEngine.CreateWithBuiltinHandlers();
+                Core.Scenarios.ScenarioLoader.LoadInto(
+                    engine,
+                    Path.Combine(candidate, "modules.json"),
+                    Path.Combine(candidate, "world.json"));
+                return engine;
+            }
+            dir = dir.Parent;
+        }
+        throw new DirectoryNotFoundException("Could not locate scenarios/tavern.");
     }
 }

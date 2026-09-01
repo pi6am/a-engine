@@ -221,9 +221,15 @@ defaults `whenOpen`/`always`; `whenOpen` reads the shared doorstate via
 that side's own `stateRef`) blocks that sense outright regardless of
 strength — closed doors still stop vision cold. One-way propagation
 (e.g. a one-way mirror) is pure data on the two sides. The delivered
-`Signal` carries its remaining `strength` — the hook for degrading a
-representation at range (speech fading to "you hear someone talking"
-through a solid door; not yet implemented). Signals delivered through a
+`Signal` carries its remaining `strength`, and a spec may declare a
+**degradation ladder** (`degrade: [{below, text}, …]`): the rung with
+the closest threshold above the remaining strength replaces the text —
+full fidelity up close, "you hear {agent} saying something" a room
+away, a content-free murmur through solid doors — while placeholders
+still format and the portal suffix still applies. Ladders are pure
+opt-in: specs without them render full fidelity at any range, so quiet
+scenarios are unaffected (the tavern opts its speech in: anything heard
+through a doorway is content-free). Signals delivered through a
 portal get a
 directional suffix naming the side in the observer's room ("… through the
 wooden door to the south." — vertical portals read "to the floor

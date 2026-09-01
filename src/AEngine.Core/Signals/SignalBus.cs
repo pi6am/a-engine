@@ -152,7 +152,7 @@ public sealed class SignalBus
                 {
                     best = new Signal(
                         spec.Sense, spec.Priority,
-                        Format(spec.Text, actor, null, null, extra, observer),
+                        Format(spec.TextAt(spec.Strength), actor, null, null, extra, observer),
                         scope == SignalScope.Departure
                             ? traversal.DepartureRoomId
                             : traversal.ArrivalRoomId,
@@ -304,13 +304,16 @@ public sealed class SignalBus
                 continue;
             if (best is null || spec.Priority > best.Priority)
             {
-                var text = Format(spec.Text, actor, target, arg, extra, observer, targetName);
+                var remaining = spec.Strength - hop.Cost;
+                // the representation degrades with surviving strength: full
+                // text up close, rungs of the ladder at range
+                var text = Format(spec.TextAt(remaining), actor, target, arg, extra, observer, targetName);
                 if (throughPortal && hop.EntrySide is not null && !SameDoor(target, hop.EntrySide))
                     text = text.TrimEnd('.') + Suffix(hop.EntrySide);
                 best = new Signal(
                     spec.Sense, spec.Priority, text, originRoomId, target?.Id,
                     ThroughPortal: throughPortal, Salience: spec.Salience,
-                    Strength: spec.Strength - hop.Cost);
+                    Strength: remaining);
             }
         }
         return best;

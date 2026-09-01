@@ -52,6 +52,22 @@ public sealed record TraversalContext(
 /// also use {exitPortal} / {exitDirection} / {entryPortal} /
 /// {entryDirection}).
 /// </summary>
+/// <summary>
+/// One rung of a signal's degradation ladder: when the signal's remaining
+/// strength at an observer drops below <see cref="Below"/>, the signal
+/// renders as this rung's text instead of the spec's full-fidelity text.
+/// The closest threshold above the remaining strength wins (the least
+/// degradation that applies); the spec's own text renders when no rung
+/// applies — so ladders are pure opt-in and scenarios without them hear
+/// full fidelity at any range.
+/// </summary>
+public sealed class DegradeSpec
+{
+    /// <summary>This rung applies while remaining strength is below this.</summary>
+    public int Below { get; init; }
+    public required string Text { get; init; }
+}
+
 public sealed class SignalSpec
 {
     public required SignalSense Sense { get; init; }
@@ -74,7 +90,32 @@ public sealed class SignalSpec
     /// in the room they were uttered in.
     /// </summary>
     public int Strength { get; init; } = 1;
+    /// <summary>
+    /// Optional degradation ladder, chosen by surviving strength: full
+    /// text up close, "you hear {agent} saying something" a room away, a
+    /// content-free murmur through solid doors. See <see cref="DegradeSpec"/>.
+    /// </summary>
+    public List<DegradeSpec>? Degrade { get; init; }
     public required string Text { get; init; }
+
+    /// <summary>
+    /// The text this spec renders with at the given remaining strength:
+    /// the degradation rung with the closest threshold above it, or the
+    /// full-fidelity text when none applies.
+    /// </summary>
+    public string TextAt(int remainingStrength)
+    {
+        if (Degrade is not { Count: > 0 } rungs)
+            return Text;
+        DegradeSpec? chosen = null;
+        foreach (var rung in rungs)
+        {
+            if (remainingStrength < rung.Below &&
+                (chosen is null || rung.Below < chosen.Below))
+                chosen = rung;
+        }
+        return chosen?.Text ?? Text;
+    }
 }
 
 /// <summary>
