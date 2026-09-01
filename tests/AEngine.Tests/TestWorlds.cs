@@ -32,6 +32,7 @@ internal static class TestWorlds
           {
             "verb": "say", "handler": "say", "speech": true, "prompt": "Say what?",
             "signals": [
+              { "sense": "audible", "priority": 10, "audience": "onlyTarget", "text": "{agent} says to you: \"{arg}\"" },
               { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
               { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
             ]

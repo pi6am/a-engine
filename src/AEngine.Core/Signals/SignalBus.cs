@@ -209,6 +209,15 @@ public sealed class SignalBus
         Signal? best = null;
         foreach (var spec in specs)
         {
+            // audience filters run before sense/portal rules: a spec can be
+            // reserved for the action's target (directed speech) or barred
+            // from it (a bystander's murmur)
+            if (spec.Audience == SignalAudience.OnlyTarget &&
+                (target is null || target.Id != observer.Id))
+                continue;
+            if (spec.Audience == SignalAudience.ExceptTarget &&
+                target is not null && target.Id == observer.Id)
+                continue;
             if (portalSide is not null && !Transmits(portalSide, spec.Sense))
                 continue;
             if (best is null || spec.Priority > best.Priority)

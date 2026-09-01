@@ -22,6 +22,21 @@ public enum SignalScope
 }
 
 /// <summary>
+/// Who may receive a spec, relative to the action's target: Everyone
+/// (default), OnlyTarget (delivered solely to the agent the action
+/// targets — directed speech, "X says to you: …"), or ExceptTarget
+/// (everyone but the target — a bystander's murmur). Composes with the
+/// sense and portal rules; an OnlyTarget spec on a targetless or
+/// non-agent-targeted action reaches nobody.
+/// </summary>
+public enum SignalAudience
+{
+    Everyone,
+    OnlyTarget,
+    ExceptTarget,
+}
+
+/// <summary>
 /// Portal-traversal context for a "go" action: the room the actor left,
 /// the room entered, and the portal sides on each end (the entry side may
 /// be null for one-way portals with no return side).
@@ -42,6 +57,8 @@ public sealed class SignalSpec
     public required SignalSense Sense { get; init; }
     public int Priority { get; init; }
     public SignalScope Scope { get; init; } = SignalScope.None;
+    /// <summary>Who may receive this spec, relative to the action's target.</summary>
+    public SignalAudience Audience { get; init; } = SignalAudience.Everyone;
     public required string Text { get; init; }
 }
 

@@ -170,12 +170,18 @@ public sealed class ActionResolver
                     continue;
                 }
                 // speech is parameterized: the label carries a {speech}
-                // placeholder, plus an addressee when several agents are
-                // present ("Say [to the old cook]: {speech}")
+                // placeholder. The undirected broadcast ("Say: {speech}") is
+                // always offered; with several other agents present each
+                // addressee gets a directed entry too ("Say [to Nix the
+                // goblin]: {speech}") — addressing is a choice, not a
+                // requirement
                 if (affordance.Verb == "say" && target.Id == agent.Id)
                 {
                     if (others.Count > 1)
                     {
+                        actions.Add(new AvailableAction(
+                            "say", agent.Id, "Say: {speech}",
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt));
                         foreach (var other in others)
                             actions.Add(new AvailableAction(
                                 "say", other.Id, $"Say [to {other.Name}]: {{speech}}",

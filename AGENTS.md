@@ -132,9 +132,17 @@ working in that area, and update them when the behavior changes:
 - **Tavern stage 2** — one-shot/timed conditions with `onExpire` chains
   (vomit → hungover, special drinks with timed buffs/crashes), bladder
   failure accidents, per-agent condition variation (flirty/belligerent
-  flavor per NPC), condition-driven phrase pools for the random policy,
-  and conversation muting or room zones so cross-table chatter doesn't
-  muddle (stage 2/3).
+  flavor per NPC), and condition-driven phrase pools for the random
+  policy. Speech attenuation: directed `say` degrades to a content-free
+  murmur for bystanders via `exceptTarget` specs, but ONLY in rooms that
+  opt in (a room-level setting — default is full-fidelity over-hearing,
+  so quiet scenarios like `nail` are unaffected; the tavern opts in);
+  `shout` (room-wide, crosses portals) and `whisper` (addressee only)
+  join as siblings so attention can be demanded and eavesdropping stays
+  a deliberate act. Also salience-ranked memory: entries addressed to
+  the agent, private sensations, and own actions evict last, with a
+  per-spec data override for importance (a bomb blast high, a jukebox
+  low).
 - **Label article doubling** — `Perception.WithDefiniteArticle` prepends
   "the" to names that already embed one ("Nix the goblin" → "Examine the
   Nix the goblin" in menu labels). Fix by detecting an embedded article

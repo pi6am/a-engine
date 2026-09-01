@@ -34,7 +34,9 @@ public class SpeechTests
 
         var says = engine.ActionResolver.Resolve(engine.World.GetObject("alice"))
             .Where(a => a.Verb == "say").ToList();
-        Assert.Equal(2, says.Count);
+        // the broadcast entry plus one directed entry per addressee
+        Assert.Equal(3, says.Count);
+        Assert.Contains(says, a => a.Label == "Say: {speech}" && a.TargetId == "alice");
         Assert.Contains(says, a => a.Label == "Say [to Bob]: {speech}" && a.TargetId == "bob");
         Assert.Contains(says, a => a.Label == "Say [to Carol]: {speech}" && a.TargetId == "carol");
     }

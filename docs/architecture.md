@@ -140,10 +140,19 @@ a brass key inside.").
 
 `say` is an affordance of the `can_speak` module (agents without it can't
 speak), only ever offered from the agent's own modules. Its label is
-parameterized: `Say: {speech}`, or `Say [to <name>]: {speech}` per
-addressee when several other agents are in the room. Plan parsing is
-generous ("Say [to X]: \"...\"", quotes optional, colon optional, and the
-speech-first paraphrase `Say: "..." to X` — the trailing addressee is only
+parameterized: the undirected broadcast `Say: {speech}` is always
+offered, plus a directed `Say [to <name>]: {speech}` entry per other
+agent present — addressing is a choice, not a requirement (a plan line
+without `[to X]` broadcasts; with one other agent present only the
+broadcast exists). Directed speech is delivered distinctly: the addressee
+receives an audience-restricted signal ("the human stranger says to
+you: \"…\"" — `audience: onlyTarget` on the spec, enforced in the
+SignalBus's per-observer selection) and remembers it as addressed to
+them, while everyone else hears the ambient form ("{agent} says: …") at
+unchanged fidelity. The actor's own message names the addressee back
+("You say to Nix the goblin: \"…\""). Plan parsing is
+generous ("Say [to X]: \"...\"", quotes optional, colon optional, and
+the speech-first paraphrase `Say: "..." to X` — the trailing addressee is only
 recognized with quoted speech, where the closing quote disambiguates it
 from the utterance); the
 parsed speech rides `AvailableAction.Text` into `Args["text"]`. Naming is
@@ -174,7 +183,10 @@ carried NPC's speech reaches the player holding it. After a successful
 action, `TurnManager.PerformAction` looks up the affordance's signal specs
 and each observing agent (any object with the `agent` module except the
 actor) receives the single highest-priority receivable signal (ties: first
-listed); texts format `{agent}`/`{target}`/`{arg}` placeholders plus
+listed). A spec's `audience` filters BEFORE sense and portal rules:
+`onlyTarget` reserves it for the agent the action targets (directed
+speech), `exceptTarget` bars the target (a bystander's murmur) — the hook
+for per-room speech attenuation later. Texts format `{agent}`/`{target}`/`{arg}` placeholders plus
 `{container}` (" from the cupboard" when the target was taken out of a
 non-room, non-agent holder, empty otherwise) and `{item}` (a two-object
 verb's aux target — the gift for give, the stowed item for put; empty for

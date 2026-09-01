@@ -416,7 +416,15 @@ public static class BuiltinHandlers
                 ? DefaultMillisPerChar
                 : ctx.Modules.ResolveInt(rulesHost, "rules", "sayMillisPerChar", DefaultMillisPerChar);
             var duration = baseSeconds + (int)(text.Length * millisPerChar / 1000.0);
-            return ActionResult.Ok($"You say: \"{text}\"", duration);
+            // a directed say (target = another agent) names the addressee
+            // back to the actor, so the direction is visible in the log
+            var addressee = ctx.Target is not null && ctx.Target.Id != ctx.Agent.Id &&
+                            ctx.Target.HasModule("agent")
+                ? ctx.Target
+                : null;
+            return ActionResult.Ok(
+                addressee is null ? $"You say: \"{text}\"" : $"You say to {addressee.Name}: \"{text}\"",
+                duration);
         }
     }
 
