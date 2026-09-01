@@ -212,22 +212,28 @@ slash.Register("turnbased", ["tb"], "Turn-based mode: time advances with your ac
     SetTimeMode(TimeMode.TurnBased);
     return false;
 });
-slash.Register("timescale", ["ts"], "Set the real-time clock speed (1.0 = normal, 2 = twice as fast, 0.5 = half)", args =>
+slash.Register("timescale", ["ts"], "Set the real-time clock speed (1 = normal, 2 = twice as fast, 0.5 = half, 0 = paused)", args =>
 {
+    var current = Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
     if (args.Length == 0)
     {
-        Console.WriteLine($"Timescale is {Interlocked.CompareExchange(ref timescale, 0.0, 0.0)}x.");
+        Console.WriteLine(current == 0
+            ? "Timescale is paused. Usage: /timescale <factor> — e.g. /timescale 2, 0.5, or 1 to resume."
+            : $"Timescale is {current}x. Usage: /timescale <factor> — e.g. /timescale 2, 0.5, or 0 to pause.");
         return false;
     }
     if (!double.TryParse(args[0], System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out var factor) || factor <= 0)
+            System.Globalization.CultureInfo.InvariantCulture, out var factor) || factor < 0)
     {
-        Console.WriteLine("Usage: /timescale <factor> — e.g. /timescale 2 or /timescale 0.5");
+        Console.WriteLine("Usage: /timescale <factor> — e.g. /timescale 2, 0.5, or 0 to pause.");
         return false;
     }
     Interlocked.Exchange(ref timescale, factor);
-    Console.WriteLine($"Timescale set to {factor}x — one real second advances {factor}s of game time." +
-        (engine.TimeMode == TimeMode.TurnBased ? " (Takes effect in real-time mode.)" : ""));
+    var modeNote = engine.TimeMode == TimeMode.TurnBased ? " (Takes effect in real-time mode.)" : "";
+    if (factor == 0)
+        Console.WriteLine("Time is paused — nothing advances until you /timescale 1 (or more)." + modeNote);
+    else
+        Console.WriteLine($"Timescale set to {factor}x — one real second advances {factor}s of game time." + modeNote);
     return false;
 });
 slash.Register("auto", [], "Let the AI play your character (ESC cancels)", args =>
@@ -900,12 +906,18 @@ async Task RealTimeLoop(CancellationToken ct)
                 lock (engine.SyncRoot)
                 {
                     pending += Interlocked.CompareExchange(ref timescale, 0.0, 0.0);
+                    var ticked = false;
                     while (pending >= 1.0)
                     {
                         engine.TurnManager.Tick();
                         pending -= 1.0;
+                        ticked = true;
                     }
-                    engine.TurnManager.RunNpcTurns();
+                    // NPC turns follow game time, not wall clock — a paused
+                    // timescale freezes the whole world, and fractional
+                    // scales pace NPCs by game seconds too
+                    if (ticked)
+                        engine.TurnManager.RunNpcTurns();
                     // an NPC action may have ended the game (a rite, a
                     // defeat): the main loop is blocked in ReadLine and
                     // would never notice — wake it so it prints the ending

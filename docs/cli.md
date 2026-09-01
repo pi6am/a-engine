@@ -76,8 +76,10 @@ per-second background timer that calls `TurnManager.Tick()` and
 mode; the timer does. Observed events accumulate in the player's memory
 (capped at `memoryLength`), so plans made after watching events still know
 what happened. `/timescale N` scales the clock: each real second
-accumulates N game seconds (default 1.0; action durations are unchanged —
-0.5 makes a 2s action take 4s of real time). If the world ends while the
+accumulates N game seconds (default 1; action durations are unchanged —
+0.5 makes a 2s action take 4s of real time; 0 pauses the world entirely —
+no game time passes and NPCs take no turns, so it works as a read-the-
+room button). If the world ends while the
 player is idle (an NPC's rite, a defeat — anything that sets
 `engine.GameOver` or incapacitates the player), the timer wakes the
 blocked prompt (`ConsolePrompt.Wake()` — ReadLine polls `KeyAvailable`
