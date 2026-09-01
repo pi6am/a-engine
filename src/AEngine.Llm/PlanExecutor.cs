@@ -65,7 +65,8 @@ public sealed class PlanExecutor
     /// back to the state-unfiltered potential set so a generated but
     /// redundant line (e.g. "Open the desk drawer" when it is already open)
     /// still resolves — the handler then reports a noop. Speech lines
-    /// ("Say [to X]: ...") are parsed generously: quotes optional, [to X]
+    /// ("Say to X: ...") are parsed generously: quotes optional, the
+    /// addressee
     /// optional.
     /// </summary>
     public static AvailableAction? MatchAvailableOrPotential(
@@ -145,9 +146,12 @@ public sealed class PlanExecutor
     }
 
     /// <summary>
-    /// Parse a speech line: "Say [to X]: \"...\"", "Say: ...", "Say ..." —
-    /// and the speech-first variant "Say: \"...\" to X". Quotation marks
-    /// and the [to X] addressee are optional; the trailing "to X" form is
+    /// Parse a speech line: "Say to X: \"...\"", "Say: ...", "Say ..." —
+    /// the speech-first variant "Say: \"...\" to X" — and the legacy
+    /// bracketed "Say [to X]: ...". Quotation marks and the addressee
+    /// are optional; a bracketless addressee runs to the colon (or the
+    /// opening quote), since names can be multi-word ("Nix the goblin");
+    /// the trailing "to X" form is
     /// only recognized with quoted speech, where the closing quote
     /// disambiguates it from the utterance itself.
     /// </summary>
@@ -168,6 +172,21 @@ public sealed class PlanExecutor
             var name = rest[3..close].Trim();
             addressee = name.Length > 0 ? name : null;
             rest = rest[(close + 1)..].Trim();
+        }
+        else if (rest.StartsWith("to ", StringComparison.OrdinalIgnoreCase))
+        {
+            // bracketless addressee: the name runs to the first colon or
+            // opening quote (whichever comes first, with room for a name);
+            // without either delimiter it can't be told from the utterance
+            // ("say to be honest" is itself speech) and stays broadcast
+            var colon = rest.IndexOf(':');
+            var quote = rest.IndexOfAny(['"', '“']);
+            var cut = new[] { colon, quote }.Where(i => i > 3).DefaultIfEmpty(-1).Min();
+            if (cut > 3)
+            {
+                addressee = rest[3..cut].Trim();
+                rest = rest[cut..].Trim();
+            }
         }
         if (rest.StartsWith(':'))
             rest = rest[1..].Trim();

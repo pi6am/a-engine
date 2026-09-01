@@ -56,7 +56,7 @@ public class MemorySalienceTests
         var engine = NewEngine();
         var alice = engine.World.GetObject("alice");
         var action = PlanExecutor.MatchAvailableOrPotential(
-            engine, alice, "Say [to Bob]: \"bring me an ale\"");
+            engine, alice, "Say to Bob: \"bring me an ale\"");
         engine.TurnManager.PerformAction(alice, action!, action.Text);
 
         // a wall of ambient events washes over bob (capacity 25)
@@ -306,7 +306,7 @@ public class MemorySalienceTests
         world.MoveObject("player", "tavern");
 
         var action = PlanExecutor.MatchAvailableOrPotential(
-            engine, player, "Say [to Nix the goblin]: \"Hey Nix, what's up?\"");
+            engine, player, "Say to Nix the goblin: \"Hey Nix, what's up?\"");
         engine.TurnManager.PerformAction(player, action!, action.Text);
 
         // speaker's own line: affordance-level salience 24

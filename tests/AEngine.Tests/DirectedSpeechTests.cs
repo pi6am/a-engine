@@ -36,7 +36,7 @@ public class DirectedSpeechTests
     {
         var engine = NewCrowdedEngine();
 
-        var result = Say(engine, "Say [to Bob]: \"Hey, what's up?\"");
+        var result = Say(engine, "Say to Bob: \"Hey, what's up?\"");
 
         // the actor sees whom they addressed
         Assert.Equal("You say to Bob: \"Hey, what's up?\"", result.Message);
@@ -77,7 +77,7 @@ public class DirectedSpeechTests
         // into room_b before the words land — the directed spec still finds
         // her (audible passes the closed door), with the portal suffix
         var action = PlanExecutor.MatchAvailableOrPotential(
-            engine, alice, "Say [to Carol]: \"quiet, you\"");
+            engine, alice, "Say to Carol: \"quiet, you\"");
         Assert.Equal("carol", action!.TargetId);
         engine.World.MoveObject("carol", "room_b");
 
@@ -160,7 +160,7 @@ public class DirectedSpeechTests
         engine.World.MoveObject("player", "tavern");
 
         var action = PlanExecutor.MatchAvailableOrPotential(
-            engine, player, "Say [to Nix the goblin]: \"Hey Nix, what's up?\"");
+            engine, player, "Say to Nix the goblin: \"Hey Nix, what's up?\"");
         Assert.NotNull(action);
         Assert.Equal("nix", action!.TargetId);
 

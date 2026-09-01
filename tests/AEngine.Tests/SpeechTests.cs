@@ -37,8 +37,8 @@ public class SpeechTests
         // the broadcast entry plus one directed entry per addressee
         Assert.Equal(3, says.Count);
         Assert.Contains(says, a => a.Label == "Say: {speech}" && a.TargetId == "alice");
-        Assert.Contains(says, a => a.Label == "Say [to Bob]: {speech}" && a.TargetId == "bob");
-        Assert.Contains(says, a => a.Label == "Say [to Carol]: {speech}" && a.TargetId == "carol");
+        Assert.Contains(says, a => a.Label == "Say to Bob: {speech}" && a.TargetId == "bob");
+        Assert.Contains(says, a => a.Label == "Say to Carol: {speech}" && a.TargetId == "carol");
     }
 
     [Fact]
@@ -60,15 +60,58 @@ public class SpeechTests
         var alice = engine.World.GetObject("alice");
 
         var action = PlanExecutor.MatchAvailableOrPotential(
-            engine, alice, "Say [to Bob]: \"Hello, how are you today?\"");
+            engine, alice, "Say to Bob: \"Hello, how are you today?\"");
         Assert.NotNull(action);
         Assert.Equal("say", action!.Verb);
         Assert.Equal("Hello, how are you today?", action.Text);
 
         var result = engine.TurnManager.PerformAction(alice, action, action.Text);
         Assert.Equal(ActionOutcome.Success, result.Outcome);
+        // one other agent present: no directed entries exist, so the line
+        // resolves to the broadcast
         var signal = Assert.Single(engine.SignalBus.Drain("bob"));
         Assert.Equal("Alice says: \"Hello, how are you today?\"", signal.Text);
+    }
+
+    [Fact]
+    public void SpeechLine_DirectedBracketless_VariantsParse()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.World.MoveObject("bob", "room_a");
+        engine.World.CreateObject("carol", "room_a", "Carol");
+        engine.World.AddModule("carol", "agent");
+        engine.World.AddModule("carol", "can_speak");
+        var alice = engine.World.GetObject("alice");
+
+        // multi-word addressee with colon and quotes
+        var a = PlanExecutor.MatchAvailableOrPotential(
+            engine, alice, "Say to Carol: \"quiet, you\"");
+        Assert.Equal("carol", a!.TargetId);
+        Assert.Equal("quiet, you", a.Text);
+
+        // colon-less, quote-delimited name
+        var b = PlanExecutor.MatchAvailableOrPotential(
+            engine, alice, "Say to Carol \"quiet, you\"");
+        Assert.Equal("carol", b!.TargetId);
+        Assert.Equal("quiet, you", b.Text);
+
+        // unquoted speech after the colon
+        var c = PlanExecutor.MatchAvailableOrPotential(
+            engine, alice, "Say to Bob: anyone there");
+        Assert.Equal("bob", c!.TargetId);
+        Assert.Equal("anyone there", c.Text);
+
+        // legacy bracketed form still parses
+        var d = PlanExecutor.MatchAvailableOrPotential(
+            engine, alice, "Say to Bob: \"old style\"");
+        Assert.Equal("bob", d!.TargetId);
+        Assert.Equal("old style", d.Text);
+
+        // "to" without a delimiter stays broadcast speech
+        var e = PlanExecutor.MatchAvailableOrPotential(
+            engine, alice, "Say to be honest with you");
+        Assert.Equal("alice", e!.TargetId);
+        Assert.Equal("to be honest with you", e.Text);
     }
 
     [Fact]
@@ -101,7 +144,7 @@ public class SpeechTests
         var alice = engine.World.GetObject("alice");
 
         var action = PlanExecutor.MatchAvailableOrPotential(
-            engine, alice, "Say [to Carol]: not you, Bob");
+            engine, alice, "Say to Carol: not you, Bob");
         Assert.NotNull(action);
         Assert.Equal("carol", action!.TargetId);
         Assert.Equal("not you, Bob", action.Text);
@@ -116,7 +159,7 @@ public class SpeechTests
         var alice = engine.World.GetObject("alice");
 
         var steps = new PlanExecutor(engine, alice)
-            .Execute(["Say [to Bob]: \"Hello, how are you today?\""]);
+            .Execute(["Say to Bob: \"Hello, how are you today?\""]);
 
         Assert.Single(steps);
         Assert.Equal(ActionOutcome.Success, steps[0].Result!.Outcome);

@@ -99,6 +99,11 @@ public sealed class ActionResolver
             {
                 foreach (var occupantId in child.Children)
                 {
+                    // the acting agent's own verbs and pockets were already
+                    // handled above and in the inventory scan — scanning
+                    // them again as an occupant duplicates every entry
+                    if (occupantId == agent.Id)
+                        continue;
                     var occupant = _world.GetObject(occupantId);
                     AddFromModules(actions, agent, occupant, stateFiltered, others, examinable);
                     if (occupant.HasModule("agent"))
@@ -131,7 +136,12 @@ public sealed class ActionResolver
                 "examine", target.Id, $"Examine {The(target)}", "examine", ""));
         }
 
-        return actions;
+        // collapse identical (verb, label) entries: interchangeable
+        // objects sharing a name (three "empty mug"s) read as one action
+        // — the LLM and the menus can't tell them apart anyway. The first
+        // occurrence wins, so choices made from this list always
+        // reference an entry that survives later re-resolution
+        return actions.DistinctBy(a => (a.Verb, a.Label)).ToList();
     }
 
     private void AddFromModules(
@@ -172,8 +182,8 @@ public sealed class ActionResolver
                 // speech is parameterized: the label carries a {speech}
                 // placeholder. The undirected broadcast ("Say: {speech}") is
                 // always offered; with several other agents present each
-                // addressee gets a directed entry too ("Say [to Nix the
-                // goblin]: {speech}") — addressing is a choice, not a
+                // addressee gets a directed entry too ("Say to Nix the
+                // goblin: {speech}") — addressing is a choice, not a
                 // requirement
                 if (affordance.Verb == "say" && target.Id == agent.Id)
                 {
@@ -184,7 +194,7 @@ public sealed class ActionResolver
                             affordance.Handler, attachment.ModuleId, affordance.Prompt));
                         foreach (var other in others)
                             actions.Add(new AvailableAction(
-                                "say", other.Id, $"Say [to {other.Name}]: {{speech}}",
+                                "say", other.Id, $"Say to {other.Name}: {{speech}}",
                                 affordance.Handler, attachment.ModuleId, affordance.Prompt));
                     }
                     else

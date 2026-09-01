@@ -21,9 +21,10 @@ public sealed class LlmPlanner
         first (take a key, unlock, open) — some actions only appear once
         earlier steps succeed. Exception: the Say action is parameterized —
         replace {speech} with the exact words you want to say, in quotes or
-        not, e.g. Say: "Hello there." — and when it appears with [to name],
-        you may keep or drop that part to choose who you address. Likewise,
-        when Attack appears with [in the {part}], replace {part} with a body
+        not, e.g. Say: "Hello there." — and when it appears as Say to name,
+        you may keep or drop the addressee to choose who you address.
+        Likewise, when Attack appears with [in the {part}], replace {part}
+        with a body
         part name to aim (e.g. Attack the guard in the head) or drop the
         bracketed part entirely for an unaimed blow.
         """;

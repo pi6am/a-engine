@@ -108,7 +108,12 @@ filtered by **observable** state: `open`/`close` follow the visible open
 state, take/drop follow held — while `unlock`/`lock` are always listed
 since lock state is not observable. `ResolvePotential` returns the same set
 without open/close state filtering, so a generated-but-redundant plan line
-still resolves (and noops at runtime). Results are three-valued
+still resolves (and noops at runtime). Identical `(verb, label)` entries
+collapse to one (first occurrence wins): interchangeable objects sharing
+a name — three "empty mug"s — read as a single action, keeping menus and
+LLM action lists lean; choices made from the collapsed list always
+reference an entry that survives later re-resolution. Results are
+three-valued
 (`ActionOutcome.Success | Noop | Failure`): redundant attempts whose end
 state already holds are **noops** (no turn consumed, no signals, not a
 failure — plan executors skip over them), wrong-state/missing-key attempts
@@ -143,9 +148,9 @@ a brass key inside.").
 `say` is an affordance of the `can_speak` module (agents without it can't
 speak), only ever offered from the agent's own modules. Its label is
 parameterized: the undirected broadcast `Say: {speech}` is always
-offered, plus a directed `Say [to <name>]: {speech}` entry per other
+offered, plus a directed `Say to <name>: {speech}` entry per other
 agent present — addressing is a choice, not a requirement (a plan line
-without `[to X]` broadcasts; with one other agent present only the
+without an addressee broadcasts; with one other agent present only the
 broadcast exists). Directed speech is delivered distinctly: the addressee
 receives an audience-restricted signal ("the human stranger says to
 you: \"…\"" — `audience: onlyTarget` on the spec, enforced in the
@@ -153,10 +158,11 @@ SignalBus's per-observer selection) and remembers it as addressed to
 them, while everyone else hears the ambient form ("{agent} says: …") at
 unchanged fidelity. The actor's own message names the addressee back
 ("You say to Nix the goblin: \"…\""). Plan parsing is
-generous ("Say [to X]: \"...\"", quotes optional, colon optional, and
+generous ("Say to X: \"...\"", quotes optional, colon optional, and
 the speech-first paraphrase `Say: "..." to X` — the trailing addressee is only
 recognized with quoted speech, where the closing quote disambiguates it
-from the utterance); the
+from the utterance; the legacy bracketed `Say [to X]: ...` still parses);
+the
 parsed speech rides `AvailableAction.Text` into `Args["text"]`. Naming is
 **observer-relative**: every agent is the protagonist of their own
 perception (`Perception.NameFor` renders self as "you"); scenario data
