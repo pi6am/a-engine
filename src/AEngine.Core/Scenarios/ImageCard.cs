@@ -119,15 +119,16 @@ public static class ImageCard
     {
         using var output = new MemoryStream();
         output.Write(PngMagic);
+        // reused per chunk (stackalloc belongs outside the loop)
+        Span<byte> header = stackalloc byte[8];
+        Span<byte> crc = stackalloc byte[4];
         foreach (var (type, data) in chunks)
         {
             var typeBytes = Encoding.ASCII.GetBytes(type);
-            Span<byte> header = stackalloc byte[8];
             BinaryPrimitives.WriteUInt32BigEndian(header, (uint)data.Length);
             typeBytes.CopyTo(header[4..]);
             output.Write(header);
             output.Write(data);
-            Span<byte> crc = stackalloc byte[4];
             BinaryPrimitives.WriteUInt32BigEndian(crc, Crc32.Compute(typeBytes, data));
             output.Write(crc);
         }
@@ -234,13 +235,14 @@ public static class ImageCard
         using var output = new MemoryStream();
         output.WriteByte(0xFF);
         output.WriteByte(0xD8); // SOI
+        // reused per segment (stackalloc belongs outside the loop)
+        Span<byte> length = stackalloc byte[2];
         foreach (var (marker, data) in segments)
         {
             output.WriteByte(0xFF);
             output.WriteByte(marker);
             if (data is null)
                 continue;
-            Span<byte> length = stackalloc byte[2];
             BinaryPrimitives.WriteUInt16BigEndian(length, (ushort)(data.Length + 2));
             output.Write(length);
             output.Write(data);
