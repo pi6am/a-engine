@@ -375,10 +375,10 @@
           "duration": 3,
           "check": { "stat": "agility", "skill": "pickpocket", "opposed": { "stat": "perception" } },
           "signals": [
-            { "sense": "visual", "priority": 2, "text": "{agent} lifts the {target}." }
+            { "sense": "visual", "priority": 2, "text": "{agent} steals the {target}{container}." }
           ],
           "failSignals": [
-            { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}!" }
+            { "sense": "visual", "priority": 10, "text": "{agent} makes a grab for the {target}{container}!" }
           ]
         },
         {
