@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using AEngine.Core.Actions;
 
 namespace AEngine.Core.Modules;
@@ -218,8 +219,8 @@ public sealed class OpposedSpec
 /// <summary>
 /// One observable-state gate on a module field: which object to test (On
 /// "target", the default, or "actor"), and the comparison the field must
-/// pass — Equals (a literal bool/number/string, compared verbatim) or
-/// Min/Max (numeric bounds). All specs on an affordance must match.
+/// pass — a literal bool/number/string compared verbatim (JSON "equals"),
+/// or numeric Min/Max bounds. All specs on an affordance must match.
 /// </summary>
 public sealed class WhenSpec
 {
@@ -227,7 +228,8 @@ public sealed class WhenSpec
     public required string Field { get; init; }
     /// <summary>"target" (default) or "actor".</summary>
     public string? On { get; init; }
-    public JsonElement? Equals { get; init; }
+    [JsonPropertyName("equals")]
+    public JsonElement? EqualsValue { get; init; }
     public double? Min { get; init; }
     public double? Max { get; init; }
 }

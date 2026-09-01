@@ -383,7 +383,7 @@ public sealed class ActionResolver
             if (!obj.HasModule(spec.Module))
                 return false;
             var value = _modules.ResolveField(obj, spec.Module, spec.Field);
-            if (!FieldMatch.Matches(value, spec.Equals, spec.Min, spec.Max))
+            if (!FieldMatch.Matches(value, spec.EqualsValue, spec.Min, spec.Max))
                 return false;
         }
         return true;
