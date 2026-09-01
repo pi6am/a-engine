@@ -138,7 +138,15 @@ public static class BuiltinHandlers
                 return ActionResult.Fail("That way leads nowhere.");
             ctx.World.MoveObject(ctx.Agent.Id, to);
             var room = ctx.World.GetObject(to);
-            return ActionResult.Ok($"You go through the {portal.Name} into {room.Name}.");
+            // the direction rides along ("You go east through the canvas
+            // awning into Market Square.") — this message is what memory
+            // stores, and direction+destination pairs are how a planner
+            // learns the map from its own footsteps
+            var direction = ctx.Modules.ResolveString(portal, "portal", "direction") ?? "";
+            var via = direction.Length > 0
+                ? $"{direction} through the {portal.Name}"
+                : $"through the {portal.Name}";
+            return ActionResult.Ok($"You go {via} into {room.Name}.");
         }
     }
 

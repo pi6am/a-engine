@@ -162,6 +162,12 @@ working in that area, and update them when the behavior changes:
 - **Autonomous agents** — NPCs act through policies; planned: perception-driven
   policies (the random policy ignores signals), agenda-driven NPCs,
   multi-player (multiple players controlling different agents).
+- **LLLM navigation** — movement messages now record direction+destination
+  ("You go east through the canvas awning into Herbalist's Stall.") so
+  planners learn the map from their own footsteps. If that proves
+  insufficient: record traversed portals in the knowledge module and
+  annotate exit listings with known destinations ("east (canvas awning,
+  open — to Herbalist's Stall)").
 - **Real-time mode** — implemented in the CLI (see `docs/cli.md`); planned:
   pacing the player's own multi-step plans by action duration, multi-player.
 - **Custom conflict/skill handlers** — the RPG stages cover the first cases;

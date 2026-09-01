@@ -11,6 +11,24 @@ namespace AEngine.Tests;
 public class AgentMemoryTests
 {
     [Fact]
+    public void Movement_RecordsDirectionAndDestination()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        var alice = engine.World.GetObject("alice");
+        engine.TurnManager.Execute(alice, "open", "door_a");
+
+        var result = engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "go", "door_a"));
+
+        // the actor's message — and thus the memory entry — carries the
+        // direction, so a planner reading its own footsteps can correlate
+        // "east" with where east goes
+        Assert.Equal("You go north through the wooden door into Room B.", result.Message);
+        Assert.Contains("You go north through the wooden door into Room B.",
+            engine.Memory.Recall("alice"));
+    }
+
+    [Fact]
     public void Wait_IsOffered_AndConsumesTurn()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
