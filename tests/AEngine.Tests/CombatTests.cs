@@ -195,6 +195,31 @@ public class CombatTests
     }
 
     [Fact]
+    public void Attack_OnIncapacitatedTarget_SaysSoInTheReport()
+    {
+        var engine = NewEngine();
+        SetStat(engine, "alice", "strength", 10);
+        SetStat(engine, "bob", "agility", 5);
+        AddSword(engine, "alice", damageBonus: 50); // one hit downs bob
+        var alice = engine.World.GetObject("alice");
+        Assert.True(engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "wear", "sword")).Success);
+
+        var down = engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
+        Assert.Contains("Bob collapses, incapacitated!", down.Message);
+
+        // further blows on the helpless target say so — the planner reading
+        // its own outcome learns the fight is over
+        var again = engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
+        Assert.Matches(@"You hit the Bob( with the sword)? for \d+ damage\. The Bob is already incapacitated\.",
+            again.Message);
+        // and the knockout line doesn't repeat
+        Assert.DoesNotContain("collapses", again.Message);
+    }
+
+    [Fact]
     public void Attack_Miss_Fails_AndIsObservable()
     {
         var engine = NewEngine();

@@ -459,7 +459,13 @@ public static class BuiltinHandlers
             if (!target.HasModule("attackable"))
                 return ActionResult.Fail($"There's no point attacking {Perception.WithDefiniteArticle(target.Name)}.");
             var random = ctx.Random ?? new Random();
-            var targetName = Perception.WithDefiniteArticle(target.Name);
+            var targetName = Perception.WithDefiniteArticle(
+                Knowledge.NameFor(ctx.Modules, ctx.Agent, target));
+            // beating someone who is already down reads differently — the
+            // report says so, and the planner reading its own outcome knows
+            // the fight is over
+            var alreadyDown = target.HasModule("agent") &&
+                              Health.IsIncapacitated(ctx.World, ctx.Modules, target);
 
             // the wielded weapon (a worn weapon-module item), if any
             var weapon = Clothing.WornItems(ctx.World, ctx.Modules, ctx.Agent)
@@ -566,6 +572,8 @@ public static class BuiltinHandlers
             }
             if (fragment is not null)
                 message += " " + fragment;
+            if (alreadyDown)
+                message += $" {Capitalize(targetName)} is already incapacitated.";
             return ActionResult.Ok(message);
         }
     }

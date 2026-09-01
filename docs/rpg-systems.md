@@ -37,7 +37,10 @@ the puller's inventory.
 ## Health
 
 `health` module (`hp`/`maxHp`/`incapacitatedAt`, default threshold 0);
-`Damage.Apply` clamps hp at 0 and reports incapacitation once — a standing
+`Damage.Apply` clamps hp at 0 and reports incapacitation once (later
+blows on a downed target note it instead — "…is already incapacitated" —
+so a planner reading its own outcomes learns the fight is over); a
+standing
 agent is knocked prone at the same moment (they crumple; seated/lying/
 carried agents stay where they are). An incapacitated agent can only `look`
 (resolver), gets no NPC turns, shows "(incapacitated)" in listings/examine,

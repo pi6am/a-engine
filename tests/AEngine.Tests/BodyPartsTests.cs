@@ -374,8 +374,11 @@ public class BodyPartsTests
         Assert.All(engine.ActionResolver.Resolve(engine.World.GetObject("bob")),
             a => Assert.Equal("look", a.Verb));
 
-        // further blows don't repeat the announcement
-        Assert.DoesNotContain("incapacitated", Attack(engine, "head").Message);
+        // further blows don't repeat the collapse announcement — but they
+        // do say the target is already down
+        var later = Attack(engine, "head");
+        Assert.DoesNotContain("collapses", later.Message);
+        Assert.Contains("is already incapacitated", later.Message);
     }
 
     [Fact]
