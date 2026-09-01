@@ -295,16 +295,16 @@ public static class BuiltinHandlers
         {
             var recipient = ctx.Target ?? throw new InvalidOperationException("give requires a target agent.");
             if (!recipient.HasModule("agent"))
-                return ActionResult.Fail($"The {recipient.Name} can't take that.");
+                return ActionResult.Fail($"{Knowledge.NameFor(ctx.Modules, ctx.Agent, recipient)} can't take that.");
             var item = ctx.AuxTarget ?? throw new InvalidOperationException("give requires an item (aux target).");
             if (item.Parent != ctx.Agent.Id)
                 return ActionResult.Noop($"You're not carrying the {item.Name}.");
             if (ctx.Reaction is { NoResist: false })
                 return ActionResult.Fail(Capitalize(
-                    $"{recipient.Name} declines {Perception.WithDefiniteArticle(item.Name)}."));
+                    $"{Knowledge.NameFor(ctx.Modules, ctx.Agent, recipient)} declines {Perception.WithDefiniteArticle(item.Name)}."));
             ctx.World.MoveObject(item.Id, recipient.Id);
             return ActionResult.Ok(
-                $"You give {Perception.WithDefiniteArticle(item.Name)} to {recipient.Name}.");
+                $"You give {Perception.WithDefiniteArticle(item.Name)} to {Knowledge.NameFor(ctx.Modules, ctx.Agent, recipient)}.");
         }
     }
 
@@ -418,13 +418,15 @@ public static class BuiltinHandlers
                 : ctx.Modules.ResolveInt(rulesHost, "rules", "sayMillisPerChar", DefaultMillisPerChar);
             var duration = baseSeconds + (int)(text.Length * millisPerChar / 1000.0);
             // a directed say (target = another agent) names the addressee
-            // back to the actor, so the direction is visible in the log
+            // back to the actor — by the name the actor can print
             var addressee = ctx.Target is not null && ctx.Target.Id != ctx.Agent.Id &&
                             ctx.Target.HasModule("agent")
                 ? ctx.Target
                 : null;
             return ActionResult.Ok(
-                addressee is null ? $"You say: \"{text}\"" : $"You say to {addressee.Name}: \"{text}\"",
+                addressee is null
+                    ? $"You say: \"{text}\""
+                    : $"You say to {Knowledge.NameFor(ctx.Modules, ctx.Agent, addressee)}: \"{text}\"",
                 duration);
         }
     }
@@ -580,26 +582,29 @@ public static class BuiltinHandlers
         {
             var target = ctx.Target ?? throw new InvalidOperationException("examine requires a target.");
             var sb = new StringBuilder();
-            sb.AppendLine(target.Name);
+            // names are observer-relative: strangers render by their
+            // incognito description until the examiner has learned them
+            var name = Knowledge.NameFor(ctx.Modules, ctx.Agent, target);
+            sb.AppendLine(name);
             if (target.Description.Length > 0)
                 sb.AppendLine(target.Description);
 
             if (target.HasModule("agent"))
             {
                 if (Health.IsIncapacitated(ctx.World, ctx.Modules, target))
-                    sb.AppendLine($"{target.Name} is incapacitated.");
+                    sb.AppendLine($"{name} is incapacitated.");
                 var words = Conditions.VisibleWords(ctx.World, ctx.Modules, target);
                 if (words.Count > 0)
-                    sb.AppendLine($"{target.Name} looks {string.Join(" and ", words)}.");
+                    sb.AppendLine($"{name} looks {string.Join(" and ", words)}.");
                 foreach (var line in Condition.ExamineLines(ctx.World, ctx.Modules, target))
                     sb.AppendLine(line);
                 var posture = Postures.Of(ctx.World, ctx.Modules, target);
                 if (posture == Postures.Prone)
-                    sb.AppendLine($"{target.Name} is prone on the ground.");
+                    sb.AppendLine($"{name} is prone on the ground.");
                 else if (posture == Postures.Carried)
-                    sb.AppendLine($"{target.Name} is being carried by {ctx.World.GetObject(target.Parent).Name}.");
+                    sb.AppendLine($"{name} is being carried by {Knowledge.NameFor(ctx.Modules, ctx.Agent, ctx.World.GetObject(target.Parent))}.");
                 else if (posture != Postures.Standing)
-                    sb.AppendLine($"{target.Name} is {posture} on {Perception.WithDefiniteArticle(ctx.World.GetObject(target.Parent).Name)}.");
+                    sb.AppendLine($"{name} is {posture} on {Perception.WithDefiniteArticle(ctx.World.GetObject(target.Parent).Name)}.");
                 var worn = Clothing.WornItems(ctx.World, ctx.Modules, target);
                 if (worn.Count > 0)
                     sb.AppendLine($"Wearing: {string.Join(", ", worn.Select(w => Perception.WithArticle(w.Name)))}.");
@@ -812,7 +817,7 @@ public static class BuiltinHandlers
                 return ActionResult.Fail($"You can't slip off the worn {target.Name}.");
             var holder = ctx.World.GetObject(target.Parent);
             ctx.World.MoveObject(target.Id, ctx.Agent.Id);
-            return ActionResult.Ok($"You steal the {target.Name} from {holder.Name}.");
+            return ActionResult.Ok($"You steal the {target.Name} from {Knowledge.NameFor(ctx.Modules, ctx.Agent, holder)}.");
         }
     }
 
@@ -947,13 +952,13 @@ public static class BuiltinHandlers
             // a ware with a `trader` sells only through that agent
             if (ctx.Modules.ResolveString(ware, "ware", "trader") is { Length: > 0 } trader &&
                 holder.Id != trader)
-                return ActionResult.Fail($"{Capitalize(holder.Name)} isn't trading the {ware.Name}.");
+                return ActionResult.Fail($"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} isn't trading the {ware.Name}.");
             // the holder consented or declined via the trade's reaction
             if (ctx.Reaction is { NoResist: false })
-                return ActionResult.Fail($"{Capitalize(holder.Name)} declines the offer.");
+                return ActionResult.Fail($"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} declines the offer.");
             var wantsId = ctx.Modules.ResolveString(ware, "ware", "wants");
             if (wantsId is null || !ctx.World.HasObject(wantsId))
-                return ActionResult.Fail($"{Capitalize(holder.Name)} isn't trading the {ware.Name}.");
+                return ActionResult.Fail($"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} isn't trading the {ware.Name}.");
             var wants = ctx.World.GetObject(wantsId);
             // the wanted item counts whether the actor still holds it or has
             // already handed it over (a gift ahead of the barter)
@@ -976,7 +981,7 @@ public static class BuiltinHandlers
                         $"You try to barter for {Perception.WithDefiniteArticle(ware.Name)}.");
                 }
                 return ActionResult.Fail(
-                    $"{Capitalize(holder.Name)} wants {Perception.WithDefiniteArticle(wants.Name)} in exchange.");
+                    $"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} wants {Perception.WithDefiniteArticle(wants.Name)} in exchange.");
             }
             // in the gift-ahead case the actor gives nothing now, so say so
             var wantsInHand = wants.Parent == ctx.Agent.Id;

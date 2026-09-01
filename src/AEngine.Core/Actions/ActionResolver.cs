@@ -133,7 +133,7 @@ public sealed class ActionResolver
             if (target.Id == agent.Id || !seen.Add(target.Id))
                 continue;
             actions.Add(new AvailableAction(
-                "examine", target.Id, $"Examine {The(target)}", "examine", ""));
+                "examine", target.Id, $"Examine {The(agent, target)}", "examine", ""));
         }
 
         // collapse identical (verb, label) entries: interchangeable
@@ -194,7 +194,7 @@ public sealed class ActionResolver
                             affordance.Handler, attachment.ModuleId, affordance.Prompt));
                         foreach (var other in others)
                             actions.Add(new AvailableAction(
-                                "say", other.Id, $"Say to {other.Name}: {{speech}}",
+                                "say", other.Id, $"Say to {NameFor(agent, other)}: {{speech}}",
                                 affordance.Handler, attachment.ModuleId, affordance.Prompt));
                     }
                     else
@@ -212,7 +212,7 @@ public sealed class ActionResolver
                 {
                     foreach (var other in others)
                         actions.Add(new AvailableAction(
-                            "give", other.Id, $"Give {The(target)} to {other.Name}",
+                            "give", other.Id, $"Give {The(agent, target)} to {NameFor(agent, other)}",
                             affordance.Handler, attachment.ModuleId, affordance.Prompt)
                         { AuxTargetId = target.Id });
                     continue;
@@ -438,26 +438,35 @@ public sealed class ActionResolver
         "escape" => "Break free",
         "wear" => $"Wear {The(target)}",
         // taking off (or stealing) another agent's property names the
-        // holder — the label must say whose jeans they are
+        // holder — the label must say whose jeans they are (by the name
+        // the acting agent can print)
         "remove" when target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
                       _world.GetObject(target.Parent) is { } wearer &&
                       wearer.HasModule("agent") && wearer.Id != agent.Id =>
-            $"Take off {The(target)} from {wearer.Name}",
+            $"Take off {The(target)} from {NameFor(agent, wearer)}",
         "remove" => $"Take off {The(target)}",
         "steal" when target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
                      _world.GetObject(target.Parent) is { } holder &&
                      holder.HasModule("agent") && holder.Id != agent.Id =>
-            $"Steal {The(target)} from {holder.Name}",
+            $"Steal {The(target)} from {NameFor(agent, holder)}",
         // a part-ful target advertises the optional aimed syntax (parsed
         // like Say's [to X]): "Attack the arena duelist [in the {part}]"
         "attack" when BodyParts.Of(_world, target).Count > 0 =>
-            $"Attack {The(target)} [in the {{part}}]",
-        _ => $"{Capitalize(affordance.Verb)} {The(target)}",
+            $"Attack {The(agent, target)} [in the {{part}}]",
+        _ => $"{Capitalize(affordance.Verb)} {The(agent, target)}",
         };
     }
 
+    /// <summary>The name the acting agent can print for this object (incognito until learned).</summary>
+    private string NameFor(WorldObject observer, WorldObject obj) =>
+        Knowledge.NameFor(_modules, observer, obj);
+
     /// <summary>The target's name with a definite article, unless it already carries one.</summary>
     private static string The(WorldObject target) => Perception.WithDefiniteArticle(target.Name);
+
+    /// <summary>Observer-relative: the name the agent can print, with a definite article.</summary>
+    private string The(WorldObject observer, WorldObject target) =>
+        Perception.WithDefiniteArticle(NameFor(observer, target));
 
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

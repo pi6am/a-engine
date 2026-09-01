@@ -31,7 +31,9 @@
         { "name": "memoryLength", "type": "int", "default": 25 },
         { "name": "memorySalienceBoost", "type": "int", "default": 8 },
         { "name": "posture", "type": "string", "default": "standing" },
-        { "name": "voice", "type": "string", "default": "" }
+        { "name": "voice", "type": "string", "default": "" },
+        { "name": "properNames", "type": "list", "default": [] },
+        { "name": "incognito", "type": "string", "default": "" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },
@@ -265,6 +267,14 @@
           ]
         }
       ]
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "fields": [
+        { "name": "knowsNames", "type": "list", "default": [] }
+      ],
+      "affordances": []
     },
     {
       "id": "condition",

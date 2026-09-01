@@ -281,7 +281,8 @@ public class SignalAttenuationTests
 
         var action = PlanExecutor.MatchAvailableOrPotential(
             engine, player, "Say: anyone in here?");
-        engine.TurnManager.PerformAction(player, action!, action.Text);
+        Assert.NotNull(action);
+        engine.TurnManager.PerformAction(player, action, action.Text);
 
         // in-room listener: full fidelity
         Assert.Contains(engine.SignalBus.Drain("nix"),

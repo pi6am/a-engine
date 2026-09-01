@@ -57,7 +57,8 @@ public class MemorySalienceTests
         var alice = engine.World.GetObject("alice");
         var action = PlanExecutor.MatchAvailableOrPotential(
             engine, alice, "Say to Bob: \"bring me an ale\"");
-        engine.TurnManager.PerformAction(alice, action!, action.Text);
+        Assert.NotNull(action);
+        engine.TurnManager.PerformAction(alice, action, action.Text);
 
         // a wall of ambient events washes over bob (capacity 25)
         var bob = engine.World.GetObject("bob");
@@ -312,7 +313,7 @@ public class MemorySalienceTests
 
         // speaker's own line: affordance-level salience 24
         Assert.Contains(engine.Memory.RecallDetailed("player"),
-            e => e.Text == "You say to Nix the goblin: \"Hey Nix, what's up?\"" && e.Salience == 24);
+            e => e.Text == "You say to a short green-skinned goblin woman: \"Hey Nix, what's up?\"" && e.Salience == 24);
         // addressee: addressed boost 8 + directed-spec salience 16 = 24
         Assert.Contains(engine.Memory.RecallDetailed("nix"),
             e => e.Text == "the human stranger says to you: \"Hey Nix, what's up?\"" && e.Salience == 24);

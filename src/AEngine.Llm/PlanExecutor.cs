@@ -212,10 +212,13 @@ public sealed class PlanExecutor
 
     /// <summary>
     /// Find the say action for an addressee: with one, the say entry whose
-    /// target's name matches (loosely); without one — or when the
-    /// addressee doesn't match any directed entry (e.g. the LLM added
-    /// "[to X]" though only one other agent is present) — the undirected
-    /// entry (or, when only directed entries exist, the first one).
+    /// target's name matches (loosely) — or whose PROPER name matches,
+    /// which works regardless of what the speaker could print (you can
+    /// address "Nix" by name the moment you've heard it, before you could
+    /// pick her out of a lineup); without one — or when the addressee
+    /// doesn't match any directed entry (e.g. the LLM added "to X" though
+    /// only one other agent is present) — the undirected entry (or, when
+    /// only directed entries exist, the first one).
     /// </summary>
     private static AvailableAction? FindSayAction(
         GameEngine engine, WorldObject agent, string? addressee)
@@ -232,9 +235,18 @@ public sealed class PlanExecutor
         {
             if (a.TargetId is null)
                 return false;
-            var name = Normalize(engine.World.GetObject(a.TargetId).Name);
-            return name.Contains(needle, StringComparison.Ordinal) ||
-                   needle.Contains(name, StringComparison.Ordinal);
+            var target = engine.World.GetObject(a.TargetId);
+            var name = Normalize(target.Name);
+            if (name.Contains(needle, StringComparison.Ordinal) ||
+                needle.Contains(name, StringComparison.Ordinal))
+                return true;
+            return Knowledge.ProperNames(engine.ModuleRegistry, target).Any(p =>
+            {
+                var proper = Normalize(p);
+                return proper == needle ||
+                       proper.Contains(needle, StringComparison.Ordinal) ||
+                       needle.Contains(proper, StringComparison.Ordinal);
+            });
         }) ?? undirected ?? says[0];
     }
 

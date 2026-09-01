@@ -220,8 +220,11 @@ public sealed class TurnManager
         _engine.SignalBus.Emit(agent, target,
             [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 10, Text = telegraph }],
             text, extra: Extras(null, action.AuxTargetId));
+        // the announcement is the DEFENDER's popup: the attacker renders by
+        // the name the defender can print (incognito until learned)
         var announcement = telegraph
-            .Replace("{agent}", agent.Name, StringComparison.Ordinal);
+            .Replace("{agent}", Actions.Knowledge.NameFor(_engine.ModuleRegistry, defender, agent),
+                StringComparison.Ordinal);
         announcement = target is not null && target.Id == defender.Id
             ? announcement
                 .Replace("the {target}", "you", StringComparison.Ordinal)
@@ -243,13 +246,14 @@ public sealed class TurnManager
                 .ChooseReactionAsync(_engine, defender, pending, CancellationToken.None);
         _engine.Reactions.PollPolicies();
 
+        // the actor's own copy names the defender as the actor knows them
         var actorText = (spec.ActorText ?? "You {verb} {target}.")
             .Replace("{verb}", action.Verb, StringComparison.Ordinal)
             .Replace("{agent}", agent.Name, StringComparison.Ordinal)
             .Replace("the {target}", Perception.WithDefiniteArticle(
-                (target ?? defender).Name), StringComparison.Ordinal)
+                Actions.Knowledge.NameFor(_engine.ModuleRegistry, agent, target ?? defender)), StringComparison.Ordinal)
             .Replace("{target}", Perception.WithDefiniteArticle(
-                (target ?? defender).Name), StringComparison.Ordinal)
+                Actions.Knowledge.NameFor(_engine.ModuleRegistry, agent, target ?? defender)), StringComparison.Ordinal)
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
         _engine.Memory.Record(agent, actorText);
         QueueOutcome(agent.Id, actorText);
@@ -318,7 +322,7 @@ public sealed class TurnManager
             if (option.Report is not null)
             {
                 var report = FormatReactionReport(
-                    option.Report, defender, AuxName(pending.Action.AuxTargetId));
+                    agent, option.Report, defender, AuxName(pending.Action.AuxTargetId));
                 _engine.Memory.Record(agent, report);
                 _engine.Reactions.RecordResolved(pending.ActorId, report);
             }
@@ -355,10 +359,13 @@ public sealed class TurnManager
     /// two-object verb's aux target. The result is sentence-capitalized
     /// ("The arena duelist attempts to dodge.").
     /// </summary>
-    private static string FormatReactionReport(string template, WorldObject defender, string? itemName)
+    private string FormatReactionReport(WorldObject actor, string template, WorldObject defender, string? itemName)
     {
+        // the report goes to the ACTOR: the reacting defender renders by
+        // the name the actor can print
         var text = template
-            .Replace("{agent}", Perception.WithDefiniteArticle(defender.Name), StringComparison.Ordinal)
+            .Replace("{agent}", Perception.WithDefiniteArticle(
+                Actions.Knowledge.NameFor(_engine.ModuleRegistry, actor, defender)), StringComparison.Ordinal)
             .Replace("{target}", "you", StringComparison.Ordinal)
             .Replace("{item}", itemName ?? "", StringComparison.Ordinal);
         return string.Concat(text[..1].ToUpperInvariant(), text.AsSpan(1));

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using AEngine.Core.Actions;
 using AEngine.Core.Modules;
 using AEngine.Core.World;
 
@@ -221,7 +222,7 @@ public sealed class SignalBus
                 if (pending[i].Cost < best.Cost)
                     best = pending[i];
             pending.Remove(best);
-            if (best.Cost > reach.GetValueOrDefault(best.Room).Cost)
+            if (reach.TryGetValue(best.Room, out var settled) && best.Cost > settled.Cost)
                 continue; // a cheaper path already settled
             var room = _world.GetObject(best.Room);
             foreach (var side in _world.ChildrenOf(best.Room).Where(c => c.HasModule("portal")))
@@ -394,6 +395,9 @@ public sealed class SignalBus
                            ? _memory.SalienceBoostOf(observer)
                            : 0) + signal.Salience;
         _memory.Record(observer, signal.Text, salience: salience);
+        // and overheard proper names are learned: hearing "Nix, pass the
+        // salt" is how you come to know who Nix is
+        Knowledge.LearnFromText(_world, _modules, observer, signal.Text);
     }
 
     private string Format(
@@ -402,7 +406,9 @@ public sealed class SignalBus
         string? targetName = null)
     {
         var text = template
-            .Replace("{agent}", actor.Name, StringComparison.Ordinal)
+            .Replace("{agent}",
+                observer is null ? actor.Name : Knowledge.NameFor(_modules, observer, actor),
+                StringComparison.Ordinal)
             .Replace("{arg}", arg ?? "", StringComparison.Ordinal)
             // degraded renderings stay anonymous: who is speaking is
             // exactly what a muffled voice through a door doesn't tell you
@@ -412,6 +418,10 @@ public sealed class SignalBus
         // "you" ("the old cook gives the bread to you"), never by name
         if (target is not null && observer is not null && target.Id == observer.Id)
             text = ReplaceTargetAsYou(text);
+        else if (target is not null && target.HasModule("agent"))
+            text = text.Replace("{target}",
+                observer is null ? target.Name : Knowledge.NameFor(_modules, observer, target),
+                StringComparison.Ordinal);
         else
             text = text.Replace("{target}", targetName ?? target?.Name ?? "", StringComparison.Ordinal);
         if (extra is not null)

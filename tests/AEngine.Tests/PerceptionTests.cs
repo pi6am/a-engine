@@ -81,7 +81,7 @@ public class PerceptionTests
 
         // every agent is the protagonist of their own perception: self is
         // "you", others keep their descriptive name
-        Assert.Equal("you", Core.Actions.Perception.NameFor(player, player));
-        Assert.Equal("desk drawer", Core.Actions.Perception.NameFor(player, desk));
+        Assert.Equal("you", Core.Actions.Perception.NameFor(engine.ModuleRegistry, player, player));
+        Assert.Equal("desk drawer", Core.Actions.Perception.NameFor(engine.ModuleRegistry, player, desk));
     }
 }

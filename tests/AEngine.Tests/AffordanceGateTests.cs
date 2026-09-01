@@ -177,7 +177,7 @@ public class AffordanceGateTests
 
         // the affordance lives on nothing in particular — it is emitted from
         // the agent's own modules, so attach metabolism's squirm via alice
-        Assert.Empty(Verbs(engine, "alice", "alice").Where(v => v == "squirm"));
+        Assert.DoesNotContain(Verbs(engine, "alice", "alice"), v => v == "squirm");
         world.SetFieldOverride("alice", "metabolism", "bladder", CoreWorld.ToJson(0.6));
         Assert.Contains("squirm", Verbs(engine, "alice", "alice"));
     }

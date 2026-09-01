@@ -68,7 +68,7 @@ public static class Perception
         {
             if (child.Id == agentId || child.HasModule("portal"))
                 continue;
-            var entry = NameFor(observer, child) + Annotate(world, modules, child);
+            var entry = NameFor(modules, observer, child) + Annotate(world, modules, child);
             // agent conditions gather into one parenthetical list:
             // "the arena duelist (prone, incapacitated)"; descriptive
             // crunch adds the overall condition word ("wounded"), and
@@ -113,7 +113,7 @@ public static class Perception
                     : $"{posture} on the {child.Name}";
                 var words = Conditions.VisibleWords(world, modules, occupant);
                 var suffix = words.Count > 0 ? ", " + string.Join(", ", words) : "";
-                items.Add($"{NameFor(observer, occupant)} ({where}{suffix})");
+                items.Add($"{NameFor(modules, observer, occupant)} ({where}{suffix})");
             }
         }
         // agents the observer is carrying (a grappled victim) list like
@@ -121,7 +121,7 @@ public static class Perception
         foreach (var carried in world.ChildrenOf(agentId))
         {
             if (carried.HasModule("agent"))
-                items.Add($"{NameFor(observer, carried)} (carried by you)");
+                items.Add($"{NameFor(modules, observer, carried)} (carried by you)");
         }
         return items;
     }
@@ -155,7 +155,7 @@ public static class Perception
             if (worn.Count == 0)
                 return;
             var list = string.Join(", ", worn.Select(w => WithArticle(w.Name)));
-            lines.Add($"{obj.Name} is wearing {list}.");
+            lines.Add($"{NameFor(modules, world.GetObject(observerId), obj)} is wearing {list}.");
         }
     }
 
@@ -211,11 +211,10 @@ public static class Perception
     /// <summary>
     /// Observer-relative naming: every agent is the protagonist of their
     /// own perception, so an agent's own name renders as "you"; everyone
-    /// else renders by their descriptive name. (Today the self case is
-    /// mostly latent — agents are excluded from their own room listings
-    /// and receive no self-signals — but any observer-relative rendering
-    /// should go through this.)
+    /// else renders by the name the observer can print — their real name,
+    /// or their incognito description until the observer has learned it
+    /// (see <see cref="Knowledge"/>).
     /// </summary>
-    public static string NameFor(WorldObject observer, WorldObject obj) =>
-        obj.Id == observer.Id ? "you" : obj.Name;
+    public static string NameFor(ModuleRegistry modules, WorldObject observer, WorldObject obj) =>
+        obj.Id == observer.Id ? "you" : Knowledge.NameFor(modules, observer, obj);
 }

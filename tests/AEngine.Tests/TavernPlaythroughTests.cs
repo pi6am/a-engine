@@ -2,6 +2,7 @@ using AEngine.Core.Actions;
 using AEngine.Core.Runtime;
 using AEngine.Core.Scenarios;
 using AEngine.Core.World;
+using AEngine.Llm;
 using CoreWorld = AEngine.Core.World.World;
 
 namespace AEngine.Tests;
@@ -92,12 +93,39 @@ public class TavernPlaythroughTests
         Do(engine, "open", "front_door_street_side");
         Do(engine, "go", "front_door_street_side");
 
+        // the player starts knowing nobody: the cast renders incognito
         var look = Do(engine, "look");
-        Assert.Contains("Lythienne the elf (sitting on the booth by the window, drunk)", look.Message);
-        Assert.Contains("Nix the goblin (sitting on the middle bar stool, tipsy)", look.Message);
-        Assert.Contains("Gorra the orc (sitting on the left chair at the corner table, tipsy)", look.Message);
+        Assert.Contains("a silver-haired elf woman (sitting on the booth by the window, drunk)", look.Message);
+        Assert.Contains("a short green-skinned goblin woman (sitting on the middle bar stool, tipsy)", look.Message);
+        Assert.Contains("a brawny orc woman with tattooed knuckles (sitting on the left chair at the corner table, tipsy)", look.Message);
+        Assert.Contains("a lean orc woman doing sums on a napkin (sitting on the right chair at the corner table)", look.Message);
+        Assert.Contains("an enormous gray-skinned troll", look.Message);
+    }
+
+    [Fact]
+    public void NamesAreLearned_FromOverheardSpeech()
+    {
+        var engine = NewEngine();
+        Do(engine, "open", "front_door_street_side");
+        Do(engine, "go", "front_door_street_side");
+        var player = engine.World.GetObject("player");
+
+        // pre-populated: the orcs know each other, so Gorra can address
+        // Thakra by name — and the player overhears it
+        var gorra = engine.World.GetObject("gorra");
+        var action = PlanExecutor.MatchAvailableOrPotential(
+            engine, gorra, "Say to Thakra: \"Thakra, you know what you did.\"");
+        Assert.Equal("thakra", action!.TargetId);
+        engine.TurnManager.PerformAction(gorra, action, action.Text);
+
+        // the mention taught the player Thakra's name — but nobody else's
+        Assert.True(AEngine.Core.Actions.Knowledge.KnowsName(
+            engine.ModuleRegistry, player, engine.World.GetObject("thakra")));
+        Assert.False(AEngine.Core.Actions.Knowledge.KnowsName(
+            engine.ModuleRegistry, player, engine.World.GetObject("nix")));
+        var look = Do(engine, "look");
         Assert.Contains("Thakra the orc (sitting on the right chair at the corner table)", look.Message);
-        Assert.Contains("Brann the troll bartender", look.Message);
+        Assert.Contains("a short green-skinned goblin woman (sitting on the middle bar stool, tipsy)", look.Message);
     }
 
     [Fact]

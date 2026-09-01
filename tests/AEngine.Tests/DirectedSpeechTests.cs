@@ -165,7 +165,7 @@ public class DirectedSpeechTests
         Assert.Equal("nix", action!.TargetId);
 
         var result = engine.TurnManager.PerformAction(player, action, action.Text);
-        Assert.Equal("You say to Nix the goblin: \"Hey Nix, what's up?\"", result.Message);
+        Assert.Equal("You say to a short green-skinned goblin woman: \"Hey Nix, what's up?\"", result.Message);
         Assert.Contains(engine.Memory.Recall("nix"),
             m => m == "the human stranger says to you: \"Hey Nix, what's up?\"");
     }

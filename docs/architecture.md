@@ -169,6 +169,25 @@ perception (`Perception.NameFor` renders self as "you"); scenario data
 gives agents descriptive names (the player object is "the guest", not
 "you") so other agents' contexts and signals read correctly.
 
+## Knowledge & names
+
+Who an agent can NAME is tracked, not assumed. An agent carrying a
+`knowledge` module starts with its `knowsNames` list (agent ids,
+pre-populatable in scenario data — the tavern's regulars all know each
+other; nobody knows the player) and learns more from overheard text:
+every delivered signal is scanned for agents' `properNames`
+(word-bounded, case-sensitive — "Rath", "Cinderstorm"), so names spread
+through conversation and even through doorways ("Thakra, the rain is
+free…"). Agents WITHOUT the module know everything — unchanged behavior
+for every pre-existing scenario. Rendering follows the observer
+everywhere — signals' `{agent}`/`{target}`, room and occupant listings,
+examine, action labels ("Say to …", "Give … to …"), and handler
+messages: a stranger prints as their `incognito` description ("a short
+green-skinned goblin woman") until their name is learned, then their
+real name. `properNames` are never printed — they exist for parsing
+("Say to Nix:" resolves to her whether or not the speaker could pick
+her out of a lineup) and for learning.
+
 ## Signals
 
 Ephemeral sensory observations (`SignalSense.Visual | Audible`) delivered

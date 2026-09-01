@@ -81,6 +81,11 @@ working in that area, and update them when the behavior changes:
   (`condition` module: traits/goals text, stat mods, visibility); they gate
   affordances (resolver `requires`/`excludes`/`when`, execution-time
   `gates` via `GateRegistry`), feed `Checks.Bonus`, and shift LLM behavior.
+- **Knowledge & names** — agents with a `knowledge` module only name
+  agents whose names they've learned (pre-populated `knowsNames`, plus
+  overheard `properNames` in delivered signals); strangers render by
+  their `incognito` description observer-relatively (signals, listings,
+  labels, examine). No module = knows everything (back-compat).
 - **Consumables & metabolism** — drinks/food as data (`beverage`/`food`
   modules, `consume`/`clear` handlers), prefab spawning from templates
   (`spawner` module, single-slot anti-flood), and a world-clock upkeep pass
