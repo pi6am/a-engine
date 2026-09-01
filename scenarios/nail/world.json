@@ -67,7 +67,7 @@
               "description": "A fragment of Rhindicar's talon bound to a hilt. It thrums with suppressed fire — proof of the old dragon's favor.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["held"] } },
+                { "module": "wearable", "overrides": { "regions": ["held"], "worn": true } },
                 { "module": "weapon", "overrides": { "damageBonus": 3, "damageDice": 1, "damageSides": 6, "skill": "blades", "stat": "agility" } }
               ]
             },
@@ -137,7 +137,7 @@
               "incognitoDescription": "A leathery, sun-beaten dockhand who seems to know every rumor on the wharf.",
                 "policy": "auto",
                 "character": "Old Ferret, a leathery, sun-beaten dockhand who knows every rumor on the wharf.",
-                "goals": "Unload boats and gossip with newcomers. Tell anyone who asks: the sorcerer Rath Cinderstorm keeps to the tower north of the market square, and the herbalist Mira trades in rare reagents at her stall. There may be an entrance to old ruins west of the market, but it's dangerous. Only talk of the ruins if asked directly, and warn that they may be treacherous."
+                "goals": "Unload boats and gossip with newcomers. Tell anyone who asks: the sorcerer Rath Cinderstorm keeps to the tower north of the market square, and the herbalist Mira trades in rare reagents at her stall. There may be an entrance to old ruins west of the market, but it's dangerous. Only talk of the ruins if asked directly, and warn that they may be treacherous. You won't say where the ruins are but suggest asking around."
               }
             },
             "can_speak",
