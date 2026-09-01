@@ -206,8 +206,13 @@ public class DebugServerTests : IDisposable
 
         var body = await GetJson("/api/objects/player/memory");
         Assert.Equal("player", body.GetProperty("agentId").GetString());
-        var entries = body.GetProperty("entries").EnumerateArray().Select(e => e.GetString()).ToArray();
-        Assert.Contains("You look around.", entries);
+        var entries = body.GetProperty("entries").EnumerateArray()
+            .Select(e => (Text: e.GetProperty("text").GetString(),
+                Salience: e.GetProperty("salience").GetInt32(),
+                Score: e.GetProperty("score").GetInt64()))
+            .ToList();
+        // the player's own look is high-salience and scores highest while fresh
+        Assert.Contains(entries, e => e.Text == "You look around." && e.Salience > 0 && e.Score > 0);
 
         Assert.Equal(HttpStatusCode.BadRequest,
             (await _http.GetAsync("/api/objects/desk/memory")).StatusCode);

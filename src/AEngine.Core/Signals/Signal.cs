@@ -59,6 +59,12 @@ public sealed class SignalSpec
     public SignalScope Scope { get; init; } = SignalScope.None;
     /// <summary>Who may receive this spec, relative to the action's target.</summary>
     public SignalAudience Audience { get; init; } = SignalAudience.Everyone;
+    /// <summary>
+    /// Memory salience in events (additive, negatives allowed): a bomb
+    /// blast +10 outlives being addressed to you; a jukebox −5 ages out
+    /// faster than ambient chatter. See AgentMemory's aging eviction.
+    /// </summary>
+    public int Salience { get; init; }
     public required string Text { get; init; }
 }
 
@@ -67,8 +73,9 @@ public sealed class SignalSpec
 /// true when the signal crossed a portal to reach the observer (or is a
 /// traversal departure/arrival report) — renderers use it to keep the
 /// "You hear:" framing for remote sounds while printing same-room speech
-/// bare.
+/// bare. Salience rides along into the observer's memory (combined there
+/// with the addressed-to-you boost).
 /// </summary>
 public sealed record Signal(
     SignalSense Sense, int Priority, string Text, string OriginRoomId,
-    string? TargetId = null, bool ThroughPortal = false);
+    string? TargetId = null, bool ThroughPortal = false, int Salience = 0);

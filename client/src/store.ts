@@ -4,6 +4,7 @@ import {
   type AvailableAction,
   type EngineState,
   type ExecuteResult,
+  type MemoryEntry,
   type ModuleDef,
   type ObjectDetail,
   type ObjectSummary,
@@ -26,7 +27,7 @@ interface StoreState {
   selectedId: string | null
   selected: ObjectDetail | null
   /** remembered events of the selected object when it is an agent; null otherwise */
-  memory: string[] | null
+  memory: MemoryEntry[] | null
   agentId: string | null
   actions: AvailableAction[]
   lastResult: ExecuteResult | null

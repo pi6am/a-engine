@@ -50,9 +50,13 @@ public class ServiceHandlersTests
       },
       {
         "id": "exit", "name": "Exit",
-        "fields": [ { "name": "text", "type": "string", "default": "" } ],
+        "fields": [
+          { "name": "text", "type": "string", "default": "" },
+          { "name": "departText", "type": "string", "default": "" }
+        ],
         "affordances": [
-          { "verb": "leave", "handler": "leave", "label": "Go home" }
+          { "verb": "leave", "handler": "leave", "label": "Go home", "playerOnly": true },
+          { "verb": "depart", "handler": "depart", "label": "Go home", "npcOnly": true }
         ]
       }
     ]
@@ -85,6 +89,8 @@ public class ServiceHandlersTests
         world.AddModule("bus_stop", "exit");
         world.SetFieldOverride("bus_stop", "exit", "text",
             CoreWorld.ToJson("You hail a night bus and ride home. The tavern's noise fades behind you."));
+        world.SetFieldOverride("bus_stop", "exit", "departText",
+            CoreWorld.ToJson("{agent} steps onto the bus and leaves."));
         return engine;
     }
 
@@ -183,5 +189,67 @@ public class ServiceHandlersTests
             "You hail a night bus and ride home. The tavern's noise fades behind you.",
             result.Message);
         Assert.Equal(result.Message, engine.GameOver);
+    }
+
+    [Fact]
+    public void GoHome_SplitByAudience_PlayerSeesLeave_NpcSeesDepart()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        world.CreateObject("carol", "room_a", "Carol");
+        world.AddModule("carol", "agent");
+        world.SetFieldOverride("carol", "agent", "policy", CoreWorld.ToJson("auto"));
+
+        var aliceVerbs = engine.ActionResolver.Resolve(world.GetObject("alice"))
+            .Where(a => a.TargetId == "bus_stop").Select(a => a.Verb).ToList();
+        Assert.Contains("leave", aliceVerbs);
+        Assert.DoesNotContain("depart", aliceVerbs);
+
+        var carolVerbs = engine.ActionResolver.Resolve(world.GetObject("carol"))
+            .Where(a => a.TargetId == "bus_stop").Select(a => a.Verb).ToList();
+        Assert.Contains("depart", carolVerbs);
+        Assert.DoesNotContain("leave", carolVerbs);
+    }
+
+    [Fact]
+    public void NpcDepart_RemovesThemFromTheWorld_WithoutEndingTheGame()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        world.CreateObject("carol", "room_a", "Carol");
+        world.AddModule("carol", "agent");
+        world.SetFieldOverride("carol", "agent", "policy", CoreWorld.ToJson("auto"));
+        // a same-room observer sees her go
+        var alice = world.GetObject("alice");
+
+        var carol = world.GetObject("carol");
+        var result = engine.TurnManager.PerformAction(
+            carol, TestWorlds.Find(engine, "carol", "depart", "bus_stop"));
+
+        Assert.Equal(ActionOutcome.Success, result.Outcome);
+        Assert.Equal("You go home.", result.Message);
+        Assert.False(world.HasObject("carol")); // gone from the scenario
+        Assert.Null(engine.GameOver); // the player's game continues
+        Assert.Contains(engine.SignalBus.Drain("alice"),
+            s => s.Text == "Carol steps onto the bus and leaves.");
+    }
+
+    [Fact]
+    public void NpcDepart_RefusedWhileCarryingAnotherAgent()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        world.CreateObject("carol", "room_a", "Carol");
+        world.AddModule("carol", "agent");
+        world.SetFieldOverride("carol", "agent", "policy", CoreWorld.ToJson("auto"));
+        var carol = world.GetObject("carol");
+        world.MoveObject("alice", "carol"); // carol is carrying alice
+
+        var result = engine.TurnManager.PerformAction(
+            carol, TestWorlds.Find(engine, "carol", "depart", "bus_stop"));
+
+        Assert.Equal(ActionOutcome.Failure, result.Outcome);
+        Assert.True(world.HasObject("carol"));
+        Assert.True(world.HasObject("alice"));
     }
 }

@@ -31,9 +31,18 @@ export interface ObjectDetail {
   modules: ModuleAttachment[]
 }
 
+export interface MemoryEntry {
+  seq: number
+  text: string
+  /** how important this entry was when recorded (events of age-resistance) */
+  salience: number
+  /** current retention score: salience minus age — lowest gets evicted next */
+  score: number
+}
+
 export interface AgentMemory {
   agentId: string
-  entries: string[]
+  entries: MemoryEntry[]
 }
 
 export interface ModuleFieldDef {

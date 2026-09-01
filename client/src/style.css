@@ -320,3 +320,16 @@ table.simple td {
   white-space: pre-wrap;
   margin-bottom: 4px;
 }
+
+/* retention score chip: salience minus age — the lowest one is evicted next */
+.memory .score {
+  display: inline-block;
+  min-width: 28px;
+  margin-right: 6px;
+  padding: 0 4px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 10px;
+  text-align: center;
+  color: var(--text-dim);
+}

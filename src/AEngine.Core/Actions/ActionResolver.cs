@@ -257,9 +257,19 @@ public sealed class ActionResolver
                            _world.GetObject(target.Parent).HasModule("agent");
         if (heldByOther && affordance.Verb is not ("steal" or "remove" or "trade"))
             return false;
+        // policy gating: some affordances belong to one audience — the
+        // game-ending "Go home" is the player's alone (an NPC picking it
+        // would end the player's game), and NPCs get their own quieter
+        // departure instead
+        var policy = _modules.ResolveString(agent, "agent", "policy") ?? "player";
+        if (affordance.PlayerOnly && policy != "player")
+            return false;
+        if (affordance.NpcOnly && policy == "player")
+            return false;
         // status conditions on the actor gate the affordance: Requires
-        // lists kinds the actor must have ("use the urinal" only while
-        // needing to pee), Excludes lists kinds that suppress the verb
+        // lists kinds any of which the actor must carry ("use the urinal"
+        // while needing to pee or bursting), Excludes lists kinds that
+        // suppress the verb
         if (!ConditionKindsApply(affordance.Requires, all: true, agent))
             return false;
         if (!ConditionKindsApply(affordance.Excludes, all: false, agent))

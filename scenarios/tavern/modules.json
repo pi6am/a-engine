@@ -26,6 +26,7 @@
         { "name": "goals", "type": "string", "default": "" },
         { "name": "traits", "type": "string", "default": "" },
         { "name": "memoryLength", "type": "int", "default": 25 },
+        { "name": "memorySalienceBoost", "type": "int", "default": 8 },
         { "name": "posture", "type": "string", "default": "standing" }
       ],
       "affordances": [
@@ -44,8 +45,9 @@
           "handler": "say",
           "speech": true,
           "prompt": "Say what?",
+          "salience": 24,
           "signals": [
-            { "sense": "audible", "priority": 10, "audience": "onlyTarget", "text": "{agent} says to you: \"{arg}\"" },
+            { "sense": "audible", "priority": 10, "audience": "onlyTarget", "salience": 16, "text": "{agent} says to you: \"{arg}\"" },
             { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
             { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
           ]
@@ -425,14 +427,23 @@
       "id": "exit",
       "name": "Exit",
       "fields": [
-        { "name": "text", "type": "string", "default": "" }
+        { "name": "text", "type": "string", "default": "" },
+        { "name": "departText", "type": "string", "default": "" }
       ],
       "affordances": [
         {
           "verb": "leave",
           "handler": "leave",
           "duration": 5,
-          "label": "Go home"
+          "label": "Go home",
+          "playerOnly": true
+        },
+        {
+          "verb": "depart",
+          "handler": "depart",
+          "duration": 5,
+          "label": "Go home",
+          "npcOnly": true
         }
       ]
     }

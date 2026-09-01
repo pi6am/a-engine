@@ -88,12 +88,28 @@ public sealed class AffordanceDefinition
     /// </summary>
     public bool OthersOnly { get; init; }
     /// <summary>
+    /// Offered only to the player-controlled agent (policy "player") —
+    /// e.g. the game-ending "Go home": an NPC picking it would end the
+    /// PLAYER's game.
+    /// </summary>
+    public bool PlayerOnly { get; init; }
+    /// <summary>Offered only to autonomous agents (policy != "player") — e.g. an NPC's own, quieter way home.</summary>
+    public bool NpcOnly { get; init; }
+    /// <summary>
     /// Emitted from the agent's own modules once per other agent present,
     /// with that agent as the target ("Perform the rite on {target}") —
     /// the performer-facing direction of a service.
     /// </summary>
     public bool TargetOthers { get; init; }
     public int Duration { get; init; } = 1;
+    /// <summary>
+    /// How salient the ACTOR's own memory of performing this action is
+    /// (events of age-resistance); unset = the agent's
+    /// memorySalienceBoost. Conversation verbs declare a high value so
+    /// exchanges outlive ambient chatter on both sides (the listener's
+    /// side comes from signal-spec salience plus the addressed boost).
+    /// </summary>
+    public int? Salience { get; init; }
     /// <summary>
     /// Speech-track affordance (say, and future vocalizations like shout
     /// or whisper): the action occupies the agent's speech track instead

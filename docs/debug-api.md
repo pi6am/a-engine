@@ -15,7 +15,7 @@ Endpoints (JSON in/out, camelCase):
 - `GET /api/world/tree`
 - `GET /api/objects`
 - `GET /api/objects/{id}` (attributes + modules with resolved field values)
-- `GET /api/objects/{id}/memory` (agents only: remembered observations and actions, oldest first; 400 for non-agents)
+- `GET /api/objects/{id}/memory` (agents only: remembered observations and actions, oldest first, each with its salience and current age-adjusted retention score — the lowest score is evicted next; 400 for non-agents)
 - `POST /api/objects` `{id, parentId, name?, description?}`
 - `DELETE /api/objects/{id}` (recursive)
 - `POST /api/objects/{id}/move` `{"parentId": "..."}`

@@ -43,6 +43,7 @@ public static class BuiltinHandlers
         new ClearHandler(),
         new RelieveHandler(),
         new LeaveHandler(),
+        new DepartHandler(),
     ];
 
     /// <summary>A module's string field, or null when the module is absent or the field is empty.</summary>
@@ -1192,7 +1193,8 @@ public static class BuiltinHandlers
 
     // leaving for good: an `exit` module on a street-side object offers
     // the way out ("Go home") — the handler ends the game with the
-    // module's departure text.
+    // module's departure text. Player-only by data (an NPC picking it
+    // would end the player's game); NPCs get the depart verb instead.
     private sealed class LeaveHandler : IActionHandler
     {
         public string Id => "leave";
@@ -1202,6 +1204,29 @@ public static class BuiltinHandlers
             var target = ctx.Target ?? throw new InvalidOperationException("leave requires a target.");
             var text = Field(ctx, target, "exit", "text") ?? "You leave.";
             return ActionResult.Ok(text) with { EndsGame = true };
+        }
+    }
+
+    // an autonomous agent's way home: the NPC steps out of the scenario —
+    // destroyed, gone from the world — without ending anyone's game. The
+    // departure is observable (the exit module's `departText`, emitted
+    // here BEFORE the actor is destroyed, since affordance-level signals
+    // resolve the actor afterward).
+    private sealed class DepartHandler : IActionHandler
+    {
+        public string Id => "depart";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("depart requires a target.");
+            if (ctx.Agent.Children.Any(id =>
+                    ctx.World.HasObject(id) && ctx.World.GetObject(id).HasModule("agent")))
+                return ActionResult.Fail("You can't leave while carrying someone.");
+            var text = Field(ctx, target, "exit", "departText") ?? "{agent} leaves.";
+            ctx.Signals.Emit(ctx.Agent, target,
+                [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 10, Text = text }]);
+            ctx.World.DestroyObject(ctx.Agent.Id);
+            return ActionResult.Ok("You go home.");
         }
     }
 }

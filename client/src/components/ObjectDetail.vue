@@ -206,7 +206,10 @@ function createChild(): void {
       <div v-if="memory !== null" class="card">
         <h3>Memory</h3>
         <ol class="memory">
-          <li v-for="(entry, i) in memory" :key="i">{{ entry }}</li>
+          <li v-for="entry in memory" :key="entry.seq">
+            <span class="score" :title="`salience ${entry.salience}`">{{ entry.score }}</span>
+            {{ entry.text }}
+          </li>
         </ol>
         <p v-if="!memory.length" class="dim">No memories yet.</p>
       </div>

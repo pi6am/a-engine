@@ -371,7 +371,12 @@ public sealed class TurnManager
             : "";
 
     /// <summary>
-    /// Record the actor's own action outcome into their memory. Look is too
+    /// Record the actor's own action outcome into their memory at high
+    /// salience (your own deeds outlive overheard chatter). An
+    /// affordance-level `salience` overrides the boost — conversation
+    /// verbs declare a high one so your side of an exchange sticks. Idle
+    /// filler is the exception: waiting carries a small penalty instead,
+    /// so idle turns age out before even ambient chatter. Look is too
     /// verbose to store verbatim; look and examine are state snapshots —
     /// keyed so only the freshest of each subject survives.
     /// </summary>
@@ -383,7 +388,14 @@ public sealed class TurnManager
                 "look" => "look",
                 "examine" => $"examine:{action.TargetId}",
                 _ => null,
-            });
+            },
+            salience: action.Verb == "wait"
+                ? IdleSaliencePenalty
+                : LookupAffordance(action)?.Salience
+                  ?? _engine.Memory.SalienceBoostOf(agent));
+
+    /// <summary>Idle turns age out before ambient chatter (salience 0).</summary>
+    private const int IdleSaliencePenalty = -2;
 
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(

@@ -153,12 +153,23 @@ public sealed class DebugServer : IDisposable
         _routes.Add(new("GET", S("api", "objects", "{id}"), (_, v) => Locked(() =>
             Ok(ObjectDetail(_engine.World.GetObject(v["id"]))))));
 
-        // an agent's remembered observations and actions (oldest first)
+        // an agent's remembered observations and actions (oldest first),
+        // with salience and the current age-adjusted retention score
         _routes.Add(new("GET", S("api", "objects", "{id}", "memory"), (_, v) => Locked(() =>
         {
             var obj = _engine.World.GetObject(v["id"]);
             return obj.HasModule("agent")
-                ? Ok(new { agentId = obj.Id, entries = _engine.Memory.Recall(obj.Id) })
+                ? Ok(new
+                {
+                    agentId = obj.Id,
+                    entries = _engine.Memory.RecallDetailed(obj.Id).Select(e => new
+                    {
+                        seq = e.Seq,
+                        text = e.Text,
+                        salience = e.Salience,
+                        score = e.Score,
+                    }),
+                })
                 : new ApiResponse(400, new { error = $"Object '{obj.Id}' is not an agent." });
         })));
 

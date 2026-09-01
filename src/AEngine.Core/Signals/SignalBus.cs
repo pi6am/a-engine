@@ -148,7 +148,7 @@ public sealed class SignalBus
                             ? traversal.DepartureRoomId
                             : traversal.ArrivalRoomId,
                         traversal.ExitSide.Id,
-                        ThroughPortal: true);
+                        ThroughPortal: true, Salience: spec.Salience);
                 }
             }
             if (best is not null)
@@ -173,11 +173,13 @@ public sealed class SignalBus
     /// <summary>
     /// Deliver a private sensation to one agent (ambient module emissions —
     /// a curse burning, a charm tingling). No propagation, no observer
-    /// formatting: the text is authored for the perceiver.
+    /// formatting: the text is authored for the perceiver, and it lands in
+    /// memory at high salience (it's about them).
     /// </summary>
     public void SendTo(WorldObject observer, string text) =>
         Enqueue(observer, new Signal(
-            SignalSense.Visual, 0, text, _world.RoomOf(observer.Id).Id));
+            SignalSense.Visual, 0, text, _world.RoomOf(observer.Id).Id),
+            _memory.SalienceBoostOf(observer));
 
     private Signal? BestReceivable(
         WorldObject observer, string originRoomId, string? otherSideRoomId,
@@ -227,7 +229,7 @@ public sealed class SignalBus
                     text = text.TrimEnd('.') + Suffix(observerSide);
                 best = new Signal(
                     spec.Sense, spec.Priority, text, originRoomId, target?.Id,
-                    ThroughPortal: observerSide is not null);
+                    ThroughPortal: observerSide is not null, Salience: spec.Salience);
             }
         }
         return best;
@@ -294,14 +296,20 @@ public sealed class SignalBus
             _modules.ResolveBool(_world.GetObject(stateRef), "doorstate", "open");
     }
 
-    private void Enqueue(WorldObject observer, Signal signal)
+    private void Enqueue(WorldObject observer, Signal signal, int? salienceOverride = null)
     {
         if (!_queues.TryGetValue(observer.Id, out var queue))
             _queues[observer.Id] = queue = new Queue<Signal>();
         queue.Enqueue(signal);
         // observed signals are also remembered, so later plans/conversations
-        // keep continuity even after the pending queue is drained
-        _memory.Record(observer, signal.Text);
+        // keep continuity even after the pending queue is drained. Salience:
+        // being the action's target (addressed!) buys the agent's boost, on
+        // top of any per-spec override riding the signal
+        var salience = salienceOverride ??
+                       (signal.TargetId == observer.Id
+                           ? _memory.SalienceBoostOf(observer)
+                           : 0) + signal.Salience;
+        _memory.Record(observer, signal.Text, salience: salience);
     }
 
     private static string Format(

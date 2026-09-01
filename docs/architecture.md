@@ -112,11 +112,13 @@ still resolves (and noops at runtime). Results are three-valued
 (`ActionOutcome.Success | Noop | Failure`): redundant attempts whose end
 state already holds are **noops** (no turn consumed, no signals, not a
 failure — plan executors skip over them), wrong-state/missing-key attempts
-are failures (turn consumed). Affordances are gated three ways, all
-data-driven: **`requires`** (comma-separated condition kinds, ANY of which
-the actor must carry — any-of because condition kinds are often exclusive
-tiers like tipsy/drunk) and **`excludes`** (any listed kind suppresses the
-verb) hide the action from menus and policies in
+are failures (turn consumed). Affordances are gated four ways, all
+data-driven: **policy** (`playerOnly`/`npcOnly` — the game-ending "Go
+home" is the player's alone, NPCs get their own departure verb);
+**`requires`** (comma-separated condition kinds, ANY of which the actor
+must carry — any-of because condition kinds are often exclusive
+tiers like tipsy/drunk) and **`excludes`** (any listed kind suppresses
+the verb) hide the action from menus and policies in
 `ActionResolver.Applies`; **`when`** specs (`{module, field, equals |
 min | max, on: target|actor}`) hide it on observable state — "Drink the
 ale" vanishes once the vessel is `empty`, "Clear the mug" appears only
@@ -344,8 +346,11 @@ bartender's LLM traits make him furious when patrons pour their own. **Restrooms
 `toilet` module offers `use` (requires the bladder bands' condition
 kinds — any-of, so bursting still admits it) handled by `relieve`
 (resets the bladder; bands detach on the action's own upkeep), and an
-`exit` module offers `leave` (the street's "Go home"), which ends the
-game with the module's text.
+`exit` module offers the street's "Go home" in two audience-split
+forms: `leave` (playerOnly) ends the game with the module's text, while
+`depart` (npcOnly) removes the NPC from the world — destroyed, gone —
+announcing the exit module's `departText` to observers ("Thakra the orc
+steps onto the bus and leaves.") without ending anyone's game.
 
 ## Reactions (quick-time events)
 
@@ -410,14 +415,41 @@ signals.
 events: signals the agent observed (recorded by `SignalBus` at delivery)
 and the results of its own actions (recorded by `TurnManager.PerformAction`;
 `look` is stored compactly as "You look around."). Capacity is data-driven
-via the `agent` module's `memoryLength` field (default 25). Two anti-bloat
-rules keep the log informative under idling: consecutive duplicate entries
-collapse to one ("You wait." × 17 is one fact), and state snapshots — look
-and examine results — are recorded under a snapshot key that supersedes the
-previous snapshot of the same subject, so only the freshest rendering
-survives (an NPC who examines you three times remembers one block, not
-three). NPC LLM contexts render it as "Recent observations and actions
-(oldest first)" for continuity across plans and conversations.
+via the `agent` module's `memoryLength` field (default 25).
+
+Retention is **salience-ranked by aging**: an entry's score is its
+salience minus its age (in recorded events), and overflow evicts the
+lowest score (ties: oldest). Salience buys age-resistance, not immunity
+— an addressed-to-you message outlives ambient chatter by the agent's
+`memorySalienceBoost` events (default 8), but a stale high-salience
+entry still loses to fresh context, so the log never locks up and
+low-salience arrivals are never dropped on the floor: the newest entry
+is never the one evicted by its own arrival (the next arrival may take
+it back out). High salience comes from being the action's target
+(directed speech, an offer), private sensations (`SendTo`), the agent's
+own actions (idle waits excepted — they carry a small penalty and age
+out before even ambient chatter; an affordance-level `salience`
+overrides the boost for the actor's own entry), and per-signal data
+overrides (`salience` on a signal spec, in events, negatives allowed —
+a bomb blast +12, a jukebox −5). Conversations want extra stickiness
+on BOTH sides: the speaker via the affordance's `salience`, the
+addressee via the directed spec's salience stacking with the addressed
+boost — the tavern tunes both to 24 (a full buffer's worth), while
+bystanders' overheard chatter stays cheap.
+The LLM context renders the log chronologically; eviction only decides
+who leaves.
+
+Two anti-bloat rules keep the log informative under idling: consecutive
+duplicate entries collapse to one ("You wait." × 17 is one fact), and
+state snapshots — look and examine results — are recorded under a
+snapshot key that supersedes the previous snapshot of the same subject,
+so only the freshest rendering survives (an NPC who examines you three
+times remembers one block, not three). NPC LLM contexts render it as
+"Recent observations and actions (oldest first)" for continuity across
+plans and conversations. The debug memory panel (`GET
+/api/objects/{id}/memory`, see `docs/debug-api.md`) shows each entry's
+salience and current score — the number that decides who is evicted
+next.
 
 ## Runtime
 

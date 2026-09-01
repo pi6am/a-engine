@@ -26,7 +26,8 @@
             {
               "module": "exit",
               "overrides": {
-                "text": "You flag the night bus, slump into a seat that smells of rain and fryer oil, and ride home. Whatever happened in the Green Gullet, it's over now."
+                "text": "You flag the night bus, slump into a seat that smells of rain and fryer oil, and ride home. Whatever happened in the Green Gullet, it's over now.",
+                "departText": "{agent} steps onto the bus and leaves."
               }
             }
           ]

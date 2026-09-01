@@ -139,10 +139,7 @@ working in that area, and update them when the behavior changes:
   so quiet scenarios like `nail` are unaffected; the tavern opts in);
   `shout` (room-wide, crosses portals) and `whisper` (addressee only)
   join as siblings so attention can be demanded and eavesdropping stays
-  a deliberate act. Also salience-ranked memory: entries addressed to
-  the agent, private sensations, and own actions evict last, with a
-  per-spec data override for importance (a bomb blast high, a jukebox
-  low).
+  a deliberate act.
 - **Label article doubling** — `Perception.WithDefiniteArticle` prepends
   "the" to names that already embed one ("Nix the goblin" → "Examine the
   Nix the goblin" in menu labels). Fix by detecting an embedded article
