@@ -141,4 +141,142 @@ public class KnowledgeTests
         var rath = world.GetObject("rath");
         Assert.True(Knowledge.KnowsName(engine.ModuleRegistry, carol, rath));
     }
+
+    [Fact]
+    public void DescriptionsAreKnowledgeGated_IncognitoDescription()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var alice = world.GetObject("alice");
+        world.AddModule("alice", "knowledge");
+        var rath = world.GetObject("rath");
+        world.SetFieldOverride("rath", "agent", "incognitoDescription",
+            CoreWorld.ToJson("A robed figure crackling with static."));
+
+        // a stranger sees the incognito description — no names leak
+        Assert.Equal("A robed figure crackling with static.",
+            Knowledge.DescriptionFor(engine.ModuleRegistry, alice, rath));
+        // once known, the full description returns
+        Knowledge.LearnName(world, engine.ModuleRegistry, alice, "rath");
+        Assert.Equal(rath.Description,
+            Knowledge.DescriptionFor(engine.ModuleRegistry, alice, rath));
+        // unset incognitoDescription falls back to the real one for strangers
+        var bob = world.GetObject("bob");
+        Assert.Equal(bob.Description,
+            Knowledge.DescriptionFor(engine.ModuleRegistry, alice, bob));
+    }
+}
+
+/// <summary>
+/// Scenario wiring for name knowledge in scenarios/nail: the old dockhand,
+/// the herbalist, and the sorcerer all know each other; the cultist and
+/// the player (Nail — Nannan in her native tongue) know nobody; a look
+/// never teaches a name.
+/// </summary>
+public class NailKnowledgeTests
+{
+    private static GameEngine LoadNail()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, "scenarios", "nail");
+            if (File.Exists(Path.Combine(candidate, "world.json")))
+            {
+                var engine = GameEngine.CreateWithBuiltinHandlers();
+                AEngine.Core.Scenarios.ScenarioLoader.LoadInto(
+                    engine,
+                    Path.Combine(candidate, "modules.json"),
+                    Path.Combine(candidate, "world.json"));
+                return engine;
+            }
+            dir = dir.Parent;
+        }
+        throw new DirectoryNotFoundException("Could not locate scenarios/nail.");
+    }
+
+    private static bool PlayerKnows(GameEngine engine, string id) =>
+        Knowledge.KnowsName(engine.ModuleRegistry,
+            engine.World.GetObject("player"), engine.World.GetObject(id));
+
+    [Fact]
+    public void AcquaintanceMatrix_MatchesTheScenarioBrief()
+    {
+        var engine = LoadNail();
+        // Ferret, Mira, and Rath all know each other
+        foreach (var (a, b) in new[] { ("ferret", "mira"), ("ferret", "rath"),
+                                       ("mira", "rath"), ("mira", "ferret"),
+                                       ("rath", "ferret"), ("rath", "mira") })
+            Assert.True(Knowledge.KnowsName(engine.ModuleRegistry,
+                engine.World.GetObject(a), engine.World.GetObject(b)), $"{a} -> {b}");
+        // the cultist knows nobody; Nail knows nobody
+        foreach (var other in new[] { "ferret", "mira", "rath", "player" })
+            Assert.False(Knowledge.KnowsName(engine.ModuleRegistry,
+                engine.World.GetObject("krell"), engine.World.GetObject(other)), $"krell -> {other}");
+        foreach (var other in new[] { "ferret", "mira", "rath", "krell" })
+            Assert.False(PlayerKnows(engine, other), $"player -> {other}");
+    }
+
+    [Fact]
+    public void LookingAtStrangers_TeachesNoNames()
+    {
+        var engine = LoadNail();
+        var player = engine.World.GetObject("player");
+
+        // examining the dockhand renders his incognito description — the
+        // proper name "Ferret" appears nowhere
+        var examine = engine.TurnManager.Execute(player, "examine", "ferret");
+        Assert.Contains("leathery, sun-beaten dockhand", examine.Message);
+        Assert.DoesNotContain("Ferret", examine.Message);
+        Assert.False(PlayerKnows(engine, "ferret"));
+
+        // the player's own description still names her (self-knowledge)
+        var self = engine.TurnManager.Execute(player, "examine", "player");
+        Assert.Contains("Nail — Nannan in her native tongue", self.Message);
+    }
+
+    [Fact]
+    public void BothOfNailsNames_AreProperNames_ForOthersToLearn()
+    {
+        var engine = LoadNail();
+        var world = engine.World;
+        var ferret = world.GetObject("ferret");
+        var player = world.GetObject("player");
+
+        // ferret hears "Nannan" in the player's speech and learns HER
+        var action = AEngine.Llm.PlanExecutor.MatchAvailableOrPotential(
+            engine, player, "Say: \"Nannan is tired.\"");
+        engine.TurnManager.PerformAction(player, action!, action.Text);
+        Assert.True(Knowledge.KnowsName(engine.ModuleRegistry, ferret, player));
+
+        // and can now render her by her real name (which carries it)
+        Assert.Equal("Nail the pink kobold",
+            Knowledge.NameFor(engine.ModuleRegistry, ferret, player));
+    }
+
+    [Fact]
+    public void SelfIntroduction_VisiblyTeachesTheName()
+    {
+        var engine = LoadNail();
+        var world = engine.World;
+        var player = world.GetObject("player");
+        var ferret = world.GetObject("ferret");
+
+        // "Name's Ferret." — the introduction rides the speech signal
+        var action = AEngine.Llm.PlanExecutor.MatchAvailableOrPotential(
+            engine, ferret, "Say: \"New in port, are ye? Name's Ferret.\"");
+        engine.TurnManager.PerformAction(ferret, action!, action.Text);
+
+        // the player learned it, and every rendering flips to the real
+        // name — the room listing, and his next line
+        Assert.True(Knowledge.KnowsName(engine.ModuleRegistry, player, ferret));
+        Assert.Equal("Ferret the old dockhand",
+            Knowledge.NameFor(engine.ModuleRegistry, player, ferret));
+
+        var again = AEngine.Llm.PlanExecutor.MatchAvailableOrPotential(
+            engine, ferret, "Say: \"Ye look like ye've come a long way, little one.\"");
+        engine.TurnManager.PerformAction(ferret, again!, again.Text);
+        Assert.Contains(engine.SignalBus.Drain("player"),
+            s => s.Text.Contains("Ferret the old dockhand says:"));
+    }
 }

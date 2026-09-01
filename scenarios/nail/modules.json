@@ -176,7 +176,11 @@
         { "name": "goals", "type": "string", "default": "" },
         { "name": "traits", "type": "string", "default": "" },
         { "name": "memoryLength", "type": "int", "default": 25 },
-        { "name": "posture", "type": "string", "default": "standing" }
+        { "name": "posture", "type": "string", "default": "standing" },
+        { "name": "voice", "type": "string", "default": "" },
+        { "name": "properNames", "type": "list", "default": [] },
+        { "name": "incognito", "type": "string", "default": "" },
+        { "name": "incognitoDescription", "type": "string", "default": "" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },
@@ -267,6 +271,14 @@
       "fields": [
         { "name": "open", "type": "bool", "default": false },
         { "name": "locked", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "knowledge",
+      "name": "Knowledge",
+      "fields": [
+        { "name": "knowsNames", "type": "list", "default": [] }
       ],
       "affordances": []
     },

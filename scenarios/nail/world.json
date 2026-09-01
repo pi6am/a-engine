@@ -16,14 +16,18 @@
       "children": [
         {
           "id": "player",
-          "name": "the pink kobold",
+          "name": "Nail the pink kobold",
           "description": "Nail — Nannan in her native tongue — a three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand, Hilezmaras' dragon-mark, coils around her left arm, suppressed but not broken.",
           "modules": [
-            { "module": "agent", "overrides": { "policy": "player",
+            { "module": "agent", "overrides": {
+              "properNames": ["Nail", "Nannan"],
+              "incognito": "the pink kobold",
+              "incognitoDescription": "A three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand coils around her left arm, suppressed but not broken.", "policy": "player",
               "memoryLength": 50,
               "character": "Nail — Nannan in your native tongue — a three-foot kobold refugee of the Xabrakkar warren, pink-scaled and purple-eyed. Hilezmaras' cult branded you with his dragon-mark; the red dragon Rhindicar, your tribe's patron, suppresses its compulsion through the talon he gifted you.",
               "goals": "Rid yourself of Hilezmaras' dragon-mark before it grows strong enough to overwhelm Rhindicar's suppression. Rhindicar urged you to find his former master, the sorcerer Rath Cinderstorm — your only hope. You arrived in Fanne'Tar knowing no one; find Rath and persuade him to help you." } },
             "can_speak",
+            "knowledge",
             "shoveable",
             "body",
             { "module": "combatant", "overrides": { "attackStat": "agility", "attackSkill": "brawling" } },
@@ -121,18 +125,22 @@
         },
         {
           "id": "ferret",
-          "name": "the old dockhand",
+          "name": "Ferret the old dockhand",
           "description": "Old Ferret, a leathery, sun-beaten dockhand who knows every rumor on the wharf.",
           "modules": [
             {
               "module": "agent",
               "overrides": {
+              "properNames": ["Ferret"],
+              "incognito": "the old dockhand",
+              "incognitoDescription": "A leathery, sun-beaten dockhand who seems to know every rumor on the wharf.",
                 "policy": "auto",
                 "character": "Old Ferret, a leathery, sun-beaten dockhand who knows every rumor on the wharf.",
                 "goals": "Unload boats and gossip with newcomers. Tell anyone who asks: the sorcerer Rath Cinderstorm keeps to the tower north of the market square, and the herbalist Mira trades in rare reagents at her stall."
               }
             },
             "can_speak",
+            { "module": "knowledge", "overrides": { "knowsNames": ["mira", "rath"] } },
             "huggable",
             { "module": "stats", "overrides": { "values": { "strength": 9, "agility": 10, "perception": 11 } } }
           ]
@@ -215,12 +223,15 @@
       "children": [
         {
           "id": "mira",
-          "name": "the herbalist",
-          "description": "Mira, a round, cheerful herbalist with ink-stained fingers and an eye for rare reagents.",
+          "name": "Mira the herbalist",
+          "description": "Mira, a round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
           "modules": [
             {
               "module": "agent",
               "overrides": {
+              "properNames": ["Mira"],
+              "incognito": "the herbalist",
+              "incognitoDescription": "A round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
                 "policy": "auto",
                 "character": "Mira, a round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
                 "goals": "Sell your remedies. Stay at your stall — you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action — a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done — you have the bloom you wanted and nothing left to sell, so never barter to get it back and stop asking customers for moonpetals.",
@@ -228,6 +239,7 @@
               }
             },
             "can_speak",
+            { "module": "knowledge", "overrides": { "knowsNames": ["ferret", "rath"] } },
             "huggable",
             { "module": "stats", "overrides": { "values": { "strength": 6, "agility": 9, "perception": 12 } } }
           ],
@@ -292,18 +304,22 @@
       "children": [
         {
           "id": "krell",
-          "name": "the cultist sentry",
-          "description": "Krell, a dragonborn zealot of Hilezmaras, scales the color of old blood, watching the reliquary with fanatical patience.",
+          "name": "Krell the cultist sentry",
+          "description": "Krell, a dragonborn zealot of Hilezmaras, scales the color of old blood, fanatically loyal to the mad tyrant.",
           "modules": [
             {
               "module": "agent",
               "overrides": {
+              "properNames": ["Krell"],
+              "incognito": "the cultist sentry",
+              "incognitoDescription": "A dragonborn zealot of Hilezmaras, scales the color of old blood, fanatically loyal to the mad tyrant.",
                 "policy": "auto",
                 "character": "Krell, a dragonborn zealot of Hilezmaras, scales the color of old blood, fanatically loyal to the mad tyrant.",
                 "goals": "Guard the iron reliquary and its focus crystal. Let no one take from it. Attack intruders who steal from you or the reliquary."
               }
             },
             "can_speak",
+            "knowledge",
             "shoveable",
             "body",
             "combatant",
@@ -447,12 +463,15 @@
       "children": [
         {
           "id": "rath",
-          "name": "the sorcerer",
+          "name": "Rath Cinderstorm the sorcerer",
           "description": "Rath Cinderstorm, a stooped, ash-haired sorcerer; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar.",
           "modules": [
             {
               "module": "agent",
               "overrides": {
+              "properNames": ["Rath", "Cinderstorm"],
+              "incognito": "the sorcerer",
+              "incognitoDescription": "A stooped, ash-haired sorcerer; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar.",
                 "policy": "auto",
                 "memoryLength": 50,
                 "character": "Rath Cinderstorm, a stooped, ash-haired sorcerer in self-imposed exile; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar, and he misses him.",
@@ -461,6 +480,7 @@
               }
             },
             "can_speak",
+            { "module": "knowledge", "overrides": { "knowsNames": ["ferret", "mira"] } },
             "shoveable",
             "attackable",
             "huggable",

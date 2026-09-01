@@ -586,8 +586,11 @@ public static class BuiltinHandlers
             // incognito description until the examiner has learned them
             var name = Knowledge.NameFor(ctx.Modules, ctx.Agent, target);
             sb.AppendLine(name);
-            if (target.Description.Length > 0)
-                sb.AppendLine(target.Description);
+            // descriptions can introduce their subject by name — strangers
+            // get the incognito description, so a look teaches no names
+            var description = Knowledge.DescriptionFor(ctx.Modules, ctx.Agent, target);
+            if (description.Length > 0)
+                sb.AppendLine(description);
 
             if (target.HasModule("agent"))
             {

@@ -33,7 +33,8 @@
         { "name": "posture", "type": "string", "default": "standing" },
         { "name": "voice", "type": "string", "default": "" },
         { "name": "properNames", "type": "list", "default": [] },
-        { "name": "incognito", "type": "string", "default": "" }
+        { "name": "incognito", "type": "string", "default": "" },
+        { "name": "incognitoDescription", "type": "string", "default": "" }
       ],
       "affordances": [
         { "verb": "look", "handler": "look", "repeatBackoff": true },

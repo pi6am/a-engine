@@ -184,7 +184,13 @@ everywhere — signals' `{agent}`/`{target}`, room and occupant listings,
 examine, action labels ("Say to …", "Give … to …"), and handler
 messages: a stranger prints as their `incognito` description ("a short
 green-skinned goblin woman") until their name is learned, then their
-real name. `properNames` are never printed — they exist for parsing
+real name — author the real name to carry the proper name ("Ferret the
+old dockhand", incognito "the old dockhand") so learning is visible in
+every rendering; and EXAMINING a stranger prints their
+`incognitoDescription` instead of the full one, since descriptions
+often introduce their subject by name ("Rath Cinderstorm, a stooped
+sorcerer…") and a look shouldn't teach a name. `properNames` are never
+printed — they exist for parsing
 ("Say to Nix:" resolves to her whether or not the speaker could pick
 her out of a lineup) and for learning.
 

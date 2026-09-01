@@ -103,4 +103,18 @@ public static class Knowledge
                 ? incognito
                 : obj.Name
             : obj.Name;
+
+    /// <summary>
+    /// The description the observer should see: the agent's
+    /// `incognitoDescription` while their name is unknown (descriptions
+    /// often introduce their subject by name — "Rath Cinderstorm, a
+    /// stooped sorcerer…" — and a look shouldn't teach a name), else the
+    /// full description. Non-agents and unset fields fall back to the
+    /// real description.
+    /// </summary>
+    public static string DescriptionFor(ModuleRegistry modules, WorldObject observer, WorldObject obj) =>
+        obj.HasModule("agent") && !KnowsName(modules, observer, obj) &&
+        modules.ResolveString(obj, "agent", "incognitoDescription") is { Length: > 0 } incognito
+            ? incognito
+            : obj.Description;
 }

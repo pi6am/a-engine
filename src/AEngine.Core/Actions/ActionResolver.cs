@@ -421,10 +421,11 @@ public sealed class ActionResolver
 
     private string LabelFor(Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
     {
-        // a data-driven label override wins; {target} names the target
-        // verbatim — the author owns the phrasing, articles included
+        // a data-driven label override wins; {target} names the target as
+        // the acting agent can print it — the author owns the phrasing,
+        // articles included
         if (affordance.Label is { } custom)
-            return custom.Replace("{target}", target.Name, StringComparison.Ordinal);
+            return custom.Replace("{target}", NameFor(agent, target), StringComparison.Ordinal);
         return affordance.Verb switch
         {
         "look" => "Look around",
