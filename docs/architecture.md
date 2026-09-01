@@ -192,7 +192,22 @@ often introduce their subject by name ("Rath Cinderstorm, a stooped
 sorcerer…") and a look shouldn't teach a name. `properNames` are never
 printed — they exist for parsing
 ("Say to Nix:" resolves to her whether or not the speaker could pick
-her out of a lineup) and for learning.
+her out of a lineup) and for learning. The knowledge module also tracks
+**notable items** (items tagged with a `notable` module): a `lastSeen`
+map records, per item, the container-or-agent last seen holding it and
+the room it was seen in — either side independently unset. Three update
+rules fire whenever knowledge is consulted for the LLM context (names,
+NPC planning, and /auto all build through `AgentContextBuilder`):
+notable items in view are (re)recorded; a remembered holder observed
+WITHOUT the item loses the holder fact; a remembered room observed
+without the item loses the room fact. So watching Mira's stall after
+she left keeps "held by Mira" but drops the where, and a moonpetal
+picked up by someone else degrades to "somewhere". The context renders
+"Important items: pouch of ember salt (held by Mira the herbalist in
+Herbalist's Stall), focus crystal (in the reliquary in the Smugglers'
+Cellar)" — holder names observer-relative, and anything directly
+observed (own inventory included) is never repeated, since the
+location report already covers it. Destroyed items are forgotten.
 
 ## Signals
 

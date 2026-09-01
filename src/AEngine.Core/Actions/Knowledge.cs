@@ -1,5 +1,7 @@
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using AEngine.Core.Modules;
+using AEngine.Core.Runtime;
 using AEngine.Core.World;
 
 namespace AEngine.Core.Actions;
@@ -117,4 +119,168 @@ public static class Knowledge
         modules.ResolveString(obj, "agent", "incognitoDescription") is { Length: > 0 } incognito
             ? incognito
             : obj.Description;
+
+    // --- notable items: last-seen memory ---
+
+    /// <summary>
+    /// Where an observer last saw a notable item: the container or agent
+    /// holding it (null = loose) and the room (null = unknown). Either
+    /// side can be unset independently — "held by Mira, somewhere",
+    /// "somewhere in the alley" — and a bare entry means seen, whereabouts
+    /// forgotten.
+    /// </summary>
+    public sealed record Sighting(string? Holder, string? Room);
+
+    /// <summary>The observer's last-seen map for notable items (a read-only snapshot).</summary>
+    public static IReadOnlyDictionary<string, Sighting> LastSeen(ModuleRegistry modules, WorldObject observer)
+    {
+        var result = new Dictionary<string, Sighting>(StringComparer.Ordinal);
+        if (!Tracks(observer) ||
+            modules.ResolveField(observer, "knowledge", "lastSeen") is not { ValueKind: JsonValueKind.Object } e)
+            return result;
+        foreach (var prop in e.EnumerateObject())
+        {
+            if (prop.Value.ValueKind != JsonValueKind.Object)
+                continue;
+            string? holder = null, room = null;
+            if (prop.Value.TryGetProperty("holder", out var h) && h.ValueKind == JsonValueKind.String)
+                holder = h.GetString();
+            if (prop.Value.TryGetProperty("room", out var r) && r.ValueKind == JsonValueKind.String)
+                room = r.GetString();
+            result[prop.Name] = new Sighting(holder, room);
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Refresh the observer's last-seen knowledge from their current view
+    /// and render it for the LLM context ("Important items: pouch of ember
+    /// salt (held by Mira the herbalist in Herbalist's Stall)"). Items
+    /// directly observed now (including anything in the observer's own
+    /// hands) are not repeated — the context's location report already
+    /// says where they are. Three update rules fire on each observation:
+    /// notable items in view are recorded (holder + room); a remembered
+    /// holder seen WITHOUT the item loses the holder fact; a remembered
+    /// room observed without the item loses the room fact — so watching
+    /// Mira's stall after she left keeps "held by Mira" but drops the
+    /// where. Destroyed items (a consumed reagent) are forgotten.
+    /// </summary>
+    public static IReadOnlyList<string> ItemReport(GameEngine engine, WorldObject observer)
+    {
+        if (!Tracks(observer))
+            return [];
+        var world = engine.World;
+        var modules = engine.ModuleRegistry;
+        var room = world.RoomOf(observer.Id);
+        var visible = VisibleFrom(world, modules, room).Select(o => o.Id).ToHashSet(StringComparer.Ordinal);
+        var seen = new Dictionary<string, Sighting>(LastSeen(modules, observer));
+        var changed = false;
+
+        // record sightings of notable items currently in view
+        foreach (var item in world.Objects.Values.Where(o => o.HasModule("notable") && visible.Contains(o.Id)))
+        {
+            seen[item.Id] = new Sighting(
+                Holder: item.Parent != room.Id && world.HasObject(item.Parent) ? item.Parent : null,
+                Room: room.Id);
+            changed = true;
+        }
+        // destroyed items are gone — forget them entirely
+        foreach (var id in seen.Keys.Where(id => !world.HasObject(id)).ToList())
+        {
+            seen.Remove(id);
+            changed = true;
+        }
+        // the holder is in view but no longer holds the item: unset holder
+        foreach (var id in seen.Keys.ToList())
+        {
+            var s = seen[id];
+            if (s.Holder is not null && world.HasObject(s.Holder) && visible.Contains(s.Holder) &&
+                !world.GetObject(s.Holder).Children.Contains(id))
+            {
+                seen[id] = s with { Holder = null };
+                changed = true;
+            }
+        }
+        // the remembered room is here but the item isn't visible: unset room
+        foreach (var id in seen.Keys.ToList())
+        {
+            var s = seen[id];
+            if (s.Room == room.Id && !visible.Contains(id))
+            {
+                seen[id] = s with { Room = null };
+                changed = true;
+            }
+        }
+
+        if (changed)
+            WriteLastSeen(world, observer, seen);
+
+        var report = new List<string>();
+        foreach (var (id, sighting) in seen)
+        {
+            if (visible.Contains(id) || !world.HasObject(id))
+                continue;
+            report.Add(DescribeSighting(engine, observer, world.GetObject(id), sighting));
+        }
+        return report;
+    }
+
+    private static string DescribeSighting(GameEngine engine, WorldObject observer, WorldObject item, Sighting sighting)
+    {
+        var world = engine.World;
+        string where;
+        if (sighting.Holder is not null && world.HasObject(sighting.Holder))
+        {
+            var holder = world.GetObject(sighting.Holder);
+            var held = holder.HasModule("agent")
+                ? $"held by {NameFor(engine.ModuleRegistry, observer, holder)}"
+                : $"in {Perception.WithDefiniteArticle(holder.Name)}";
+            where = sighting.Room is not null && world.HasObject(sighting.Room)
+                ? $"{held} in {world.GetObject(sighting.Room).Name}"
+                : held;
+        }
+        else if (sighting.Room is not null && world.HasObject(sighting.Room))
+            where = $"in {world.GetObject(sighting.Room).Name}";
+        else
+            where = "somewhere";
+        return $"{item.Name} ({where})";
+    }
+
+    /// <summary>
+    /// Everything an observer in this room can see, recursively: room
+    /// contents, open containers' and surfaces' contents, agents' carried
+    /// and worn items, furniture occupants. Closed containers, portal
+    /// machinery, body parts, and conditions stay invisible.
+    /// </summary>
+    private static IEnumerable<WorldObject> VisibleFrom(World.World world, ModuleRegistry modules, WorldObject obj)
+    {
+        foreach (var child in world.ChildrenOf(obj.Id))
+        {
+            if (child.HasModule("portal") || Conditions.IsInternal(child))
+                continue;
+            yield return child;
+            var reveals =
+                child.HasModule("surface") ||
+                child.HasModule("container") && Perception.IsOpen(world, modules, child) ||
+                child.HasModule("agent") ||
+                child.HasModule("sittable") || child.HasModule("lyable");
+            if (reveals)
+                foreach (var inner in VisibleFrom(world, modules, child))
+                    yield return inner;
+        }
+    }
+
+    private static void WriteLastSeen(World.World world, WorldObject observer, Dictionary<string, Sighting> seen)
+    {
+        var dict = seen.ToDictionary(kv => kv.Key, kv =>
+        {
+            var entry = new Dictionary<string, string>();
+            if (kv.Value.Holder is not null)
+                entry["holder"] = kv.Value.Holder;
+            if (kv.Value.Room is not null)
+                entry["room"] = kv.Value.Room;
+            return (object)entry;
+        });
+        world.SetFieldOverride(observer.Id, "knowledge", "lastSeen", World.World.ToJson(dict));
+    }
 }

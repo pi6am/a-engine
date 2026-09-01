@@ -278,8 +278,15 @@
       "id": "knowledge",
       "name": "Knowledge",
       "fields": [
-        { "name": "knowsNames", "type": "list", "default": [] }
+        { "name": "knowsNames", "type": "list", "default": [] },
+        { "name": "lastSeen", "type": "map", "default": {} }
       ],
+      "affordances": []
+    },
+    {
+      "id": "notable",
+      "name": "Notable",
+      "fields": [],
       "affordances": []
     },
     {

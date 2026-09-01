@@ -62,6 +62,12 @@ public sealed class AgentContextBuilder
             sb.AppendLine(items.Count == 0
                 ? "You are carrying nothing."
                 : "You are carrying: " + string.Join(", ", items.Select(i => i.Name)));
+            // remembered whereabouts of notable items not currently in
+            // view (ItemReport refreshes the knowledge first — the same
+            // sweep decides what not to repeat)
+            var important = Knowledge.ItemReport(_engine, agent);
+            if (important.Count > 0)
+                sb.AppendLine("Important items: " + string.Join(", ", important));
             foreach (var line in Condition.SelfLines(_engine.World, _engine.ModuleRegistry, agent))
                 sb.AppendLine(line);
 

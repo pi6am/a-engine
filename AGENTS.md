@@ -85,7 +85,11 @@ working in that area, and update them when the behavior changes:
   agents whose names they've learned (pre-populated `knowsNames`, plus
   overheard `properNames` in delivered signals); strangers render by
   their `incognito` description observer-relatively (signals, listings,
-  labels, examine). No module = knows everything (back-compat).
+  labels, examine), and examining a stranger shows their
+  `incognitoDescription`. The module also tracks `notable` items (a
+  `lastSeen` map of holder + room, with unset-on-refuted rules) rendered
+  into LLM contexts as "Important items: …". No module = knows everything
+  (back-compat).
 - **Consumables & metabolism** — drinks/food as data (`beverage`/`food`
   modules, `consume`/`clear` handlers), prefab spawning from templates
   (`spawner` module, single-slot anti-flood), and a world-clock upkeep pass

@@ -250,6 +250,7 @@
               "name": "pouch of ember salt",
               "description": "A waxed pouch of brick-red salt, warm to the touch. A ritual reagent.",
               "modules": [
+                "notable",
                 "portable",
                 { "module": "ware", "overrides": { "wants": "moonpetal", "trader": "mira", "refusal": "Ah-ah! That salt's worth a moonpetal bloom, dear. Bring me the bloom and we'll talk." } }
               ]
@@ -276,7 +277,7 @@
           "id": "moonpetal",
           "name": "moonpetal bloom",
           "description": "A pale bloom that opens only at dusk — prized by herbalists.",
-          "modules": ["portable"]
+          "modules": ["notable", "portable"]
         },
         {
           "id": "passage_alley_side",
@@ -416,7 +417,7 @@
               "id": "focus_crystal",
               "name": "focus crystal",
               "description": "A fist-sized crystal that hums when held. A ritual focus.",
-              "modules": ["portable"]
+              "modules": ["notable", "portable"]
             }
           ]
         },

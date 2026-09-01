@@ -246,7 +246,8 @@ public class NailKnowledgeTests
         // ferret hears "Nannan" in the player's speech and learns HER
         var action = AEngine.Llm.PlanExecutor.MatchAvailableOrPotential(
             engine, player, "Say: \"Nannan is tired.\"");
-        engine.TurnManager.PerformAction(player, action!, action.Text);
+        Assert.NotNull(action);
+        engine.TurnManager.PerformAction(player, action, action.Text);
         Assert.True(Knowledge.KnowsName(engine.ModuleRegistry, ferret, player));
 
         // and can now render her by her real name (which carries it)
@@ -265,7 +266,8 @@ public class NailKnowledgeTests
         // "Name's Ferret." — the introduction rides the speech signal
         var action = AEngine.Llm.PlanExecutor.MatchAvailableOrPotential(
             engine, ferret, "Say: \"New in port, are ye? Name's Ferret.\"");
-        engine.TurnManager.PerformAction(ferret, action!, action.Text);
+        Assert.NotNull(action);
+        engine.TurnManager.PerformAction(ferret, action, action.Text);
 
         // the player learned it, and every rendering flips to the real
         // name — the room listing, and his next line
@@ -275,7 +277,8 @@ public class NailKnowledgeTests
 
         var again = AEngine.Llm.PlanExecutor.MatchAvailableOrPotential(
             engine, ferret, "Say: \"Ye look like ye've come a long way, little one.\"");
-        engine.TurnManager.PerformAction(ferret, again!, again.Text);
+        Assert.NotNull(again);
+        engine.TurnManager.PerformAction(ferret, again, again.Text);
         Assert.Contains(engine.SignalBus.Drain("player"),
             s => s.Text.Contains("Ferret the old dockhand says:"));
     }
