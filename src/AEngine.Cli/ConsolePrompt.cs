@@ -213,6 +213,21 @@ public sealed class ConsolePrompt
                     }
                     else if (key.Key == ConsoleKey.Enter)
                     {
+                        // with the completion popup open, Enter accepts the
+                        // highlighted item (the arrows select), like Tab —
+                        // otherwise a bare "/" submits as an empty command
+                        var matches = CurrentMatches();
+                        if (matches.Count > 0)
+                        {
+                            _buffer.Clear();
+                            _buffer.Append(matches[_selected].Name);
+                            _cursor = _buffer.Length;
+                            // show the accepted command on screen as if it
+                            // had been typed — the buffer update alone
+                            // leaves the partial input ("/") visible
+                            Console.Write("\r" + _prompt + _buffer);
+                            Console.Write("\x1b[K"); // clear any leftovers
+                        }
                         // the status line (if any) detaches into the log —
                         // the caller re-sets it if the reaction is still open
                         if (_status is not null)

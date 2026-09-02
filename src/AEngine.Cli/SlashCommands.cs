@@ -39,11 +39,17 @@ public sealed class SlashCommandRegistry
 
     /// <summary>
     /// Dispatch a slash command. Returns true to exit the REPL, false to
-    /// continue. Unknown commands print a hint and return false.
+    /// continue. Unknown commands (and a bare "/") print a hint and
+    /// return false.
     /// </summary>
     public bool Dispatch(string input)
     {
         var parts = input[1..].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 0)
+        {
+            Console.WriteLine("Type /help for commands.");
+            return false;
+        }
         var name = parts[0];
         var args = parts[1..];
         foreach (var entry in _entries)

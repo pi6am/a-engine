@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\AEngine.Cli\AEngine.Cli.csproj" />
     <ProjectReference Include="..\..\src\AEngine.Core\AEngine.Core.csproj" />
     <ProjectReference Include="..\..\src\AEngine.DebugServer\AEngine.DebugServer.csproj" />
     <ProjectReference Include="..\..\src\AEngine.Llm\AEngine.Llm.csproj" />
