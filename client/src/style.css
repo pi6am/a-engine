@@ -333,3 +333,12 @@ table.simple td {
   text-align: center;
   color: var(--text-dim);
 }
+
+/* knowledge panel section labels */
+.card h4 {
+  margin: 10px 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}

@@ -16,6 +16,97 @@ import {
 const detail = computed(() => store.selected)
 const memory = computed(() => store.memory)
 
+// --- knowledge panel --------------------------------------------------
+
+/** resolved knowledge-module fields, when the object tracks knowledge at all */
+const knowledgeFields = computed<Record<string, unknown> | null>(() => {
+  const m = detail.value?.modules.find((m) => m.moduleId === 'knowledge')
+  return (m?.fields as Record<string, unknown> | null) ?? null
+})
+
+const knownNames = computed<string[]>(() => {
+  const v = knowledgeFields.value?.knowsNames
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+})
+
+const lastSeenEntries = computed<Record<string, { holder?: string; room?: string }>>(() => {
+  const v = knowledgeFields.value?.lastSeen
+  if (v === null || typeof v !== 'object' || Array.isArray(v)) return {}
+  const out: Record<string, { holder?: string; room?: string }> = {}
+  for (const [item, entry] of Object.entries(v as Record<string, unknown>)) {
+    if (entry === null || typeof entry !== 'object') continue
+    const holder = (entry as Record<string, unknown>).holder
+    const room = (entry as Record<string, unknown>).room
+    out[item] = {
+      holder: typeof holder === 'string' ? holder : undefined,
+      room: typeof room === 'string' ? room : undefined,
+    }
+  }
+  return out
+})
+
+function objectName(id: string): string {
+  return store.objects.find((o) => o.id === id)?.name ?? '(unknown object)'
+}
+
+/** agents whose names this object could still learn */
+const learnableAgents = computed(() =>
+  store.objects.filter(
+    (o) => o.id !== detail.value?.id && o.modules.includes('agent') && !knownNames.value.includes(o.id),
+  ),
+)
+
+const notableItems = computed(() => store.objects.filter((o) => o.modules.includes('notable')))
+const trackedItems = computed(() => Object.keys(lastSeenEntries.value))
+const holderOptions = computed(() => store.objects)
+const roomOptions = computed(() => store.objects.filter((o) => o.modules.includes('room')))
+
+const newNameId = ref('')
+
+function learnName(): void {
+  if (!detail.value || !newNameId.value) return
+  const next = [...knownNames.value, newNameId.value]
+  void setFieldOverride(detail.value.id, 'knowledge', 'knowsNames', next).then((ok) => {
+    if (ok) newNameId.value = ''
+  })
+}
+
+function forgetName(id: string): void {
+  if (!detail.value) return
+  void setFieldOverride(detail.value.id, 'knowledge', 'knowsNames', knownNames.value.filter((n) => n !== id))
+}
+
+/** rewrite the lastSeen map, dropping empty holder/room values */
+function saveSightings(entries: Record<string, { holder?: string; room?: string }>): void {
+  if (!detail.value) return
+  const clean: Record<string, { holder?: string; room?: string }> = {}
+  for (const [item, entry] of Object.entries(entries)) {
+    clean[item] = {
+      holder: entry.holder || undefined,
+      room: entry.room || undefined,
+    }
+  }
+  void setFieldOverride(detail.value.id, 'knowledge', 'lastSeen', clean)
+}
+
+function forgetItem(itemId: string): void {
+  const next = { ...lastSeenEntries.value }
+  delete next[itemId]
+  saveSightings(next)
+}
+
+function updateSighting(itemId: string, patch: { holder?: string; room?: string }): void {
+  saveSightings({ ...lastSeenEntries.value, [itemId]: { ...lastSeenEntries.value[itemId], ...patch } })
+}
+
+const newItemId = ref('')
+
+function trackItem(): void {
+  if (!newItemId.value) return
+  updateSighting(newItemId.value, {})
+  newItemId.value = ''
+}
+
 // attribute add/edit inputs, keyed by attribute name (function refs in v-for)
 const attrInputs = reactive<Record<string, HTMLInputElement | null>>({})
 const newAttrName = ref('')
@@ -212,6 +303,72 @@ function createChild(): void {
           </li>
         </ol>
         <p v-if="!memory.length" class="dim">No memories yet.</p>
+      </div>
+
+      <div v-if="knowledgeFields" class="card">
+        <h3>Knowledge</h3>
+
+        <h4>Known names</h4>
+        <div v-for="id in knownNames" :key="id" class="row">
+          <span class="mono">{{ id }}</span>
+          <span class="grow">{{ objectName(id) }}</span>
+          <button class="danger" @click="forgetName(id)">×</button>
+        </div>
+        <p v-if="!knownNames.length" class="dim">Knows nobody by name.</p>
+        <div class="row">
+          <select v-model="newNameId" class="grow">
+            <option value="" disabled>learn a name…</option>
+            <option v-for="a in learnableAgents" :key="a.id" :value="a.id">
+              {{ a.id }} ({{ a.name }})
+            </option>
+          </select>
+          <button :disabled="!newNameId" @click="learnName">learn</button>
+        </div>
+
+        <h4>Notable items</h4>
+        <div v-for="(entry, itemId) in lastSeenEntries" :key="itemId" class="card">
+          <div class="row">
+            <strong>{{ objectName(itemId) }}</strong>
+            <span class="grow" />
+            <button class="danger" @click="forgetItem(itemId)">forget</button>
+          </div>
+          <div class="row">
+            <span class="dim">holder</span>
+            <select
+              class="grow"
+              :value="entry.holder ?? ''"
+              @change="updateSighting(itemId, { holder: ($event.target as HTMLSelectElement).value })"
+            >
+              <option value="">— unknown —</option>
+              <option v-for="o in holderOptions" :key="o.id" :value="o.id">{{ o.name }} ({{ o.id }})</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="dim">room</span>
+            <select
+              class="grow"
+              :value="entry.room ?? ''"
+              @change="updateSighting(itemId, { room: ($event.target as HTMLSelectElement).value })"
+            >
+              <option value="">— unknown —</option>
+              <option v-for="o in roomOptions" :key="o.id" :value="o.id">{{ o.name }} ({{ o.id }})</option>
+            </select>
+          </div>
+        </div>
+        <p v-if="!trackedItems.length" class="dim">No notable items tracked.</p>
+        <div class="row">
+          <select v-model="newItemId" class="grow">
+            <option value="" disabled>track a notable item…</option>
+            <option
+              v-for="o in notableItems.filter((n) => !trackedItems.includes(n.id))"
+              :key="o.id"
+              :value="o.id"
+            >
+              {{ o.name }} ({{ o.id }})
+            </option>
+          </select>
+          <button :disabled="!newItemId" @click="trackItem">track</button>
+        </div>
       </div>
 
       <div class="card">

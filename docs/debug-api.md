@@ -44,7 +44,11 @@ running with `--debug-api`; the API base URL is editable in the header
 (default `http://127.0.0.1:5050`, persisted to localStorage). Views: world
 tree, object editor (attributes, modules + field overrides,
 move/delete/create child — plus a memory panel when the selected object is
-an agent, via `GET /api/objects/{id}/memory`), engine panel, actions panel
+an agent, via `GET /api/objects/{id}/memory`, and a knowledge panel when
+it carries a `knowledge` module: known names and tracked notable items
+with their last-seen holder/room, rendered from the module's fields and
+editable in place — the panel writes through the ordinary field-override
+endpoint), engine panel, actions panel
 (execute via `POST /api/actions/execute`). Manual refresh + optional ~2s
 auto-poll; no server push.
 
