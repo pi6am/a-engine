@@ -23,6 +23,9 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
+    # creating the release (and uploading assets to it) needs write access
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -78,8 +81,17 @@ jobs:
           name: a-engine-${{ matrix.rid }}
           path: a-engine-${{ matrix.rid }}.${{ matrix.archive }}
 
+      # matrix jobs race to create the release: the first one wins, the
+      # rest just upload their asset to the existing release (--clobber
+      # makes re-runs replace assets instead of failing)
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: a-engine-${{ matrix.rid }}.${{ matrix.archive }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          asset="a-engine-${{ matrix.rid }}.${{ matrix.archive }}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" --title "$tag" --generate-notes || true
+          fi
+          gh release upload "$tag" "$asset" --clobber
