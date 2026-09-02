@@ -25,7 +25,10 @@ cd client && npm install && npm run dev   # debug web client (needs the CLI with
 ```
 
 Targets **net10.0**. The SDK is .NET 10; only the 10.0 runtime is installed, so do
-not retarget to net8.0 without installing its runtime.
+not retarget to net8.0 without installing its runtime. CI:
+`.github/workflows/console-binary.yml` runs the tests, then publishes
+self-contained single-file console binaries (bundled with the scenarios)
+for linux/windows/macOS — on `v*` tags they attach to a GitHub Release.
 
 ## Layout
 

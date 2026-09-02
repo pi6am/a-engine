@@ -6,7 +6,10 @@ player and NPCs alike, act through the same affordances and perceive the
 world through sensory signals. LLM-driven NPCs (and an LLM-driven player)
 plug in through any OpenAI-compatible endpoint.
 
-Requires the **.NET 10 SDK**.
+Requires the **.NET 10 SDK** — or skip that: grab a self-contained binary
+(bundled with the scenarios) from
+[Releases](https://github.com/pi6am/a-engine/releases), unpack, and run
+`./a-engine scenarios/nail` (Windows: `a-engine.exe scenarios\nail`).
 
 ## Run it
 
