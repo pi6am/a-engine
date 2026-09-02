@@ -13,9 +13,11 @@ public class ControlSwitcherTests
 {
     private static GameEngine LoadTavern()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        DirectoryInfo? dir = new(AppContext.BaseDirectory);
         while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "scenarios", "tavern", "world.json")))
-            dir = dir.Parent!;
+            dir = dir.Parent;
+        if (dir is null)
+            throw new DirectoryNotFoundException("Could not locate scenarios/tavern.");
         var engine = GameEngine.CreateWithBuiltinHandlers();
         ScenarioLoader.LoadFrom(engine, Path.Combine(dir.FullName, "scenarios", "tavern"));
         return engine;

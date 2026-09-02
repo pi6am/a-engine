@@ -4,6 +4,17 @@ using AEngine.Core.Actions;
 
 namespace AEngine.Core.Modules;
 
+/// <summary>How a speech verb's {speech} entries are aimed (see AffordanceDefinition.SpeechTargets).</summary>
+public enum SpeechTargeting
+{
+    /// <summary>One undirected entry aimed at everyone ("Shout: {speech}").</summary>
+    Broadcast,
+    /// <summary>One entry per other agent present; none when alone ("Whisper to X: {speech}").</summary>
+    Directed,
+    /// <summary>Undirected broadcast, plus directed entries in a crowd (say).</summary>
+    Both,
+}
+
 /// <summary>Field types supported by module definitions.</summary>
 public enum FieldType
 {
@@ -117,6 +128,15 @@ public sealed class AffordanceDefinition
     /// of the action track, so talking doesn't block movement or attacks.
     /// </summary>
     public bool Speech { get; init; }
+    /// <summary>
+    /// Directionality of a speech verb: how the resolver parameterizes it
+    /// with {speech} entries. Broadcast — one undirected entry ("Shout:
+    /// {speech}"); Directed — one entry per other agent present, none
+    /// when alone ("Whisper to Nix: {speech}"); Both — say's broadcast
+    /// plus directed entries in a crowd (null behaves as Both for verb
+    /// "say"; other speech verbs must declare it).
+    /// </summary>
+    public SpeechTargeting? SpeechTargets { get; init; }
     public bool RepeatBackoff { get; init; }
     public int RepeatBackoffCap { get; init; } = 30;
     public List<string>? Postures { get; init; }

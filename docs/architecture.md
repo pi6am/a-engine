@@ -147,22 +147,31 @@ a brass key inside.").
 
 `say` is an affordance of the `can_speak` module (agents without it can't
 speak), only ever offered from the agent's own modules. Its label is
-parameterized: the undirected broadcast `Say: {speech}` is always
+parameterized, with the aim declared per speech verb via
+`speechTargets` (the resolver builds the entries): **Both** (the `say`
+default) — the undirected broadcast `Say: {speech}` is always
 offered, plus a directed `Say to <name>: {speech}` entry per other
-agent present — addressing is a choice, not a requirement (a plan line
-without an addressee broadcasts; with one other agent present only the
-broadcast exists). Directed speech is delivered distinctly: the addressee
+agent present when several are (addressing is a choice, not a
+requirement; with one other agent present only the broadcast exists);
+**Broadcast** — exactly one undirected entry (`Shout: {speech}`, the
+tavern's shout — you can't shout at someone); **Directed** — one entry
+per other agent present and none when alone (`Whisper to <name>:
+{speech}`, the tavern's whisper — there is no undirected whisper).
+Directed speech is delivered distinctly: the addressee
 receives an audience-restricted signal ("the human stranger says to
 you: \"…\"" — `audience: onlyTarget` on the spec, enforced in the
 SignalBus's per-observer selection) and remembers it as addressed to
 them, while everyone else hears the ambient form ("{agent} says: …") at
 unchanged fidelity. The actor's own message names the addressee back
-("You say to Nix the goblin: \"…\""). Plan parsing is
+("You say to Nix the goblin: \"…\"" — and renders the verb itself:
+"You whisper to Nix: …", "You shout: …"). Plan parsing is
 generous ("Say to X: \"...\"", quotes optional, colon optional, and
 the speech-first paraphrase `Say: "..." to X` — the trailing addressee is only
 recognized with quoted speech, where the closing quote disambiguates it
-from the utterance; the legacy bracketed `Say [to X]: ...` still parses);
-the
+from the utterance; the legacy bracketed `Say [to X]: ...` still parses;
+`shout` and `whisper` lines parse the same way — a stray addressee on a
+shout is ignored, while a whisper with no addressee needs exactly one
+listener to be unambiguous); the
 parsed speech rides `AvailableAction.Text` into `Args["text"]`. Naming is
 **observer-relative**: every agent is the protagonist of their own
 perception (`Perception.NameFor` renders self as "you"); scenario data
@@ -273,7 +282,13 @@ through a doorway is content-free). Degraded renderings can stay
 anonymous with the `{voice}` placeholder — the actor's agent-module
 `voice` texture ("a deep, gravelly voice saying something"), falling
 back to "muffled" when undeclared — since who is speaking is exactly
-what a voice through a door doesn't tell you. Signals delivered through a
+what a voice through a door doesn't tell you. The tavern's speech
+variants use strength to demand or deny attention: `shout` carries
+`strength` 2 (its words survive one portal at remaining 1, degrading
+to "a {voice} voice shouting something" beyond), while `whisper`
+carries 0 — its `onlyTarget` spec never leaves the addressee's ear, and
+same-room bystanders get only a content-free `exceptTarget` murmur
+("{agent} murmurs something to {target}") that no wall will carry. Signals delivered through a
 portal get a
 directional suffix naming the side in the observer's room ("… through the
 wooden door to the south." — vertical portals read "to the floor

@@ -72,11 +72,11 @@ public sealed class PlanExecutor
     public static AvailableAction? MatchAvailableOrPotential(
         GameEngine engine, WorldObject agent, string line)
     {
-        if (TryParseSpeech(line, out var addressee, out var speech))
+        if (TryParseSpeech(line, out var verb, out var addressee, out var speech))
         {
-            var say = FindSayAction(engine, agent, addressee);
-            if (say is not null)
-                return say with { Text = speech };
+            var spoken = FindSpeechAction(engine, agent, verb, addressee);
+            if (spoken is not null)
+                return spoken with { Text = speech };
         }
         if (TryParseAttack(engine, agent, line) is { } attack)
             return attack;
@@ -148,22 +148,24 @@ public sealed class PlanExecutor
     /// <summary>
     /// Parse a speech line: "Say to X: \"...\"", "Say: ...", "Say ..." —
     /// the speech-first variant "Say: \"...\" to X" — and the legacy
-    /// bracketed "Say [to X]: ...". Quotation marks and the addressee
-    /// are optional; a bracketless addressee runs to the colon (or the
-    /// opening quote), since names can be multi-word ("Nix the goblin");
-    /// the trailing "to X" form is
+    /// bracketed "Say [to X]: ...". The leading verb may be say, shout,
+    /// or whisper (shout is broadcast — a stray addressee is ignored;
+    /// whisper needs one). Quotation marks are optional; a bracketless
+    /// addressee runs to the colon (or the opening quote), since names
+    /// can be multi-word ("Nix the goblin"); the trailing "to X" form is
     /// only recognized with quoted speech, where the closing quote
     /// disambiguates it from the utterance itself.
     /// </summary>
-    public static bool TryParseSpeech(string line, out string? addressee, out string speech)
+    public static bool TryParseSpeech(string line, out string verb, out string? addressee, out string speech)
     {
+        verb = "say";
         addressee = null;
         speech = "";
-        if (!line.StartsWith("say", StringComparison.OrdinalIgnoreCase))
+        var stem = SpeechStem(line);
+        if (stem is null)
             return false;
-        if (line.Length > 3 && line[3] is not (' ' or ':' or '['))
-            return false; // "saying", "says" — not a speech command
-        var rest = line[3..].Trim();
+        verb = stem;
+        var rest = line[stem.Length..].Trim();
         if (rest.StartsWith("[to", StringComparison.OrdinalIgnoreCase))
         {
             var close = rest.IndexOf(']');
@@ -211,43 +213,72 @@ public sealed class PlanExecutor
     }
 
     /// <summary>
-    /// Find the say action for an addressee: with one, the say entry whose
-    /// target's name matches (loosely) — or whose PROPER name matches,
-    /// which works regardless of what the speaker could print (you can
-    /// address "Nix" by name the moment you've heard it, before you could
-    /// pick her out of a lineup); without one — or when the addressee
-    /// doesn't match any directed entry (e.g. the LLM added "to X" though
-    /// only one other agent is present) — the undirected entry (or, when
-    /// only directed entries exist, the first one).
+    /// The speech verb a line starts with ("say", "shout", "whisper" —
+    /// case-insensitive, followed by end-of-line, space, colon, or the
+    /// legacy "["), or null. Word-boundary matters: "saying", "shouts",
+    /// "whispers" are not speech commands.
     /// </summary>
-    private static AvailableAction? FindSayAction(
-        GameEngine engine, WorldObject agent, string? addressee)
+    private static string? SpeechStem(string line) =>
+        new[] { "say", "shout", "whisper" }.FirstOrDefault(v =>
+            line.StartsWith(v, StringComparison.OrdinalIgnoreCase) &&
+            (line.Length == v.Length || line[v.Length] is ' ' or ':' or '['));
+
+    /// <summary>
+    /// Find the {speech}-parameterized action for a verb: with an
+    /// addressee, the entry whose target's name matches (loosely) — or
+    /// whose PROPER name matches, which works regardless of what the
+    /// speaker could print (you can address "Nix" by name the moment
+    /// you've heard it, before you could pick her out of a lineup).
+    /// Without one, the undirected entry; a directed-only verb (whisper)
+    /// has none, so it falls to its single entry when exactly one
+    /// listener is present and stays unmatched when the addressee is
+    /// ambiguous — there is no undirected whisper.
+    /// </summary>
+    private static AvailableAction? FindSpeechAction(
+        GameEngine engine, WorldObject agent, string verb, string? addressee)
     {
-        var says = engine.ActionResolver.Resolve(agent)
-            .Where(a => a.Verb == "say").ToList();
-        if (says.Count == 0)
+        var verbs = engine.ActionResolver.Resolve(agent)
+            .Where(a => a.Verb == verb).ToList();
+        if (verbs.Count == 0)
             return null;
-        var undirected = says.FirstOrDefault(a => a.TargetId == agent.Id);
-        if (addressee is null)
-            return undirected ?? says[0];
-        var needle = Normalize(addressee);
-        return says.FirstOrDefault(a =>
+        var undirected = verbs.FirstOrDefault(a => a.TargetId == agent.Id);
+        if (addressee is not null)
         {
-            if (a.TargetId is null)
-                return false;
-            var target = engine.World.GetObject(a.TargetId);
-            var name = Normalize(target.Name);
-            if (name.Contains(needle, StringComparison.Ordinal) ||
-                needle.Contains(name, StringComparison.Ordinal))
-                return true;
-            return Knowledge.ProperNames(engine.ModuleRegistry, target).Any(p =>
+            var needle = Normalize(addressee);
+            var matched = verbs.FirstOrDefault(a =>
             {
-                var proper = Normalize(p);
-                return proper == needle ||
-                       proper.Contains(needle, StringComparison.Ordinal) ||
-                       needle.Contains(proper, StringComparison.Ordinal);
+                if (a.TargetId is null)
+                    return false;
+                var target = engine.World.GetObject(a.TargetId);
+                // match the raw name, the knowledge-rendered label (the
+                // plan line usually echoes the advertised label — for a
+                // stranger that's their incognito rendering, "a halfling
+                // woman with a loaded tray"), or their proper name
+                var name = Normalize(target.Name);
+                var rendered = Normalize(
+                    Knowledge.NameFor(engine.ModuleRegistry, agent, target));
+                if (name.Contains(needle, StringComparison.Ordinal) ||
+                    needle.Contains(name, StringComparison.Ordinal) ||
+                    rendered.Contains(needle, StringComparison.Ordinal) ||
+                    needle.Contains(rendered, StringComparison.Ordinal))
+                    return true;
+                return Knowledge.ProperNames(engine.ModuleRegistry, target).Any(p =>
+                {
+                    var proper = Normalize(p);
+                    return proper == needle ||
+                           proper.Contains(needle, StringComparison.Ordinal) ||
+                           needle.Contains(proper, StringComparison.Ordinal);
+                });
             });
-        }) ?? undirected ?? says[0];
+            if (matched is not null)
+                return matched;
+            // a broadcast entry ignores a stray addressee ("shout to X"
+            // is still just a shout; "say to X" with X unmatched keeps
+            // say's old fall-through to the undirected entry)
+            if (undirected is not null)
+                return undirected;
+        }
+        return undirected ?? (verbs.Count == 1 ? verbs[0] : null);
     }
 
     /// <summary>

@@ -65,6 +65,35 @@
               ] },
             { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
           ]
+        },
+        {
+          "verb": "shout",
+          "handler": "say",
+          "speech": true,
+          "prompt": "Shout what?",
+          "speechTargets": "broadcast",
+          "salience": 24,
+          "signals": [
+            { "sense": "audible", "priority": 12, "strength": 2, "salience": 10,
+              "text": "{agent} shouts: \"{arg}\"",
+              "degrade": [
+                { "below": 1, "text": "a {voice} voice shouting something" }
+              ] }
+          ]
+        },
+        {
+          "verb": "whisper",
+          "handler": "say",
+          "speech": true,
+          "prompt": "Whisper what?",
+          "speechTargets": "directed",
+          "salience": 24,
+          "signals": [
+            { "sense": "audible", "priority": 10, "audience": "onlyTarget", "strength": 0,
+              "salience": 16, "text": "{agent} whispers to you: \"{arg}\"" },
+            { "sense": "audible", "priority": 4, "audience": "exceptTarget", "strength": 0,
+              "text": "{agent} murmurs something to {target}" }
+          ]
         }
       ]
     },

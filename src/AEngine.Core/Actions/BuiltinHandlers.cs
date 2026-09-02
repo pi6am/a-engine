@@ -425,6 +425,9 @@ public static class BuiltinHandlers
                 ? DefaultMillisPerChar
                 : ctx.Modules.ResolveInt(rulesHost, "rules", "sayMillisPerChar", DefaultMillisPerChar);
             var duration = baseSeconds + (int)(text.Length * millisPerChar / 1000.0);
+            // the verb rides along from the affordance (say, shout,
+            // whisper) — the speaker hears their own manner of speaking
+            var verb = string.IsNullOrEmpty(ctx.Verb) ? "say" : ctx.Verb;
             // a directed say (target = another agent) names the addressee
             // back to the actor — by the name the actor can print
             var addressee = ctx.Target is not null && ctx.Target.Id != ctx.Agent.Id &&
@@ -433,8 +436,8 @@ public static class BuiltinHandlers
                 : null;
             return ActionResult.Ok(
                 addressee is null
-                    ? $"You say: \"{text}\""
-                    : $"You say to {Knowledge.NameFor(ctx.Modules, ctx.Agent, addressee)}: \"{text}\"",
+                    ? $"You {verb}: \"{text}\""
+                    : $"You {verb} to {Knowledge.NameFor(ctx.Modules, ctx.Agent, addressee)}: \"{text}\"",
                 duration);
         }
     }

@@ -39,7 +39,7 @@ public sealed class LlmPolicy : IAgentPolicy
         if (engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn(agent.Id))
         {
             if (_cachedPlans.TryGetValue(agent.Id, out var talking) && talking.Count > 0 &&
-                !PlanExecutor.TryParseSpeech(talking.Peek(), out _, out _))
+                !PlanExecutor.TryParseSpeech(talking.Peek(), out _, out _, out _))
             {
                 var line = talking.Dequeue();
                 var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);

@@ -142,22 +142,25 @@ working in that area, and update them when the behavior changes:
 
 - **LLM integration** — the harness is live (planning, NPC policy, room and
   event narration; see `docs/llm.md`). Still planned: guided world
-  expansion for *open* scenarios, speech variants (Shout/Whisper), provider
-  config files, streaming, retries/backoff.
+  expansion for *open* scenarios, provider config files, streaming,
+  retries/backoff.
 - **Tavern stage 2** — one-shot/timed conditions with `onExpire` chains
   (vomit → hungover, special drinks with timed buffs/crashes), bladder
   failure accidents, per-agent condition variation (flirty/belligerent
   flavor per NPC), and condition-driven phrase pools for the random
-  policy. Speech attenuation: directed `say` degrades to a content-free
-  murmur for bystanders via `exceptTarget` specs, but ONLY in rooms that
-  opt in (a room-level setting — default is full-fidelity over-hearing,
-  so quiet scenarios like `nail` are unaffected; the tavern opts in);
-  `shout` (room-wide, crosses portals) and `whisper` (addressee only)
-  join as siblings so attention can be demanded and eavesdropping stays
-  a deliberate act. (Range-based degradation is live: the tavern's say
-  specs already degrade to "you hear X saying something" through
-  doorways via `degrade` ladders; shout/whisper build on
-  strength/attenuation the same way.)
+  policy. Speech variants are live: `shout` (broadcast-only, strength 2
+  — words survive one portal, degrading beyond) and `whisper`
+  (directed-only, strength 0 — addressee only; bystanders get a
+  content-free murmur) join `say` as `can_speak` affordances aimed via
+  the affordance's `speechTargets` (`broadcast|directed|both`). Speech
+  attenuation: directed `say` degrades to a content-free murmur for
+  bystanders via `exceptTarget` specs, but ONLY in rooms that opt in (a
+  room-level setting — default is full-fidelity over-hearing, so quiet
+  scenarios like `nail` are unaffected; the tavern opts in).
+  (Range-based degradation is live: the tavern's say specs already
+  degrade to "you hear X saying something" through doorways via
+  `degrade` ladders; shout/whisper build on strength/attenuation the
+  same way.)
 - **Label article doubling** — `Perception.WithDefiniteArticle` prepends
   "the" to names that already embed one ("Nix the goblin" → "Examine the
   Nix the goblin" in menu labels). Fix by detecting an embedded article

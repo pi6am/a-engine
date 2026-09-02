@@ -180,29 +180,29 @@ public sealed class ActionResolver
                     continue;
                 }
                 // speech is parameterized: the label carries a {speech}
-                // placeholder. The undirected broadcast ("Say: {speech}") is
-                // always offered; with several other agents present each
-                // addressee gets a directed entry too ("Say to Nix the
-                // goblin: {speech}") — addressing is a choice, not a
-                // requirement
-                if (affordance.Verb == "say" && target.Id == agent.Id)
+                // placeholder, aimed per SpeechTargets. Both (the say
+                // default): the undirected broadcast ("Say: {speech}") is
+                // always offered, and with several other agents present
+                // each addressee gets a directed entry too ("Say to Nix
+                // the goblin: {speech}") — addressing is a choice, not a
+                // requirement. Broadcast (shout): exactly one undirected
+                // entry. Directed (whisper): one entry per other agent,
+                // none when alone — there is no undirected whisper.
+                if (target.Id == agent.Id &&
+                    (affordance.SpeechTargets is not null || affordance.Verb == "say"))
                 {
-                    if (others.Count > 1)
-                    {
+                    var cap = char.ToUpperInvariant(affordance.Verb[0]) + affordance.Verb[1..];
+                    var targeting = affordance.SpeechTargets ?? Modules.SpeechTargeting.Both;
+                    if (targeting != Modules.SpeechTargeting.Directed)
                         actions.Add(new AvailableAction(
-                            "say", agent.Id, "Say: {speech}",
+                            affordance.Verb, agent.Id, $"{cap}: {{speech}}",
                             affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                    if (targeting != Modules.SpeechTargeting.Broadcast &&
+                        (targeting == Modules.SpeechTargeting.Directed || others.Count > 1))
                         foreach (var other in others)
                             actions.Add(new AvailableAction(
-                                "say", other.Id, $"Say to {NameFor(agent, other)}: {{speech}}",
+                                affordance.Verb, other.Id, $"{cap} to {NameFor(agent, other)}: {{speech}}",
                                 affordance.Handler, attachment.ModuleId, affordance.Prompt));
-                    }
-                    else
-                    {
-                        actions.Add(new AvailableAction(
-                            "say", agent.Id, "Say: {speech}",
-                            affordance.Handler, attachment.ModuleId, affordance.Prompt));
-                    }
                     continue;
                 }
                 // give is a two-object verb on the held item: one entry per
@@ -307,12 +307,17 @@ public sealed class ActionResolver
                     return false;
             }
         }
+        // speech verbs are parameterized from the agent's OWN attachments
+        // (see the speech entry building in AddFromModules): another
+        // agent's can_speak never offers you "Shout the Lythienne"
+        if ((affordance.SpeechTargets is not null || affordance.Verb == "say") &&
+            target.Id != agent.Id)
+            return false;
         var applies = affordance.Verb switch
         {
             "look" => target.Id == agent.Id,
             "inventory" => target.Id == agent.Id,
             "wait" => target.Id == agent.Id,
-            "say" => target.Id == agent.Id, // speech comes from your own can_speak
             "take" => !held && target.Id != agent.Id, // can't pick up yourself
             "drop" => held && target.Id != agent.Id && !Clothing.IsWorn(_modules, target),
             // give: a held, unworn item (entries are emitted per recipient)
