@@ -544,7 +544,11 @@ finish.
 ## Scenarios
 
 JSON files defining modules and an initial world tree; `ScenarioLoader`
-composes multiple documents in order (later overrides by id). Packaging is
+composes multiple documents in order (later overrides by id). The
+document root may carry `about` (a blurb — what the scenario is, where
+it came from; `GameEngine.ScenarioAbout`, shown by the CLI's `/about`)
+and `defeatText` (ending text when the player is incapacitated).
+Packaging is
 pluggable via `IScenarioSource` (registered in `ScenarioSources`): a source
 turns a path into the raw JSON documents, and the loader merges them.
 Built-in sources: a directory holding `modules.json`/`world.json`; a zip

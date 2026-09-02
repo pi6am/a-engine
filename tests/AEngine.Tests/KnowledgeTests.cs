@@ -175,6 +175,14 @@ public class KnowledgeTests
 /// </summary>
 public class NailKnowledgeTests
 {
+    [Fact]
+    public void About_CreditsTheSource()
+    {
+        var engine = LoadNail();
+        Assert.Contains("Concedo", engine.ScenarioAbout);
+        Assert.Contains("Nail", engine.ScenarioAbout);
+    }
+
     private static GameEngine LoadNail()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

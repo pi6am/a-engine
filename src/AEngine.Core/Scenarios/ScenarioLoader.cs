@@ -38,6 +38,8 @@ public static class ScenarioLoader
     private sealed class ScenarioDto
     {
         public string? Name { get; init; }
+        /// <summary>About blurb — what the scenario is, where it came from (→ GameEngine.ScenarioAbout).</summary>
+        public string? About { get; init; }
         /// <summary>Ending text when the player is incapacitated (→ GameEngine.DefeatText).</summary>
         public string? DefeatText { get; init; }
         public List<ModuleDefinition>? Modules { get; init; }
@@ -80,6 +82,8 @@ public static class ScenarioLoader
                 ?? throw new InvalidDataException($"Scenario document '{document.Label}' parsed to null.");
             if (dto.Name is not null)
                 name = dto.Name;
+            if (dto.About is not null)
+                engine.ScenarioAbout = dto.About;
             if (dto.DefeatText is not null)
                 engine.DefeatText = dto.DefeatText;
             if (dto.Modules is not null)

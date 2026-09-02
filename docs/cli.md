@@ -43,7 +43,8 @@ Registered in `SlashCommandRegistry` (extensible, with aliases and help
 text): `/actions` (numbered action list), `/showplan on|off` (log the
 extracted LLM plan, default off), `/narrate all|room|actions|off` (LLM
 narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
-(`/tb`), `/timescale N` (`/ts`), `/quit` (`/exit`), `/help`. Output
+(`/tb`), `/timescale N` (`/ts`), `/about` (the loaded scenario's about
+blurb), `/quit` (`/exit`), `/help`. Output
 toggles live in `OutputSettings`.
 
 ## Auto mode (AI self-play)

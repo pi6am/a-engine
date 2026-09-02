@@ -1,4 +1,5 @@
 {
+  "about": "A kitchen-and-dining-hall demo where an autonomous old cook keeps the pantry stocked.",
   "name": "npc",
   "world": [
     {

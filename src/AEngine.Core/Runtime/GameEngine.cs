@@ -37,6 +37,12 @@ public sealed class GameEngine
     /// <summary>Ending text for player incapacitation (scenario root <c>defeatText</c>).</summary>
     public string DefeatText { get; set; } = "Your journey ends here.";
 
+    /// <summary>
+    /// About blurb of the loaded scenario (scenario root <c>about</c>) —
+    /// what it is, where it came from; shown by the CLI's /about.
+    /// </summary>
+    public string ScenarioAbout { get; set; } = "";
+
     /// <summary>Randomness source for built-in policies; settable (seed it in tests).</summary>
     public Random Random { get; set; } = new();
 

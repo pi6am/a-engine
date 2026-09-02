@@ -20,6 +20,21 @@ public class ScenarioLoaderTests : IDisposable
     }
 
     [Fact]
+    public void LoadDocumentsInto_About_SetsScenarioAbout()
+    {
+        var engine = new GameEngine();
+        ScenarioLoader.LoadDocumentsInto(engine,
+            [new ScenarioDocument("test", """{"name":"x","about":"An about blurb.","world":[]}""")]);
+        Assert.Equal("An about blurb.", engine.ScenarioAbout);
+
+        // absent -> empty; later documents override, like the name
+        var engine2 = new GameEngine();
+        ScenarioLoader.LoadDocumentsInto(engine2,
+            [new ScenarioDocument("test", """{"name":"x","world":[]}""")]);
+        Assert.Equal("", engine2.ScenarioAbout);
+    }
+
+    [Fact]
     public void LoadInto_BuildsNestedTreeWithModulesAndOverrides()
     {
         var modules = WriteFile("modules.json", """
