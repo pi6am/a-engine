@@ -43,9 +43,30 @@ Registered in `SlashCommandRegistry` (extensible, with aliases and help
 text): `/actions` (numbered action list), `/showplan on|off` (log the
 extracted LLM plan, default off), `/narrate all|room|actions|off` (LLM
 narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
-(`/tb`), `/timescale N` (`/ts`), `/about` (the loaded scenario's about
+(`/tb`), `/timescale N` (`/ts`), `/control ID` (play as another agent,
+see below), `/about` (the loaded scenario's about
 blurb), `/quit` (`/exit`), `/help`. Output
 toggles live in `OutputSettings`.
+
+## POV switching (/control)
+
+`/control mira` makes another agent the point of view in every respect:
+typed commands drive their actions, the room renders from where they
+stand, their observed signals and memory print, reactions prompt for
+them, and LLM planning/narration speaks in their voice. `/control` with
+no arguments lists the agents. `/control player` switches back.
+
+Policy juggling (`ControlSwitcher`): the POV agent gets policy
+`"player"` — the externally-driven marker the turn manager never
+auto-runs — so the NPC you possess stops acting on its own. The
+scenario's true player goes inert (`"none"`, an unregistered policy) so
+your body doesn't wander off while you're away; reactions against it
+fall to their deadline default. A possessed NPC's original policy
+(`auto`, `llm`, …) is remembered and restored the moment you switch
+away. Auto mode (`/auto`) is turned off by a switch — it drives whoever
+you were controlling. Defeat is checked against the POV: possessing an
+incapacitated agent is refused, and if your POV body drops the game
+ends there.
 
 ## Auto mode (AI self-play)
 

@@ -113,6 +113,11 @@ catch (Exception ex)
 }
 
 var player = engine.World.GetObject("player");
+// /control POV switching. The switcher manages the displaced agents'
+// policies; `player` is REASSIGNED on switch — every closure below
+// captures the variable, so input routing, signals, memory, reactions,
+// LLM planning, and narration all follow the new POV.
+var control = new ControlSwitcher(engine, player.Id);
 // The full room description prints on arrival (the player's room changed
 // since the last render) — while you stay put, only action results and
 // observations print. Tracked across the main loop and the real-time
@@ -122,6 +127,7 @@ Console.WriteLine($"=== {scenarioName} ===");
 
 LlmPlanner? planner = null;
 Narrator? narrator = null;
+OpenAiCompatibleClient? llmClient = null;
 if (!string.IsNullOrWhiteSpace(llmEndpoint))
 {
     var llmOptions = new LlmOptions
@@ -130,7 +136,7 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
         Model = string.IsNullOrWhiteSpace(llmModel) ? "default" : llmModel,
         ApiKey = llmApiKey,
     };
-    var llmClient = new OpenAiCompatibleClient(llmOptions);
+    llmClient = new OpenAiCompatibleClient(llmOptions);
     planner = new LlmPlanner(llmClient, engine);
     narrator = new Narrator(llmClient, player.Name);
     engine.PolicyRegistry.Register(new LlmPolicy(planner));
@@ -251,6 +257,33 @@ slash.Register("auto", [], "Let the AI play your character (ESC cancels)", args 
         SetAuto(false);
     else
         Console.WriteLine($"Auto mode is {(IsAuto() ? "on" : "off")}. Usage: /auto");
+    return false;
+});
+slash.Register("control", [], "Play as another agent (/control ferret; /control player to switch back)", args =>
+{
+    if (args.Length == 0)
+    {
+        Console.WriteLine("Agents (/control <id> to take one over):");
+        foreach (var line in control.Describe())
+            Console.WriteLine("  " + line);
+        return false;
+    }
+    if (!control.TrySwitch(args[0], out var message))
+    {
+        Console.WriteLine(message);
+        return false;
+    }
+    lock (engine.SyncRoot)
+    {
+        player = engine.World.GetObject(control.CurrentId);
+        lastRoomId = null; // the loop top prints the new body's room
+        engine.SignalBus.Drain(player.Id); // drop the pre-switch backlog
+    }
+    if (IsAuto())
+        SetAuto(false); // the keyboard drives the new body now
+    if (llmClient is not null)
+        narrator = new Narrator(llmClient, player.Name); // narrate from the new POV
+    Console.WriteLine(message);
     return false;
 });
 slash.Register("quit", ["exit"], "Leave the game", _ => true);
