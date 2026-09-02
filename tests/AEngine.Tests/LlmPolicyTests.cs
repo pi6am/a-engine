@@ -42,6 +42,10 @@ public class LlmPolicyTests
 
     private static void RunTurns(GameEngine engine, int count)
     {
+        // one NPC round per batch: the first call starts the (fake-LLM,
+        // already-complete) selection, the next completes it; later
+        // batches need a fresh round
+        engine.TurnManager.NewNpcRound();
         for (var i = 0; i < count; i++)
             engine.TurnManager.RunNpcTurns();
     }
@@ -175,13 +179,18 @@ public class LlmPolicyTests
             Open the cupboard
             """);
         var engine = NewEngine(llm);
+        engine.TimeMode = TimeMode.RealTime; // speech pacing is real-time
 
         RunTurns(engine, 2); // cook plans (LLM call 1) and says the line
         Assert.True(engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn("cook"));
 
         // the cached non-speech step pops and executes mid-utterance —
-        // talking doesn't block doing
+        // talking doesn't block doing (a couple of ticks pass: new
+        // real-time rounds, the line still pacing)
+        for (var i = 0; i < 2; i++)
+            engine.TurnManager.Tick();
         RunTurns(engine, 2);
+        Assert.True(engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn("cook"));
         Assert.True(engine.ModuleRegistry.ResolveBool(
             engine.World.GetObject("cupboard"), "openable", "open"));
         Assert.Equal(0, llm.Remaining); // no new LLM call was needed
@@ -194,6 +203,7 @@ public class LlmPolicyTests
         llm.Enqueue("Say: \"What a fine day it is, indeed!\"");
         llm.Enqueue("Take the loaf of bread");
         var engine = NewEngine(llm);
+        engine.TimeMode = TimeMode.RealTime; // speech pacing is real-time
 
         RunTurns(engine, 2); // cook plans (LLM call 1) and says the line
         Assert.True(engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn("cook"));
@@ -207,7 +217,8 @@ public class LlmPolicyTests
         Assert.Equal(1, llm.Remaining);
 
         // once the speech track clears, the pending signal interrupts as usual
-        PassTurns(engine, 3);
+        for (var i = 0; i < 8; i++)
+            engine.TurnManager.Tick();
         RunTurns(engine, 2);
         Assert.Equal(0, llm.Remaining);
         Assert.Equal("cook", engine.World.GetObject("bread").Parent);

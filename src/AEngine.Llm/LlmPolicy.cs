@@ -34,18 +34,36 @@ public sealed class LlmPolicy : IAgentPolicy
         GameEngine engine, WorldObject agent,
         IReadOnlyList<AvailableAction> actions, CancellationToken ct)
     {
+        // a companion-slot offer (speech-only or body-only, from the
+        // turn-based say-alongside-act rule): only matching plan lines
+        // dequeue — the rest wait for their own slot or round
+        var speechSlot = actions.Count > 0 && actions.All(a => IsSpeech(engine, a));
+        var bodySlot = actions.Count > 0 && actions.All(a => !IsSpeech(engine, a));
+
         // mid-utterance: no re-planning (pending signals keep) and no new
         // speech, but cached non-speech steps still execute
         if (engine.TurnManager.Turn < engine.TurnManager.SpeechBusyUntilTurn(agent.Id))
         {
-            if (_cachedPlans.TryGetValue(agent.Id, out var talking) && talking.Count > 0 &&
-                !PlanExecutor.TryParseSpeech(talking.Peek(), out _, out _, out _))
+            if (_cachedPlans.TryGetValue(agent.Id, out var talking) && talking.Count > 0)
             {
-                var line = talking.Dequeue();
-                var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);
-                if (match is not null)
-                    return match;
-                _cachedPlans.Remove(agent.Id); // stale — re-plan once speech clears
+                // the next line is more talk, waiting its turn — show it
+                // as words being held back, not as talking
+                if (PlanExecutor.TryParseSpeech(talking.Peek(), out _, out _, out _))
+                {
+                    if (bodySlot)
+                        return null; // not this slot's line
+                    engine.TurnManager.NotePendingSpeech(agent.Id);
+                }
+                else
+                {
+                    if (speechSlot)
+                        return null; // not this slot's line
+                    var line = talking.Dequeue();
+                    var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);
+                    if (match is not null)
+                        return match;
+                    _cachedPlans.Remove(agent.Id); // stale — re-plan once speech clears
+                }
             }
             return null;
         }
@@ -57,6 +75,10 @@ public sealed class LlmPolicy : IAgentPolicy
             {
                 if (steps.Count > 0)
                 {
+                    // slot offers only dequeue their kind of line
+                    if ((speechSlot && !PlanExecutor.TryParseSpeech(steps.Peek(), out _, out _, out _)) ||
+                        (bodySlot && PlanExecutor.TryParseSpeech(steps.Peek(), out _, out _, out _)))
+                        return null;
                     var line = steps.Dequeue();
                     var match = PlanExecutor.MatchAvailableOrPotential(engine, agent, line);
                     if (match is not null)
@@ -70,6 +92,11 @@ public sealed class LlmPolicy : IAgentPolicy
             _cachedPlans.Remove(agent.Id);
         }
 
+        // slot offers don't trigger fresh planning — a plan without a
+        // matchable line simply yields the slot
+        if (speechSlot || bodySlot)
+            return null;
+
         var plan = await _planner.CreatePlanAsync(
             agent,
             "Choose your next actions. If someone spoke to you recently, consider responding " +
@@ -81,6 +108,14 @@ public sealed class LlmPolicy : IAgentPolicy
         if (plan.Count > 1)
             _cachedPlans[agent.Id] = new Queue<string>(plan.Skip(1));
         return PlanExecutor.MatchAvailableOrPotential(engine, agent, plan[0]);
+    }
+
+    private static bool IsSpeech(GameEngine engine, AvailableAction action)
+    {
+        if (!engine.ModuleRegistry.Has(action.ModuleId))
+            return false;
+        return engine.ModuleRegistry.Get(action.ModuleId).Affordances
+            .FirstOrDefault(a => a.Verb == action.Verb)?.Speech == true;
     }
 
     /// <summary>Ask the LLM for an in-character reaction to a telegraphed action.</summary>

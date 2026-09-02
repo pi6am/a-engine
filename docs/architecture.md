@@ -438,6 +438,33 @@ forms: `leave` (playerOnly) ends the game with the module's text, while
 announcing the exit module's `departText` to observers ("Thakra the orc
 steps onto the bus and leaves.") without ending anyone's game.
 
+## Part-targeted actions & chatter
+
+**Touching is part-targeted.** Body parts are children with the
+`bodypart` module (as in the RPG systems) plus `intimate` and
+`sensitivity` fields; affordances with `targetParts` (declared on the
+actor's own module, like speech) list one entry per part of each other
+agent present — "Kiss Maya's neck", via the label's `{holder}`/`{part}`
+placeholders. Non-intimate parts always list; intimate ones only when
+their wear region is uncovered (garments cover `wearable.regions`; the
+resolver filters listing, the execution-time `exposed` gate enforces it
+against stale plans). The action targets the PART: the reaction system
+resolves the defending holder from its parent, `onlyTarget` specs reach
+the part's owner, and `{holder}` renders the owner observer-relatively
+in signals ("Alex kisses Maya's neck", "your neck" for the owner). Free-text plans parse the same
+way ("kiss her neck", "massage Maya's shoulders" — `TryParseTouch`).
+Handlers receive everything through the affordance's `data` string map —
+prose and tuning stay in data, handlers stay generic (see the `set`
+handler for the pattern: a field knob described entirely in data).
+
+**Non-agent voices** (a television) are objects with a `chatter`
+module: `channels` maps a channel name to a line pool, `interval` paces
+emissions, and `Runtime/Chatter.Advance` (the same turn tails as
+metabolism) emits one random line as a low-salience audible signal
+while `on`. Power and channel are plain affordances through the `set`
+handler, so the TV is data all the way down — no policy, no reactions,
+no room-granular ears.
+
 ## Reactions (quick-time events)
 
 An affordance can declare a `reaction` spec (`window` in game seconds,
@@ -453,7 +480,13 @@ an actor incapacitated, knocked prone, or grabbed during the window fizzles
 discarded. An option's `stat`/`skill`/`bonus` replace the defender's side
 of the opposed check (gate and handler-rolled alike, via
 `Checks.EvaluateOpposed`'s reaction parameter and `ActionContext.Reaction`);
-`noResist` accepts the action. An option's `text` is the defender-side
+`noResist` accepts the action. An option may declare `defaultWhen` — a
+field condition on the defender — making the effective default
+state-driven: the defender melts into a touch when comfortable,
+deflects when not (an intimacy scenario's consent layer) with no policy
+or LLM round-trip, and the
+random policy defers to that effective default instead of flipping coins
+on someone's yes or no. An option's `text` is the defender-side
 line, delivered as a private sensation (`SendTo` — queued for display
 and recorded to memory) BEFORE the check/handler resolves, so the
 defender's log shows their choice ahead of the outcome ("You try to
@@ -539,22 +572,40 @@ next.
 
 ## Runtime
 
-`GameEngine` ties everything together; `TurnManager` runs both time modes:
-turn-based (each action advances the turn) and real-time (the CLI's
-per-second timer calls `TurnManager.Tick()`, and NPC turns are driven by
-the timer instead of player input). Turn-consuming actions leave the actor
-**busy** for their affordance's data-driven `duration` (seconds/turns,
-default 1); busy NPCs skip their turns. `Scheduler` is a wake-up queue for
-long-running actions (nothing schedules multi-turn actions yet).
+`GameEngine` ties everything together; `TurnManager` runs both time modes,
+and they differ in what a `duration` means. **Turn-based** is classic
+text-adventure pacing: every action takes one turn, the actor is busy
+only through the current round, and durations pace just the world clock
+(metabolism, chatter, ambient). Each player action grants the NPCs
+**one round** (`NewNpcRound` — also bumped automatically by player-policy
+actions): per round an agent may perform **one body action and one speech
+action** (the companion slot — Maya says her line and sits, together).
+NPC planning is asynchronous: the CLI's turn pump completes in-flight
+selections and slots as LLM responses land, printing observed signals
+above the prompt while the player keeps typing, and grants no new rounds
+until the next player input. **Real-time** keeps durations as busy spells
+(the CLI's per-second timer calls `TurnManager.Tick()`, NPC turns ride
+the timer, one round per tick). **Ongoing actions are
+observable** in real-time mode: body-track actions of 3+ seconds record
+what the actor is doing on the agent-module `activity` field (the
+affordance's `activity` template — "massaging {target}" — or a naive
+gerund fallback; part targets render possessively), shown in room
+listings ("Maya (massaging Alex's shoulders)"), on examine, and in LLM
+contexts, and cleared when the busy spell expires. Speech held back
+behind a busy speech track marks `speakingSoon` ("Maya looks about to say
+something.") — noted when an LLM policy defers a speech line, cleared
+when the words are said or the track frees. `Scheduler` is a wake-up
+queue for long-running actions (nothing schedules multi-turn actions
+yet).
 **Game over**: a handler result flagged `EndsGame` records its message on
 `engine.GameOver` (NPC turns stop once set); the CLI prints it as the
 ending and exits. The CLI also ends the game with the scenario's root
 `defeatText` when the player is incapacitated. **Level of detail**:
 `RunNpcTurns` throttles agents no player can perceive — full rate in a
 player's room and adjacent (portal-linked) rooms, otherwise new work
-starts only every `npcLodFactor` turns (rules module, default 10, 1
-disables), staggered per agent id; in-flight policy decisions always
-finish.
+starts only every `npcLodFactor` rounds (rules module, default 10, 1
+disables; staggered per agent id on the round clock) — in-flight policy
+decisions always finish.
 
 ## Scenarios
 

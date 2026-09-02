@@ -224,7 +224,7 @@ public class BodyPartsTests
         SetStat(covered, "alice", "strength", 10);
         SetDamage(covered, "alice", 6);
         var hit = Attack(covered);
-        Assert.Equal("You hit the Bob in the torso for 3 damage.", hit.Message);
+        Assert.Equal("You hit Bob in the torso for 3 damage.", hit.Message);
         Assert.Equal(9, PartHp(covered, "bob_torso"));
 
         // the same armor does nothing for the head
@@ -234,7 +234,7 @@ public class BodyPartsTests
         SetStat(exposed, "alice", "strength", 10);
         SetDamage(exposed, "alice", 6);
         hit = Attack(exposed);
-        Assert.Equal("You hit the Bob in the head for 6 damage.", hit.Message);
+        Assert.Equal("You hit Bob in the head for 6 damage.", hit.Message);
         Assert.Equal(2, PartHp(exposed, "bob_head"));
     }
 
@@ -248,18 +248,18 @@ public class BodyPartsTests
         SetDamage(engine, "alice", 5);
 
         // the aimed syntax is advertised on the label
-        Assert.Equal("Attack the Bob [in the {part}]",
+        Assert.Equal("Attack Bob [in the {part}]",
             TestWorlds.Find(engine, "alice", "attack", "bob").Label);
 
         var hit = Attack(engine, "head");
-        Assert.Equal("You hit the Bob in the head for 5 damage.", hit.Message);
+        Assert.Equal("You hit Bob in the head for 5 damage.", hit.Message);
         Assert.Equal(3, PartHp(engine, "bob_head"));
         Assert.Equal(12, PartHp(engine, "bob_torso"));
 
         // an unknown part (typo, hallucination) fails without damage
         var miss = Attack(engine, "tail");
         Assert.Equal(ActionOutcome.Failure, miss.Outcome);
-        Assert.Equal("The Bob has no such part.", miss.Message);
+        Assert.Equal("Bob has no such part.", miss.Message);
         Assert.Equal(3, PartHp(engine, "bob_head"));
     }
 
@@ -278,7 +278,7 @@ public class BodyPartsTests
         Assert.Equal(7, PartHp(engine, "bob_torso"));
         var aimed = Attack(engine, "torso");
         Assert.Equal(ActionOutcome.Failure, aimed.Outcome);
-        Assert.Equal("You swing at the Bob's torso and miss.", aimed.Message);
+        Assert.Equal("You swing at Bob's torso and miss.", aimed.Message);
         Assert.Equal(7, PartHp(engine, "bob_torso"));
     }
 
@@ -406,7 +406,7 @@ public class BodyPartsTests
         SetStat(engine, "alice", "strength", 10);
         SetDamage(engine, "alice", 2);
 
-        Assert.Equal("You hit the Bob in the head for 2 damage.", Attack(engine, "head").Message);
+        Assert.Equal("You hit Bob in the head for 2 damage.", Attack(engine, "head").Message);
         var examine = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "examine", "bob"));
         Assert.Contains("Health: head 3/5.", examine.Message);
@@ -431,11 +431,11 @@ public class BodyPartsTests
             "rules", "rules", "crunch", Core.World.World.ToJson("descriptive"));
 
         // 5/5 = 100% of the part: a severe blow
-        Assert.Contains("You land a severe blow on the Bob's head.", Attack(engine, "head").Message);
+        Assert.Contains("You land a severe blow on Bob's head.", Attack(engine, "head").Message);
         // custom band tables override the defaults (5/10 = 50% → light)
         engine.World.SetFieldOverride("rules", "rules", "blowBands",
             Core.World.World.ToJson(new Dictionary<string, int> { ["light"] = 50, ["heavy"] = 100 }));
-        Assert.Equal("You land a light blow on the Bob's torso.", Attack(engine, "torso").Message);
+        Assert.Equal("You land a light blow on Bob's torso.", Attack(engine, "torso").Message);
 
         // 5/15 total remaining (33%): wounded
         var look = engine.TurnManager.PerformAction(
@@ -469,7 +469,7 @@ public class BodyPartsTests
         SetDamage(engine, "alice", 3);
 
         var result = engine.TurnManager.Execute(engine.World.GetObject("alice"), "choke", "bob");
-        Assert.Equal("You choke the Bob for 3 damage.", result.Message);
+        Assert.Equal("You choke Bob for 3 damage.", result.Message);
         Assert.Equal(3, PartHp(engine, "bob_head"));
         Assert.Equal(10, PartHp(engine, "bob_torso"));
     }
@@ -498,7 +498,7 @@ public class BodyPartsTests
         engine.World.AddModule("bob", "health");
         AddWornArmor(engine, "bob", 2, "top");
         var hit = Attack(engine);
-        Assert.Equal("You hit the Bob for 4 damage.", hit.Message);
+        Assert.Equal("You hit Bob for 4 damage.", hit.Message);
         SetDamage(engine, "alice", 10);
         hit = Attack(engine);
         Assert.Contains("Bob collapses, incapacitated!", hit.Message);
@@ -512,7 +512,7 @@ public class BodyPartsTests
         engine2.World.MoveObject("bob", "alice");
         SetDamage(engine2, "alice", 3);
         var choke = engine2.TurnManager.Execute(engine2.World.GetObject("alice"), "choke", "bob");
-        Assert.Equal("You choke the Bob for 3 damage.", choke.Message);
+        Assert.Equal("You choke Bob for 3 damage.", choke.Message);
         Assert.Equal(7, engine2.ModuleRegistry.ResolveInt(
             engine2.World.GetObject("bob"), "health", "hp"));
     }
@@ -524,20 +524,20 @@ public class BodyPartsTests
         AddPart(engine, "bob", "head", "head", "head", 8);
         var alice = engine.World.GetObject("alice");
 
-        var aimed = PlanExecutor.MatchAvailableOrPotential(engine, alice, "Attack the Bob in the head");
+        var aimed = PlanExecutor.MatchAvailableOrPotential(engine, alice, "Attack Bob in the head");
         Assert.NotNull(aimed);
         Assert.Equal("attack", aimed.Verb);
         Assert.Equal("head", aimed.Text);
 
         // the advertised label verbatim means unaimed (raw {part} placeholder)
         var verbatim = PlanExecutor.MatchAvailableOrPotential(
-            engine, alice, "Attack the Bob [in the {part}]");
+            engine, alice, "Attack Bob [in the {part}]");
         Assert.NotNull(verbatim);
         Assert.Null(verbatim.Text);
 
         // bracketed aimed form, and plain unaimed
         Assert.Equal("head", PlanExecutor.MatchAvailableOrPotential(
-            engine, alice, "Attack the Bob [in the head]")!.Text);
-        Assert.Null(PlanExecutor.MatchAvailableOrPotential(engine, alice, "Attack the Bob")!.Text);
+            engine, alice, "Attack Bob [in the head]")!.Text);
+        Assert.Null(PlanExecutor.MatchAvailableOrPotential(engine, alice, "Attack Bob")!.Text);
     }
 }

@@ -192,7 +192,7 @@ public class PortableAgentTests
 
         // the in-flight plan is a bogus self-take: no match, no crash,
         // no execution — the agent just re-plans next turn
-        llm.CompleteNext("Take the Bob");
+        llm.CompleteNext("Take Bob");
         TickUntil(engine, () => llm.Started == 2);
 
         llm.CompleteNext("Wait");

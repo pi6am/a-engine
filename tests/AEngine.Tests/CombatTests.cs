@@ -144,7 +144,7 @@ public class CombatTests
 
         var result = engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.True(result.Success);
-        Assert.Matches(@"You hit the Bob for [12] damage\.", result.Message);
+        Assert.Matches(@"You hit Bob for [12] damage\.", result.Message);
     }
 
     [Fact]
@@ -213,7 +213,7 @@ public class CombatTests
         // its own outcome learns the fight is over
         var again = engine.TurnManager.PerformAction(
             alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
-        Assert.Matches(@"You hit the Bob( with the sword)? for \d+ damage\. The Bob is already incapacitated\.",
+        Assert.Matches(@"You hit Bob( with the sword)? for \d+ damage\. Bob is already incapacitated\.",
             again.Message);
         // and the knockout line doesn't repeat
         Assert.DoesNotContain("collapses", again.Message);
@@ -229,7 +229,7 @@ public class CombatTests
 
         var result = engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.False(result.Success);
-        Assert.Equal("You swing at the Bob and miss.", result.Message);
+        Assert.Equal("You swing at Bob and miss.", result.Message);
         Assert.Equal(10, engine.ModuleRegistry.ResolveInt(engine.World.GetObject("bob"), "health", "hp"));
         Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text == "Alice swings at you and misses.");
     }
@@ -253,7 +253,7 @@ public class CombatTests
         Assert.True(engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wear", "sword")).Success);
         var armed = engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.True(armed.Success);
-        Assert.Equal("You hit the Bob with the sword for 5 damage.", armed.Message);
+        Assert.Equal("You hit Bob with the sword for 5 damage.", armed.Message);
         Assert.Equal(hpAfterUnarmed - 5,
             engine.ModuleRegistry.ResolveInt(engine.World.GetObject("bob"), "health", "hp"));
     }
@@ -276,7 +276,7 @@ public class CombatTests
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.True(result.Success);
-        Assert.Equal("You hit the Bob with the sword for 0 damage.", result.Message);
+        Assert.Equal("You hit Bob with the sword for 0 damage.", result.Message);
         Assert.Equal(10, engine.ModuleRegistry.ResolveInt(engine.World.GetObject("bob"), "health", "hp"));
     }
 
@@ -292,7 +292,7 @@ public class CombatTests
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
         Assert.True(result.Success);
-        Assert.Matches(@"You hit the Bob for [12] damage\.", result.Message);
+        Assert.Matches(@"You hit Bob for [12] damage\.", result.Message);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using AEngine.Core.World;
 
 namespace AEngine.Core.Actions;
@@ -615,6 +616,11 @@ public static class BuiltinHandlers
             {
                 if (Health.IsIncapacitated(ctx.World, ctx.Modules, target))
                     sb.AppendLine($"{name} is incapacitated.");
+                // what they're in the middle of, and words being held back
+                if (ctx.Modules.ResolveString(target, "agent", "activity") is { Length: > 0 } busy)
+                    sb.AppendLine($"{name} is {busy}.");
+                if (ctx.Modules.ResolveBool(target, "agent", "speakingSoon"))
+                    sb.AppendLine($"{name} looks about to say something.");
                 var words = Conditions.VisibleWords(ctx.World, ctx.Modules, target);
                 if (words.Count > 0)
                     sb.AppendLine($"{name} looks {string.Join(" and ", words)}.");
@@ -1230,6 +1236,20 @@ public static class BuiltinHandlers
         {
             var target = ctx.Target ?? throw new InvalidOperationException("leave requires a target.");
             var text = Field(ctx, target, "exit", "text") ?? "You leave.";
+            // the exit's `endings` map keys condition kinds on the actor
+            // to epilogue suffixes — a goodbye after a warm evening reads
+            // differently than one after a cold one
+            if (ctx.Modules.ResolveField(target, "exit", "endings") is
+                    { ValueKind: JsonValueKind.Object } endings)
+            {
+                foreach (var kind in endings.EnumerateObject())
+                {
+                    if (kind.Value.ValueKind != JsonValueKind.String)
+                        continue;
+                    if (Conditions.Has(ctx.World, ctx.Modules, ctx.Agent, kind.Name))
+                        text = text.TrimEnd() + " " + kind.Value.GetString()!.Trim();
+                }
+            }
             return ActionResult.Ok(text) with { EndsGame = true };
         }
     }

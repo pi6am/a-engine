@@ -61,7 +61,32 @@ public sealed class GateRegistry
     public void Replace(IActionGate gate) => _gates[gate.Id] = gate;
 
     /// <summary>The built-in gate kinds.</summary>
-    public static IEnumerable<IActionGate> Builtins() => [new ConditionGate(), new FieldGate()];
+    public static IEnumerable<IActionGate> Builtins() =>
+        [new ConditionGate(), new FieldGate(), new ExposedGate()];
+}
+
+/// <summary>
+/// Exposure gate for body-part-targeted actions: blocks when the part's
+/// wear region is covered by a worn garment on its owner ("You reach for
+/// her chest, but her dress is in the way."). No args — the target's own
+/// region decides. Parts without a region are never blocked.
+/// </summary>
+public sealed class ExposedGate : IActionGate
+{
+    public string Id => "exposed";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var part = ctx.Target;
+        if (part is null || !part.HasModule("bodypart"))
+            return false;
+        var region = BodyParts.Region(ctx.Modules, part);
+        if (region.Length == 0 || !ctx.World.HasObject(part.Parent))
+            return false;
+        var owner = ctx.World.GetObject(part.Parent);
+        return owner.HasModule("agent") &&
+               Clothing.CoversRegion(ctx.World, ctx.Modules, owner, region);
+    }
 }
 
 /// <summary>
@@ -188,5 +213,22 @@ internal static class GateArgs
         if (args is not { } e || e.ValueKind != JsonValueKind.Object)
             return null;
         return e.TryGetProperty(name, out var v) ? v : null;
+    }
+}
+
+/// <summary>
+/// Evaluate a When spec directly against an object (the resolver's
+/// WhenApplies answers actor-vs-target internally; this is the seam for
+/// other systems that already hold the object — reaction defaults).
+/// </summary>
+public static class WhenSpecEval
+{
+    public static bool Matches(ModuleRegistry modules, WorldObject obj, Modules.WhenSpec spec)
+    {
+        if (!obj.HasModule(spec.Module))
+            return false;
+        return FieldMatch.Matches(
+            modules.ResolveField(obj, spec.Module, spec.Field),
+            spec.EqualsValue, spec.Min, spec.Max);
     }
 }

@@ -105,7 +105,9 @@ public sealed class ReactionManager
     /// <summary>
     /// The option that applies when the defender doesn't choose: their
     /// remembered last choice for this (verb, actor) when it's still
-    /// available, else the spec's configured default.
+    /// available, else the first option whose DefaultWhen field condition
+    /// holds on the defender (dynamic defaults — a date melts into a
+    /// touch when comfortable and warmed up), else the configured default.
     /// </summary>
     public ReactionOptionSpec EffectiveDefault(PendingReaction pending)
     {
@@ -115,6 +117,15 @@ public sealed class ReactionManager
                     (pending.DefenderId, pending.Action.Verb, pending.ActorId), out var id) &&
                 pending.Options.FirstOrDefault(o => o.Id == id) is { } remembered)
                 return remembered;
+            if (_engine.World.HasObject(pending.DefenderId))
+            {
+                var defender = _engine.World.GetObject(pending.DefenderId);
+                var conditional = pending.Options.FirstOrDefault(o =>
+                    o.DefaultWhen is { } when &&
+                    WhenSpecEval.Matches(_engine.ModuleRegistry, defender, when));
+                if (conditional is not null)
+                    return conditional;
+            }
             return pending.DefaultOption;
         }
     }

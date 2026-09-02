@@ -180,7 +180,7 @@ public class SpeechVariantTests
     {
         var engine = NewEngine();
         // carol can shout/whisper too — her can_speak must not offer the
-        // player "Shout the Carol"-style entries; every shout/whisper
+        // player "Shout Carol"-style entries; every shout/whisper
         // entry is a parameterized {speech} one
         engine.World.AddModule("carol", "speech_variants");
 
@@ -214,6 +214,26 @@ public class SpeechVariantTests
             engine, alice, "Whisper to a burly stranger: \"psst\"");
         Assert.NotNull(match);
         Assert.Equal("bob", match!.TargetId);
+    }
+
+    [Fact]
+    public void PlanParsing_ASayShapedLabelIsAnActionNotSpeech()
+    {
+        var engine = TestWorlds.NewTwoRoomEngine();
+        engine.ModuleRegistry.LoadJson("""
+            [ { "id": "exit", "name": "Exit",
+                "fields": [ { "name": "text", "type": "string", "default": "" } ],
+                "affordances": [ { "verb": "leave", "handler": "leave", "duration": 5,
+                                   "playerOnly": true, "label": "Say goodnight and go home" } ] } ]
+            """);
+        engine.World.CreateObject("door_out", "room_a", "front door");
+        engine.World.AddModule("door_out", "exit");
+
+        var alice = engine.World.GetObject("alice");
+        var match = PlanExecutor.MatchAvailableOrPotential(
+            engine, alice, "Say goodnight and go home");
+        Assert.NotNull(match);
+        Assert.Equal("leave", match!.Verb); // the exit action, not speech
     }
 
     private static string FindTavernDir()

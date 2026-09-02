@@ -77,14 +77,17 @@ public static class Condition
 
     /// <summary>
     /// The agent's total hp pool: parts summed when present, else the
-    /// monolithic health module; null when the agent has neither.
+    /// monolithic health module; null when the agent has neither. Parts
+    /// without their own health module (non-combat anatomy — the
+    /// postdate's erogenous zones) don't count either way.
     /// </summary>
     public static (int Hp, int Max)? Pool(World.World world, ModuleRegistry modules, WorldObject agent)
     {
-        var parts = BodyParts.Of(world, agent);
-        if (parts.Count > 0)
-            return (parts.Sum(p => modules.ResolveInt(p, "health", "hp")),
-                    parts.Sum(p => modules.ResolveInt(p, "health", "maxHp")));
+        var wounded = BodyParts.Of(world, agent)
+            .Where(p => p.HasModule("health")).ToList();
+        if (wounded.Count > 0)
+            return (wounded.Sum(p => modules.ResolveInt(p, "health", "hp")),
+                    wounded.Sum(p => modules.ResolveInt(p, "health", "maxHp")));
         return agent.HasModule("health")
             ? (modules.ResolveInt(agent, "health", "hp"),
                modules.ResolveInt(agent, "health", "maxHp"))
@@ -122,9 +125,9 @@ public static class Condition
     {
         if (!Descriptive(world, modules))
         {
-            var parts = BodyParts.Of(world, agent);
-            if (parts.Count > 0)
-                return ["Health: " + string.Join(", ", parts.Select(p =>
+            var wounded = BodyParts.Of(world, agent).Where(p => p.HasModule("health")).ToList();
+            if (wounded.Count > 0)
+                return ["Health: " + string.Join(", ", wounded.Select(p =>
                     $"{p.Name} {modules.ResolveInt(p, "health", "hp")}/{modules.ResolveInt(p, "health", "maxHp")}" +
                     (BodyParts.IsCrippled(modules, p) ? " (crippled)" : ""))) + "."];
             if (Pool(world, modules, agent) is { } pool)
@@ -147,7 +150,6 @@ public static class Condition
         World.World world, ModuleRegistry modules, WorldObject target)
     {
         var lines = new List<string>();
-        var parts = BodyParts.Of(world, target);
         if (Descriptive(world, modules))
         {
             if (Overall(world, modules, target) is { } o &&
@@ -157,8 +159,9 @@ public static class Condition
                 lines.Add($"{Capitalize(target.Name)}'s {part.Name} is crippled.");
             return lines;
         }
-        if (parts.Count > 0)
-            lines.Add("Health: " + string.Join(", ", parts.Select(p =>
+        var wounded = BodyParts.Of(world, target).Where(p => p.HasModule("health")).ToList();
+        if (wounded.Count > 0)
+            lines.Add("Health: " + string.Join(", ", wounded.Select(p =>
                 $"{p.Name} {modules.ResolveInt(p, "health", "hp")}/{modules.ResolveInt(p, "health", "maxHp")}" +
                 (BodyParts.IsCrippled(modules, p) ? " (crippled)" : ""))) + ".");
         else if (Pool(world, modules, target) is { } pool)

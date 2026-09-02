@@ -196,7 +196,7 @@ public class ReactionsTests
 
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
-        Assert.Equal("You attack the Bob.", result.Message);
+        Assert.Equal("You attack Bob.", result.Message);
 
         // parked: no damage yet, the defender has a pending reaction, the
         // actor is already committed (busy), the telegraph is observable
@@ -219,7 +219,7 @@ public class ReactionsTests
         // the actor isn't an observer of their own signals — the outcome
         // is reported separately so the UI can show it to them
         Assert.Contains(engine.Reactions.DrainResolved(),
-            r => r.ActorId == "alice" && r.Message == "You swing at the Bob and miss.");
+            r => r.ActorId == "alice" && r.Message == "You swing at Bob and miss.");
     }
 
     [Fact]
@@ -238,11 +238,11 @@ public class ReactionsTests
         var messages = engine.Reactions.DrainResolved()
             .Where(r => r.ActorId == "alice").Select(r => r.Message).ToArray();
         Assert.Equal(
-            new[] { "The Bob attempts to dodge.", "You swing at the Bob and miss." },
+            new[] { "Bob attempts to dodge.", "You swing at Bob and miss." },
             messages);
         // and the actor's own memory keeps the choice for later context
         var memory = engine.Memory.Recall("alice");
-        Assert.Contains(memory, m => m == "The Bob attempts to dodge.");
+        Assert.Contains(memory, m => m == "Bob attempts to dodge.");
     }
 
     [Fact]
@@ -377,7 +377,7 @@ public class ReactionsTests
         // window 0: too fast to react — a plain opposed attack
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
-        Assert.Equal("You swing at the Bob and miss.", result.Message);
+        Assert.Equal("You swing at Bob and miss.", result.Message);
         Assert.Empty(engine.Reactions.Pending);
     }
 
@@ -391,7 +391,7 @@ public class ReactionsTests
 
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "attack", "bob"));
-        Assert.StartsWith("You hit the Bob", result.Message);
+        Assert.StartsWith("You hit Bob", result.Message);
         Assert.Empty(engine.Reactions.Pending);
     }
 

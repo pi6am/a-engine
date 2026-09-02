@@ -184,7 +184,10 @@ public sealed class ConsolePrompt
                 {
                     if (_modalMenu is { } menu)
                     {
-                        // modal reaction popup: only navigation keys apply
+                        // modal reaction popup: it owns the keyboard
+                        // entirely — arrows move the selection (never the
+                        // input history), Enter picks, Escape dismisses,
+                        // and every other key is eaten
                         if (key.Key == ConsoleKey.UpArrow && menu.Options.Count > 0)
                         {
                             _modalSel = (_modalSel - 1 + menu.Options.Count) % menu.Options.Count;
@@ -200,12 +203,15 @@ public sealed class ConsolePrompt
                             reactionChoice = _modalSel;
                             _modalMenu = null;
                             Redraw();
+                            // fall through: the choice dispatches below
                         }
                         else if (key.Key == ConsoleKey.Escape)
                         {
                             _modalMenu = null;
                             Redraw();
                         }
+                        if (reactionChoice is null)
+                            continue;
                     }
                     else if (key.Key == ConsoleKey.F2)
                     {
@@ -368,8 +374,13 @@ public sealed class ConsolePrompt
                         Redraw();
                     }
                 }
-                if (reactionChoice is { } choice)
-                    ReactionChosen?.Invoke(choice);
+                if (reactionChoice is { } chosen)
+                {
+                    // a locked-in response is not a submitted line — keep
+                    // reading input after the choice dispatches
+                    ReactionChosen?.Invoke(chosen);
+                    continue;
+                }
             }
         }
         finally

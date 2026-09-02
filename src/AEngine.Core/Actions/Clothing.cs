@@ -35,4 +35,14 @@ public static class Clothing
         agent.HasModule("body")
             ? modules.ResolveStringList(agent, "body", "regions") ?? []
             : null;
+
+    /// <summary>
+    /// True when some worn garment covers the body region (a dress covers
+    /// both top and bottom; a bra covers the top). Parts in a covered
+    /// region are not exposed — the intimacy gating behind touching them.
+    /// </summary>
+    public static bool CoversRegion(
+        World.World world, ModuleRegistry modules, WorldObject agent, string region) =>
+        WornItems(world, modules, agent)
+            .Any(g => GarmentRegions(modules, g).Contains(region, StringComparer.Ordinal));
 }

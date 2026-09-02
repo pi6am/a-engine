@@ -33,6 +33,12 @@ public sealed class ActionContext
     /// (whose Target is the recipient/container). Null for one-object verbs.
     /// </summary>
     public WorldObject? AuxTarget { get; init; }
+    /// <summary>
+    /// The affordance's free string payload (Data) — answers for ask
+    /// verbs, intensities for stimulation, targets for set-style verbs.
+    /// Null when invoked without an affordance (scheduled actions).
+    /// </summary>
+    public IReadOnlyDictionary<string, string>? Data { get; init; }
     public IReadOnlyDictionary<string, string> Args { get; init; } =
         new Dictionary<string, string>();
 }

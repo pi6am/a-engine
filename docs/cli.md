@@ -33,8 +33,12 @@ output is left alone.
 Per-key line editing — cursor movement, mid-line insert, up/down history,
 slash-command completion popup with tab (filters as you type; ESC or
 deleting the leading `/` closes it) — and redraws the input line around
-background output. F2 opens the quick-time reaction popup in real-time
-mode (announced on a status line).
+background output. F2 opens the quick-time reaction picker (announced on
+a status line in both time modes). The picker owns the keyboard while
+open; picking locks the response in and reports it above the prompt
+("Maya leans in to kiss you. (Response: Melt into it)"), and F2 then
+moves to the next pending reaction if any. Unpicked reactions fall back
+to their effective default when the player submits their next turn.
 
 ## Slash commands
 
@@ -89,8 +93,18 @@ never deliver to the actor — those ride a bounded per-agent queue in
 through `Reactions.DrainResolved`). The player's quick-time reactions go
 through their policy like any NPC's (no inline prompt, no F2 banner).
 
-## Real-time mode
+## Turn-based mode (the default)
 
+Every action takes one turn — classic text-adventure pacing — and each
+player action grants every NPC one round, in which an agent may do one
+body action AND say one line (the speech and action tracks are
+independent). NPC planning is never allowed to block the prompt: after
+your action, a background pump completes in-flight NPC decisions as they
+arrive (LLM latency included) and prints what you observe above the input
+line while you keep typing. NPCs get no further rounds until your next
+input — waiting grants exactly one round, same as any other action.
+
+## Real-time mode
 `--real-time` (or `/realtime`; `/turnbased` switches back) runs a
 per-second background timer that calls `TurnManager.Tick()` and
 `RunNpcTurns()` and prints the player's observed signals as they happen

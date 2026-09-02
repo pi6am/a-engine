@@ -155,6 +155,9 @@ if (!Console.IsInputRedirected)
     Console.CancelKeyPress += (_, _) => RestoreTerminal();
 }
 CancellationTokenSource? realTimeCts = null;
+// turn-based delivery pump (see TurnPumpLoop) — flushes async NPC
+// decisions while the player types
+CancellationTokenSource? turnPumpCts = null;
 // real-time clock speed: 1.0 = one game second per real second; 0.5 makes
 // a 2s action take 4s of real time, 2.0 takes 1s. Read/written across
 // threads (the timer loop), so use Interlocked.
@@ -309,12 +312,23 @@ console.ReactionMenuProvider = () =>
 };
 console.ReactionChosen = index =>
 {
+    PendingReaction? picked = null;
+    ReactionOptionSpec? chosen = null;
     lock (engine.SyncRoot)
     {
         var pr = engine.Reactions.PendingFor(player.Id);
         if (pr is not null && index < pr.Options.Count)
-            engine.Reactions.Choose(pr.Id, pr.Options[index].Id);
+        {
+            picked = pr;
+            chosen = pr.Options[index];
+            engine.Reactions.Choose(pr.Id, chosen.Id);
+        }
     }
+    // the response is locked in: report it, and the F2 status moves to
+    // the next pending reaction (the pump re-derives it) — the choice's
+    // sensations and the resolution print as they land
+    if (picked is not null && chosen is not null)
+        console.WriteAbove($"{picked.Announcement} (Response: {chosen.Label})");
 };
 
 Console.WriteLine(planner is null
@@ -330,6 +344,12 @@ if (debugServer is not null)
 
 if (realTime)
     SetTimeMode(TimeMode.RealTime);
+else
+{
+    // turn-based from the start: the pump flushes async NPC decisions
+    turnPumpCts = new CancellationTokenSource();
+    _ = TurnPumpLoop(turnPumpCts.Token);
+}
 
 Console.WriteLine(); // separate the intro from the first room description
 // action narration (/narrate actions|all): raw outcome and observation
@@ -353,6 +373,7 @@ while (true)
         Console.WriteLine();
         Console.WriteLine(Wrap(gameOverText));
         realTimeCts?.Cancel();
+        turnPumpCts?.Cancel();
         return 0;
     }
 
@@ -419,6 +440,7 @@ while (true)
         if (console.WasWoken)
             continue;
         realTimeCts?.Cancel();
+        turnPumpCts?.Cancel();
         Console.WriteLine();
         Console.WriteLine("Goodbye.");
         return 0;
@@ -432,11 +454,17 @@ while (true)
         if (slash.Dispatch(input))
         {
             realTimeCts?.Cancel();
+            turnPumpCts?.Cancel();
             Console.WriteLine("Goodbye.");
             return 0;
         }
         continue; // meta command: no turn consumed
     }
+
+    // submitting a turn closes any open reaction windows: unpicked
+    // responses fall back to their defaults (F2 picks were already
+    // locked in and reported)
+    ResolvePlayerReactionsToDefaults();
 
     if (!int.TryParse(input, out var choice))
     {
@@ -530,6 +558,7 @@ while (true)
         if (text is null) // EOF
         {
             realTimeCts?.Cancel();
+            turnPumpCts?.Cancel();
             Console.WriteLine();
             Console.WriteLine("Goodbye.");
             return 0;
@@ -730,6 +759,7 @@ static string? FindScenarioDir(string relative)
 // default reaction applies.
 void RunNpcTurnsAndResolve()
 {
+    engine.TurnManager.NewNpcRound(); // one NPC round per player action
     engine.TurnManager.RunNpcTurns();
     ResolvePendingReactions();
 }
@@ -826,21 +856,12 @@ void ResolvePendingReactions()
 {
     while (true)
     {
-        PendingReaction? playerPending;
         PendingReaction? npcPending;
         lock (engine.SyncRoot)
         {
             engine.Reactions.PollPolicies();
-            // in auto mode the player's own reactions go through their
-            // policy like any NPC — never the inline prompt
-            playerPending = IsAuto() ? null : engine.Reactions.PendingFor(player.Id);
             npcPending = engine.Reactions.Pending
                 .FirstOrDefault(p => p.PolicySelection is { IsCompleted: false });
-        }
-        if (playerPending is not null)
-        {
-            PromptReactionInline(playerPending);
-            continue;
         }
         if (npcPending is null)
         {
@@ -851,6 +872,23 @@ void ResolvePendingReactions()
         {
             lock (engine.SyncRoot)
                 engine.Reactions.ForceDefault(npcPending.Id);
+        }
+    }
+}
+
+// submitting a turn closes the reaction windows: anything the player
+// hasn't picked (via F2) falls back to its effective default — picked
+// responses were already locked in and reported
+void ResolvePlayerReactionsToDefaults()
+{
+    while (true)
+    {
+        lock (engine.SyncRoot)
+        {
+            var pr = engine.Reactions.PendingFor(player.Id);
+            if (pr is null)
+                return;
+            engine.Reactions.Choose(pr.Id, engine.Reactions.EffectiveDefault(pr).Id);
         }
     }
 }
@@ -875,25 +913,6 @@ void PrintResolvedOutcomes()
         }
 }
 
-void PromptReactionInline(PendingReaction pr)
-{
-    ReactionOptionSpec effectiveDefault;
-    lock (engine.SyncRoot)
-        effectiveDefault = engine.Reactions.EffectiveDefault(pr);
-    Console.WriteLine();
-    Console.WriteLine(pr.Announcement + " How do you react?");
-    for (var i = 0; i < pr.Options.Count; i++)
-        Console.WriteLine($"  {i + 1}. {pr.Options[i].Label}" +
-            (ReferenceEquals(pr.Options[i], effectiveDefault) ? " (default)" : ""));
-    var answer = console.ReadLine("> ")?.Trim() ?? "";
-    var chosen = int.TryParse(answer, out var n) && n >= 1 && n <= pr.Options.Count
-        ? pr.Options[n - 1]
-        : pr.Options.FirstOrDefault(o => o.Label.Equals(answer, StringComparison.OrdinalIgnoreCase))
-          ?? effectiveDefault;
-    lock (engine.SyncRoot)
-        engine.Reactions.Choose(pr.Id, chosen.Id);
-}
-
 // Switch between turn-based and real-time mode on the fly. Real-time runs
 // a per-second background timer that advances the world and prints the
 // signals the player observes as they happen.
@@ -904,6 +923,8 @@ void SetTimeMode(TimeMode mode)
     engine.TimeMode = mode;
     if (mode == TimeMode.RealTime)
     {
+        turnPumpCts?.Cancel();
+        turnPumpCts = null;
         realTimeCts = new CancellationTokenSource();
         _ = RealTimeLoop(realTimeCts.Token);
         Console.WriteLine("Real-time mode: the world advances on its own.");
@@ -911,8 +932,77 @@ void SetTimeMode(TimeMode mode)
     else
     {
         realTimeCts?.Cancel();
+        turnPumpCts?.Cancel();
         realTimeCts = null;
+        turnPumpCts = new CancellationTokenSource();
+        _ = TurnPumpLoop(turnPumpCts.Token);
         Console.WriteLine("Turn-based mode: time advances with your actions.");
+    }
+}
+
+// turn-based delivery pump: the player's prompt is never blocked on an
+// NPC's (possibly LLM-slow) planning — this loop completes in-flight NPC
+// selections and companion slots as they land, printing observed signals
+// above the prompt. It advances no time and grants no new NPC rounds
+// (those come once per player action, via RunNpcTurnsAndResolve); it only
+// finishes what those rounds started.
+async Task TurnPumpLoop(CancellationToken ct)
+{
+    using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+    try
+    {
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            try
+            {
+                IReadOnlyList<AEngine.Core.Signals.Signal> signals;
+                IReadOnlyList<(string ActorId, string Message)> resolved;
+                string? status = null;
+                lock (engine.SyncRoot)
+                {
+                    engine.TurnManager.RunNpcTurns();
+                    engine.Reactions.PollPolicies();
+                    if (engine.GameOver is null)
+                    {
+                        signals = engine.SignalBus.Drain(player.Id);
+                        resolved = engine.Reactions.DrainResolved();
+                        status = engine.Reactions.PendingFor(player.Id) is { } pr
+                            ? $"{pr.Announcement} F2 to react " +
+                              $"(default: {engine.Reactions.EffectiveDefault(pr).Label})"
+                            : null;
+                    }
+                    else
+                    {
+                        signals = [];
+                        resolved = [];
+                    }
+                }
+                console.SetStatus(status);
+                var lines = new List<string>();
+                foreach (var signal in signals)
+                    lines.Add(RenderSignal(signal));
+                foreach (var (actorId, message) in resolved)
+                    if (actorId == player.Id)
+                        lines.Add(message);
+                if (lines.Count > 0)
+                    console.WriteAbove(string.Join('\n', lines));
+                if (engine.GameOver is not null)
+                    console.Wake(); // the main loop prints the ending
+            }
+            catch (OperationCanceledException)
+            {
+                throw; // mode switched or shutting down — handled outside
+            }
+            catch (Exception ex)
+            {
+                // a faulty handler/policy must not kill the pump
+                console.WriteAbove($"[engine error] {ex.Message}");
+            }
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        // mode switched or shutting down
     }
 }
 

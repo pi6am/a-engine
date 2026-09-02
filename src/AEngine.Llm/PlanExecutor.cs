@@ -72,12 +72,21 @@ public sealed class PlanExecutor
     public static AvailableAction? MatchAvailableOrPotential(
         GameEngine engine, WorldObject agent, string line)
     {
+        // an exact label match always wins: a planner faithfully echoing
+        // an action's label ("Say goodnight and go home" — an exit, not a
+        // sentence to speak) is running that action
+        var exact = engine.ActionResolver.Resolve(agent).FirstOrDefault(a =>
+            string.Equals(a.Label, line, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null)
+            return exact;
         if (TryParseSpeech(line, out var verb, out var addressee, out var speech))
         {
             var spoken = FindSpeechAction(engine, agent, verb, addressee);
             if (spoken is not null)
                 return spoken with { Text = speech };
         }
+        if (TryParseTouch(engine, agent, line) is { } touch)
+            return touch;
         if (TryParseAttack(engine, agent, line) is { } attack)
             return attack;
         return MatchLine(engine.ActionResolver.Resolve(agent), line)
@@ -210,6 +219,61 @@ public sealed class PlanExecutor
         }
         speech = rest.Trim().Trim('"').Trim();
         return speech.Length > 0;
+    }
+
+    /// <summary>
+    /// The touch-verb stem a line starts with (kiss, massage, stroke,
+    /// lick), or null. Word boundaries matter ("kissing" is not a
+    /// command).
+    /// </summary>
+    private static string? TouchStem(string line) =>
+        new[] { "kiss", "massage", "stroke", "lick" }.FirstOrDefault(v =>
+            line.StartsWith(v, StringComparison.OrdinalIgnoreCase) &&
+            (line.Length == v.Length || line[v.Length] is ' '));
+
+    /// <summary>
+    /// Parse a touch line aimed at a body part: "Kiss Maya's neck",
+    /// "massage her shoulders", "stroke her thigh". The part resolves on
+    /// the other agents present (possessives stripped generously — her,
+    /// his, their, the, or an owner's name); the action must exist in
+    /// the actor's current list (so exposure and intimacy filtering
+    /// still decide).
+    /// </summary>
+    public static AvailableAction? TryParseTouch(GameEngine engine, WorldObject agent, string line)
+    {
+        var stem = TouchStem(line);
+        if (stem is null)
+            return null;
+        var rest = line[stem.Length..].Trim();
+        if (rest.Length == 0)
+            return null;
+        var actions = engine.ActionResolver.Resolve(agent)
+            .Where(a => a.Verb == stem && a.TargetId is not null)
+            .ToList();
+        if (actions.Count == 0)
+            return null;
+        var roomId = engine.World.RoomOf(agent.Id).Id;
+        foreach (var other in engine.World.Objects.Values
+                     .Where(o => o.Id != agent.Id && o.HasModule("agent") &&
+                                 engine.World.RoomOf(o.Id).Id == roomId))
+        {
+            var prefixes = new List<string> { "the ", "her ", "his ", "their ", other.Name + "'s " };
+            foreach (var proper in Knowledge.ProperNames(engine.ModuleRegistry, other))
+                prefixes.Add(proper + "'s ");
+            foreach (var prefix in prefixes.Append(""))
+            {
+                if (!rest.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var partName = rest[prefix.Length..].Trim();
+                if (partName.Length == 0)
+                    continue;
+                var part = BodyParts.FindByName(engine.World, other, partName);
+                if (part is null)
+                    continue;
+                return actions.FirstOrDefault(a => a.TargetId == part.Id);
+            }
+        }
+        return null;
     }
 
     /// <summary>

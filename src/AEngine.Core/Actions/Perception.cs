@@ -72,8 +72,13 @@ public static class Perception
             // agent conditions gather into one parenthetical list:
             // "the arena duelist (prone, incapacitated)"; descriptive
             // crunch adds the overall condition word ("wounded"), and
-            // visible status conditions append theirs ("tipsy", "drunk")
+            // visible status conditions append theirs ("tipsy", "drunk").
+            // A busy agent leads with their activity — what someone is
+            // doing outranks how they're positioned
             var conditions = new List<string>();
+            if (child.HasModule("agent") &&
+                modules.ResolveString(child, "agent", "activity") is { Length: > 0 } busy)
+                conditions.Add(busy);
             if (Condition.Descriptive(world, modules) && child.HasModule("agent") &&
                 !Health.IsIncapacitated(world, modules, child) &&
                 Condition.Overall(world, modules, child) is { } condition)
@@ -112,8 +117,10 @@ public static class Perception
                     ? $"carried by {child.Name}"
                     : $"{posture} on the {child.Name}";
                 var words = Conditions.VisibleWords(world, modules, occupant);
+                var activity = modules.ResolveString(occupant, "agent", "activity");
+                var midActivity = activity is { Length: > 0 } ? activity + ", " : "";
                 var suffix = words.Count > 0 ? ", " + string.Join(", ", words) : "";
-                items.Add($"{NameFor(modules, observer, occupant)} ({where}{suffix})");
+                items.Add($"{NameFor(modules, observer, occupant)} ({midActivity}{where}{suffix})");
             }
         }
         // agents the observer is carrying (a grappled victim) list like
@@ -183,9 +190,12 @@ public static class Perception
 
     /// <summary>"brass key" -> "the brass key"; names with an article stay as-is.</summary>
     public static string WithDefiniteArticle(string name) =>
+        // a proper name takes no article ("Maya eases back", "Examine
+        // Nix the goblin") — capitalized leading word reads as one
         name.StartsWith("the ", StringComparison.OrdinalIgnoreCase) ||
         name.StartsWith("a ", StringComparison.OrdinalIgnoreCase) ||
-        name.StartsWith("an ", StringComparison.OrdinalIgnoreCase)
+        name.StartsWith("an ", StringComparison.OrdinalIgnoreCase) ||
+        (name.Length > 0 && char.IsUpper(name[0]))
             ? name
             : "the " + name;
 

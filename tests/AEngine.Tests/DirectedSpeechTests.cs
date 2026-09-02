@@ -189,4 +189,48 @@ public class DirectedSpeechTests
         }
         throw new DirectoryNotFoundException("Could not locate scenarios/tavern.");
     }
+
+    [Fact]
+    public void UndirectedSay_AloneTogether_RemembersLikeDirectedSpeech()
+    {
+        var engine = NewCrowdedEngine();
+        // just the two of them: the broadcast IS the conversation
+        engine.World.MoveObject("carol", "room_b");
+
+        var result = Say(engine, "Say: \"just us then\"");
+        Assert.Equal("You say: \"just us then\"", result.Message);
+
+        // the listener remembers it with the addressed boost — their own
+        // replies (affordance salience) shouldn't out-live what they heard
+        var toBob = engine.Memory.RecallDetailed("bob")
+            .Single(e => e.Text.Contains("just us then"));
+        Assert.Equal(8, toBob.Salience); // solo-addressee boost on the ambient spec
+    }
+
+    [Fact]
+    public void UndirectedSay_WithABystander_StaysCheap()
+    {
+        var engine = NewCrowdedEngine(); // alice, bob, carol all present
+
+        Say(engine, "Say: \"everyone gets a turn\"");
+
+        // three in the room: no solo addressee, ambient stays forgettable
+        var toBob = engine.Memory.RecallDetailed("bob")
+            .Single(e => e.Text.Contains("everyone gets a turn"));
+        Assert.Equal(0, toBob.Salience);
+    }
+
+    [Fact]
+    public void UndirectedSay_OverheardFromTheNextRoom_NotBoosted()
+    {
+        var engine = NewCrowdedEngine();
+        engine.World.MoveObject("carol", "room_b");
+
+        Say(engine, "Say: \"just us then\"");
+
+        // carol overhears through the door: informed, not addressed
+        var toCarol = engine.Memory.RecallDetailed("carol")
+            .Single(e => e.Text.Contains("just us then"));
+        Assert.Equal(0, toCarol.Salience);
+    }
 }

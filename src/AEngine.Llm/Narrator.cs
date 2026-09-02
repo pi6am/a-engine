@@ -127,7 +127,7 @@ public sealed class Narrator
     /// <summary>Build the event-narration request messages (exposed for tests).</summary>
     public IReadOnlyList<LlmMessage> BuildEventMessages(IReadOnlyList<string> rawLines) =>
         [LlmMessage.System(_eventsSystemPrompt),
-         LlmMessage.User($"The events read:\n\n{string.Join('\n', rawLines)}\n\nNarrate them.")];
+         LlmMessage.User($"The events read:\n\n{string.Join('\n', rawLines)}\n\nNarrate them. Paraphrase related events and make them flow together, as long as you preserve the sense of what occurred. Use synonyms to introduce variation, again preserving the sense.")];
 
     /// <summary>
     /// Narrate a batch of raw event lines (action outcomes and

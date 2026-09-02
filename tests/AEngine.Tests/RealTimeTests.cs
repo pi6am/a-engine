@@ -50,6 +50,7 @@ public class RealTimeTests
     public void BusyAgent_SkipsNpcTurns_UntilDurationElapses()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         engine.Random = new Random(0);
         // make "take" a long-running action (2 turns)
         engine.ModuleRegistry.LoadJson("""
@@ -70,25 +71,26 @@ public class RealTimeTests
         var bob = engine.World.GetObject("bob");
         var take = TestWorlds.Find(engine, "bob", "take", "pear");
         Assert.True(engine.TurnManager.PerformAction(bob, take).Success);
-        var turnAfterAction = engine.TurnManager.Turn;
 
-        // busy for one more turn: NPC turns are skipped entirely
+        // busy for the take's 2-second duration: NPC turns are skipped entirely
         engine.TurnManager.RunNpcTurns();
         engine.TurnManager.RunNpcTurns();
-        Assert.Equal(turnAfterAction, engine.TurnManager.Turn);
+        Assert.Equal(0, engine.TurnManager.Turn); // no time passed, nobody acted
 
-        // a turn passes (Alice waits), then Bob acts again via his policy
-        var alice = engine.World.GetObject("alice");
-        engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wait"));
+        // the duration ticks off, then Bob acts again via his policy
+        engine.TurnManager.Tick();
+        engine.TurnManager.Tick();
         engine.TurnManager.RunNpcTurns(); // starts Bob's selection
         engine.TurnManager.RunNpcTurns(); // executes it
-        Assert.True(engine.TurnManager.Turn > turnAfterAction + 1);
+        Assert.True(engine.TurnManager.Turn >= 2);
+        Assert.NotEmpty(engine.TurnManager.DrainOutcomes("bob"));
     }
 
     [Fact]
     public void Say_DurationScalesWithTextLength()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         var bob = engine.World.GetObject("bob");
         var say = TestWorlds.Find(engine, "bob", "say");
 
@@ -106,6 +108,7 @@ public class RealTimeTests
     public void Say_SpeechTrack_DoesNotBlockActions()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         var bob = engine.World.GetObject("bob");
         // open the door so Bob can move
         var door = TestWorlds.Find(engine, "bob", "open", "door_b");
@@ -142,6 +145,7 @@ public class RealTimeTests
     public void RepeatBackoff_DoublesConsecutiveIdleDuration_AndResetsOnOtherVerb()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         var bob = engine.World.GetObject("bob");
         var look = TestWorlds.Find(engine, "bob", "look");
         var inventory = TestWorlds.Find(engine, "bob", "inventory");
@@ -149,14 +153,18 @@ public class RealTimeTests
         // consecutive looks back off: 1x, 2x, 4x (busy until 1, 3, 6)
         engine.TurnManager.PerformAction(bob, look); // turn 0
         Assert.Equal(1, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.Tick(); // real-time: time passes by ticks
         engine.TurnManager.PerformAction(bob, look); // turn 1
         Assert.Equal(3, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look); // turn 2
         Assert.Equal(6, engine.TurnManager.BusyUntilTurn("bob"));
 
         // a different verb resets the streak (inventory has no backoff: 1 turn)
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, inventory); // turn 3
         Assert.Equal(4, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look); // turn 4 — back to 1x
         Assert.Equal(5, engine.TurnManager.BusyUntilTurn("bob"));
     }
@@ -165,6 +173,7 @@ public class RealTimeTests
     public void RepeatBackoff_CapsAtConfiguredMaximum()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         engine.ModuleRegistry.LoadJson("""
         [
           {
@@ -185,9 +194,12 @@ public class RealTimeTests
         var look = TestWorlds.Find(engine, "bob", "look");
 
         engine.TurnManager.PerformAction(bob, look); // turn 0 -> busy 1 (1x)
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look); // turn 1 -> busy 3 (2x)
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look); // turn 2 -> busy 6 (4x)
         Assert.Equal(6, engine.TurnManager.BusyUntilTurn("bob"));
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look); // turn 3 -> 8x capped to 4: busy 7
         Assert.Equal(7, engine.TurnManager.BusyUntilTurn("bob"));
     }
@@ -196,6 +208,7 @@ public class RealTimeTests
     public void IdleBusyAgent_WakesOnNewSignal()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         engine.Random = new Random(0);
         var bob = engine.World.GetObject("bob");
         var alice = engine.World.GetObject("alice");
@@ -203,7 +216,9 @@ public class RealTimeTests
         // Bob idles: three consecutive looks back off to 4 turns busy
         var look = TestWorlds.Find(engine, "bob", "look");
         engine.TurnManager.PerformAction(bob, look);
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look);
+        engine.TurnManager.Tick();
         engine.TurnManager.PerformAction(bob, look); // busy until turn 6 (turn now 3)
         Assert.Equal(6, engine.TurnManager.BusyUntilTurn("bob"));
 
@@ -211,17 +226,19 @@ public class RealTimeTests
         var say = TestWorlds.Find(engine, "alice", "say");
         Assert.True(engine.TurnManager.PerformAction(alice, say, "wake up!").Success);
 
-        // idle backoff is interruptible: Bob's selection starts despite being busy
-        var turnBefore = engine.TurnManager.Turn;
+        // idle backoff is interruptible: Bob's selection starts despite
+        // being busy — and executes (real-time actions advance no turns,
+        // so the outcome queue is the witness)
         engine.TurnManager.RunNpcTurns(); // wakes: starts Bob's selection
         engine.TurnManager.RunNpcTurns(); // executes it
-        Assert.True(engine.TurnManager.Turn > turnBefore);
+        Assert.NotEmpty(engine.TurnManager.DrainOutcomes("bob"));
     }
 
     [Fact]
     public void NonIdleBusyAgent_DoesNotWakeOnSignal()
     {
         var engine = TestWorlds.NewTwoRoomEngine();
+        engine.TimeMode = TimeMode.RealTime;
         engine.Random = new Random(0);
         // make "take" a long-running action (5 turns, no backoff)
         engine.ModuleRegistry.LoadJson("""

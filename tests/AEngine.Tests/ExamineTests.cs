@@ -23,7 +23,7 @@ public class ExamineTests
         Assert.Contains(actions, a => a.Verb == "examine" && a.TargetId == "chest");
         Assert.Contains(actions, a => a.Verb == "examine" && a.TargetId == "door_a");
         Assert.Contains(actions, a => a.Verb == "examine" && a.TargetId == "bob");
-        Assert.Contains(actions, a => a.Verb == "examine" && a.Label == "Examine the Bob");
+        Assert.Contains(actions, a => a.Verb == "examine" && a.Label == "Examine Bob");
         Assert.DoesNotContain(actions, a => a.Verb == "examine" && a.TargetId == "alice");
         // no duplicates
         var examines = actions.Where(a => a.Verb == "examine").ToList();

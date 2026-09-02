@@ -179,6 +179,38 @@ public sealed class ActionResolver
                             affordance.Handler, attachment.ModuleId, affordance.Prompt));
                     continue;
                 }
+                // touch family (TargetParts): offered from the agent's own
+                // modules, one entry per body part of each other agent
+                // present — "Kiss Maya's neck". Non-intimate parts always
+                // list; intimate ones only when their region is uncovered
+                // (consent itself is a reaction + gates at execution).
+                // The action targets the PART; the reaction system finds
+                // the defending holder from its parent.
+                if (affordance.TargetParts && target.Id == agent.Id)
+                {
+                    foreach (var other in others)
+                        foreach (var part in BodyParts.Of(_world, other))
+                        {
+                            var intimate = _modules.ResolveBool(part, "bodypart", "intimate");
+                            if (affordance.IntimateParts)
+                            {
+                                if (!intimate || RegionCovered(other, part))
+                                    continue;
+                            }
+                            else if (intimate)
+                                continue;
+                            actions.Add(new AvailableAction(
+                                affordance.Verb, part.Id,
+                                (affordance.Label ?? "{verb} {holder}'s {part}")
+                                .Replace("{verb}",
+                                    char.ToUpperInvariant(affordance.Verb[0]) + affordance.Verb[1..],
+                                    StringComparison.Ordinal)
+                                .Replace("{holder}", NameFor(agent, other), StringComparison.Ordinal)
+                                .Replace("{part}", part.Name, StringComparison.Ordinal),
+                                affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                        }
+                    continue;
+                }
                 // speech is parameterized: the label carries a {speech}
                 // placeholder, aimed per SpeechTargets. Both (the say
                 // default): the undirected broadcast ("Say: {speech}") is
@@ -313,6 +345,11 @@ public sealed class ActionResolver
         if ((affordance.SpeechTargets is not null || affordance.Verb == "say") &&
             target.Id != agent.Id)
             return false;
+        // likewise the touch family: another agent's touch module offers
+        // their parts to nobody — your own module parameterizes the
+        // per-part entries ("Kiss Maya's neck"), never "Kiss the Maya"
+        if (affordance.TargetParts && target.Id != agent.Id)
+            return false;
         var applies = affordance.Verb switch
         {
             "look" => target.Id == agent.Id,
@@ -387,8 +424,7 @@ public sealed class ActionResolver
     /// of the target (default) or the actor. Every spec must match —
     /// comparison semantics are shared with field gates (FieldMatch).
     /// </summary>
-    private bool WhenApplies(
-        Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
+    private bool WhenApplies(Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
     {
         if (affordance.When is not { Count: > 0 } specs)
             return true;
@@ -424,9 +460,19 @@ public sealed class ActionResolver
         return target.HasModule("openable") ? (target, "openable") : null;
     }
 
-    private string LabelFor(Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
+    /// <summary>
+    /// True when the part's wear region is covered by a worn garment on
+    /// its owner — the resolver-side filter for listing intimate parts
+    /// (the same rule the execution-time `exposed` gate enforces).
+    /// </summary>
+    private bool RegionCovered(WorldObject owner, WorldObject part)
     {
-        // a data-driven label override wins; {target} names the target as
+        var region = _modules.ResolveString(part, "bodypart", "region") ?? "";
+        return region.Length > 0 && Clothing.CoversRegion(_world, _modules, owner, region);
+    }
+
+    private string LabelFor(Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
+    {        // a data-driven label override wins; {target} names the target as
         // the acting agent can print it — the author owns the phrasing,
         // articles included
         if (affordance.Label is { } custom)

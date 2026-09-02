@@ -51,6 +51,13 @@ public sealed class TurnManager
     private readonly HashSet<string> _busyInterruptible = new(StringComparer.Ordinal);
 
     /// <summary>
+    /// Per-agent expiry turn for the recorded body-track activity (the
+    /// agent-module `activity` field is the observable copy — look,
+    /// examine, and LLM contexts read the world, not this manager).
+    /// </summary>
+    private readonly Dictionary<string, int> _activityUntil = new(StringComparer.Ordinal);
+
+    /// <summary>
     /// Per-agent queues of their own action-outcome messages (bounded), for
     /// tooling: signals never reach the actor, so an auto-played character's
     /// actions would otherwise be invisible to a spectator. Parked-action
@@ -143,7 +150,7 @@ public sealed class TurnManager
             var result = gateFailure
                          ?? EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb,
-                             auxTargetId: action.AuxTargetId);
+                             auxTargetId: action.AuxTargetId, affordanceData: affordance?.Data);
             if (result.EndsGame)
                 _engine.GameOver ??= result.Message;
             // remember your own action and its outcome (a look result is too
@@ -153,25 +160,45 @@ public sealed class TurnManager
             QueueOutcome(agent.Id, result.Message);
             if (result.Outcome == ActionOutcome.Noop)
                 return result;
+            // a player-driven action grants the NPCs their round — this
+            // is what makes turn-based turn-based (the CLI also bumps
+            // explicitly via NewNpcRound before RunNpcTurns; idempotent)
+            if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
+                _roundEpoch++;
             if (result.Success)
                 EmitSignals(agent, action, text, departureRoomId, holderBefore, targetNameBefore);
             else
                 EmitFailSignals(agent, action);
             var duration = BusyDuration(agent, action, result);
+            // turn-based pacing: every action is one turn (classic
+            // text-adventure semantics) — durations pace the world clock
+            // (metabolism, chatter) and real-time mode, not turns. Busy
+            // spells last through the current round only.
+            var busySpan = _engine.TimeMode == TimeMode.TurnBased ? 2 : duration;
             // speech rides its own track: it paces talking (and replanning,
             // see LlmPolicy) without blocking movement or attacks
             if (affordance?.Speech == true)
-                _speechBusyUntil[agent.Id] = Turn + duration;
+            {
+                _speechBusyUntil[agent.Id] = Turn + busySpan;
+                ClearPendingSpeech(agent.Id); // the queued words are being said
+            }
             else
-                _busyUntil[agent.Id] = Turn + duration;
+            {
+                _busyUntil[agent.Id] = Turn + busySpan;
+                RecordActivity(agent, action, affordance, busySpan);
+            }
             if (_engine.TimeMode == TimeMode.TurnBased)
             {
-                // ambient time passes with the actor's own activity, so NPC
-                // count doesn't speed up emissions for the player; metabolism
-                // is a world clock — everyone's alcohol burns and bladder
-                // fills with the time this action took
+                // ambient time passes with the actor's own activity — and
+                // so do their metabolism and intimacy: each action
+                // advances only the ACTOR's per-agent clocks (the cast
+                // size must not speed up everyone's world), while the
+                // room-objects' chatter rides the player's clock (the POV
+                // experiences the TV)
                 AdvanceAmbient(duration, agent.Id);
-                Metabolism.Advance(_engine, duration);
+                Metabolism.Advance(_engine, duration, agent.Id);
+                if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
+                    Chatter.Advance(_engine, duration);
                 AdvanceTurn();
             }
             return result;
@@ -225,6 +252,11 @@ public sealed class TurnManager
         var announcement = telegraph
             .Replace("{agent}", Actions.Knowledge.NameFor(_engine.ModuleRegistry, defender, agent),
                 StringComparison.Ordinal);
+        // part-targeted actions ("leans in to kiss {holder}'s neck"):
+        // the holder IS the defender
+        if (target is not null && target.Parent.Length > 0 && _engine.World.HasObject(target.Parent) &&
+            _engine.World.GetObject(target.Parent).Id == defender.Id)
+            announcement = announcement.Replace("{holder}", "you", StringComparison.Ordinal);
         announcement = target is not null && target.Id == defender.Id
             ? announcement
                 .Replace("the {target}", "you", StringComparison.Ordinal)
@@ -236,8 +268,11 @@ public sealed class TurnManager
                     StringComparison.Ordinal);
         announcement = announcement
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
-        var pending = _engine.Reactions.Add(
+        var pending =         _engine.Reactions.Add(
             agent.Id, defender.Id, action, text, announcement, options, Turn + spec.Window);
+        // the committed actor's round counts (players park too)
+        if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
+            _roundEpoch++;
         // an NPC defender's policy picks the reaction; synchronous policies
         // (random/auto without LLM) resolve immediately in PollPolicies
         var policyId = _engine.ModuleRegistry.ResolveString(defender, "agent", "policy") ?? "player";
@@ -255,14 +290,26 @@ public sealed class TurnManager
             .Replace("{target}", Perception.WithDefiniteArticle(
                 Actions.Knowledge.NameFor(_engine.ModuleRegistry, agent, target ?? defender)), StringComparison.Ordinal)
             .Replace("{item}", AuxName(action.AuxTargetId), StringComparison.Ordinal);
+        // part-targeted telegraphs ("You lean in to kiss {holder}."):
+        // the holder renders by the name the actor can print
+        if (target is not null && target.Parent.Length > 0 && _engine.World.HasObject(target.Parent) &&
+            _engine.World.GetObject(target.Parent).HasModule("agent"))
+            actorText = actorText.Replace("{holder}",
+                Actions.Knowledge.NameFor(_engine.ModuleRegistry, agent, _engine.World.GetObject(target.Parent)),
+                StringComparison.Ordinal);
+        actorText = actorText.Replace("{holder}", "", StringComparison.Ordinal);
         _engine.Memory.Record(agent, actorText);
         QueueOutcome(agent.Id, actorText);
         var parkDuration = BusyDuration(agent, action, ActionResult.Ok(actorText));
-        _busyUntil[agent.Id] = Turn + parkDuration;
+        _busyUntil[agent.Id] = Turn + (_engine.TimeMode == TimeMode.TurnBased ? 2 : parkDuration);
+        RecordActivity(agent, action, LookupAffordance(action),
+            _engine.TimeMode == TimeMode.TurnBased ? 2 : parkDuration);
         if (_engine.TimeMode == TimeMode.TurnBased)
         {
             AdvanceAmbient(parkDuration, agent.Id);
-            Metabolism.Advance(_engine, parkDuration);
+            Metabolism.Advance(_engine, parkDuration, agent.Id);
+            if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
+                Chatter.Advance(_engine, parkDuration);
             AdvanceTurn();
         }
         return ActionResult.Ok(actorText);
@@ -335,7 +382,8 @@ public sealed class TurnManager
             var result = EvaluateGates(agent, pending.Action, pending.Text, LookupAffordance(pending.Action))
                          ?? EvaluateCheck(agent, pending.Action, option)
                          ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
-                             pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId);
+                             pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId,
+                             LookupAffordance(pending.Action)?.Data);
             if (result.EndsGame)
                 _engine.GameOver ??= result.Message;
             RecordOutcome(agent, pending.Action, result.Message);
@@ -407,18 +455,21 @@ public sealed class TurnManager
     /// <summary>Execute a handler by id without advancing the turn.</summary>
     public ActionResult Execute(
         WorldObject agent, string handlerId, string? targetId = null, string? text = null,
-        string? verb = null, Modules.ReactionOptionSpec? reaction = null, string? auxTargetId = null)
+        string? verb = null, Modules.ReactionOptionSpec? reaction = null, string? auxTargetId = null,
+        IReadOnlyDictionary<string, string>? affordanceData = null)
     {
         lock (_engine.SyncRoot)
         {
             var handler = _engine.HandlerRegistry.Get(handlerId);
-            return handler.Execute(BuildContext(agent, targetId, text, verb, auxTargetId, reaction));
+            return handler.Execute(
+                BuildContext(agent, targetId, text, verb, auxTargetId, reaction, affordanceData));
         }
     }
 
     private ActionContext BuildContext(
         WorldObject agent, string? targetId, string? text, string? verb,
-        string? auxTargetId, Modules.ReactionOptionSpec? reaction) =>
+        string? auxTargetId, Modules.ReactionOptionSpec? reaction,
+        IReadOnlyDictionary<string, string>? affordanceData = null) =>
         new()
         {
             World = _engine.World,
@@ -435,6 +486,7 @@ public sealed class TurnManager
             Verb = verb,
             Random = _engine.Random,
             Reaction = reaction,
+            Data = affordanceData,
             Args = text is null
                 ? new Dictionary<string, string>()
                 : new Dictionary<string, string> { ["text"] = text },
@@ -502,6 +554,10 @@ public sealed class TurnManager
                 var agent = _engine.World.GetObject(agentId);
                 if (Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, agent))
                     continue; // unconscious agents get no turn
+                // "about to say something" only lasts while the speech
+                // track is actually occupied
+                if (Turn >= _speechBusyUntil.GetValueOrDefault(agentId))
+                    ClearPendingSpeech(agentId);
                 var policyId = _engine.ModuleRegistry.ResolveString(agent, "agent", "policy")!;
                 if (!_engine.PolicyRegistry.Has(policyId))
                     continue;
@@ -525,26 +581,141 @@ public sealed class TurnManager
                     if (action is null)
                         continue; // stale choice — discard, fresh selection next turn
                     PerformAction(agent, action, chosen.Text);
+                    // turn-based: the round allows one speech AND one body
+                    // action — start the companion slot (a random policy
+                    // resolves inline; an LLM plan lands on a later pump)
+                    if (_engine.TimeMode == TimeMode.TurnBased)
+                        StartCompanionSlot(policy, agent, speechSlot: !IsSpeech(action));
                     continue;
+                }
+                // the companion slot (say-alongside-act): complete it the
+                // same way the primary selection completes. A slot that
+                // yielded (nothing to say) doesn't consume anything —
+                // the round-start flow below still runs
+                if (_inFlightSlots.TryGetValue(agentId, out var slot))
+                {
+                    if (!slot.Selection.IsCompleted)
+                        continue;
+                    _inFlightSlots.Remove(agentId);
+                    var chosen = slot.Selection.IsCompletedSuccessfully ? slot.Selection.Result : null;
+                    var match = chosen is null ? null : SlotChoices(agent, slot.SpeechSlot)
+                        .FirstOrDefault(a => a.Verb == chosen.Verb && a.TargetId == chosen.TargetId &&
+                                             a.AuxTargetId == chosen.AuxTargetId);
+                    if (match is not null)
+                    {
+                        PerformAction(agent, match, chosen!.Text);
+                        continue;
+                    }
                 }
 
                 // LOD: agents nobody can perceive (not in a player's room or
                 // an adjacent one) start new work only every npcLodFactor
                 // turns — in-flight decisions always run to completion. With
-                // no player in the world, everything runs at full LOD.
+                // no player in the world, everything is full LOD. The
+                // stagger keys on the round clock (the turn counter jumps
+                // several times per round now that every action advances it)
                 if (lodFactor > 1 && fullLodRooms.Count > 0 &&
                     !fullLodRooms.Contains(_engine.World.RoomOf(agentId).Id) &&
-                    Turn % lodFactor != StableOffset(agentId, lodFactor))
+                    RoundClock % lodFactor != StableOffset(agentId, lodFactor))
                     continue;
 
                 // no selection in flight: busy agents skip (idle backoff is
                 // interruptible — new signals wake the agent to start deciding)
                 if (IsBusy(agentId) && !CanWake(agentId))
                     continue;
+                // one NPC round per player action (turn-based) or per turn
+                // (real-time): once an agent has started their selection
+                // this round, later pumps only complete what's in flight
+                if (RoundConsumed(agentId))
+                    continue;
                 var availableActions = _engine.ActionResolver.Resolve(agent);
+                ConsumeRound(agentId);
                 _inFlightSelections[agentId] =
                     policy.ChooseActionAsync(_engine, agent, availableActions, CancellationToken.None);
                 // deciding counts as this agent's turn
+            }
+        }
+    }
+
+    /// <summary>Per-agent companion-slot selections, keyed by agent id.</summary>
+    private sealed record SlotSelection(
+        Task<AvailableAction?> Selection, bool SpeechSlot);
+
+    private readonly Dictionary<string, SlotSelection> _inFlightSlots = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The NPC round each agent last consumed: in turn-based mode the
+    /// value is the round epoch (bumped by <see cref="NewNpcRound"/> once
+    /// per player action — NPC actions advance the turn counter but never
+    /// grant new NPC rounds); in real-time mode it is the turn itself
+    /// (each tick is a round).
+    /// </summary>
+    private readonly Dictionary<string, int> _roundStartedAt = new(StringComparer.Ordinal);
+
+    private int _roundEpoch;
+
+    /// <summary>
+    /// Grant a fresh NPC round (turn-based): called once per player
+    /// action — a typed command, a Wait, an auto-played step — so every
+    /// autonomous agent gets exactly one round of (up to) one speech and
+    /// one body action between player inputs.
+    /// </summary>
+    public void NewNpcRound()
+    {
+        lock (_engine.SyncRoot)
+        {
+            _roundEpoch++;
+        }
+    }
+
+    private bool RoundConsumed(string agentId) =>
+        _roundStartedAt.TryGetValue(agentId, out var at) &&
+        at == RoundClock;
+
+    private void ConsumeRound(string agentId) =>
+        _roundStartedAt[agentId] = RoundClock;
+
+    /// <summary>
+    /// The clock rounds stagger on: the round epoch in turn-based mode
+    /// (bumped once per player action), the turn itself in real-time
+    /// (each tick is a round).
+    /// </summary>
+    private int RoundClock =>
+        _engine.TimeMode == TimeMode.TurnBased ? _roundEpoch : Turn;
+
+    private bool IsSpeech(AvailableAction action) =>
+        LookupAffordance(action)?.Speech == true;
+
+    /// <summary>
+    /// The actions offered to a companion slot: only speech, or only
+    /// non-speech, depending on what the primary action was.
+    /// </summary>
+    private List<AvailableAction> SlotChoices(WorldObject agent, bool speechSlot) =>
+        _engine.ActionResolver.Resolve(agent)
+            .Where(a => IsSpeech(a) == speechSlot)
+            .ToList();
+
+    private void StartCompanionSlot(Policies.IAgentPolicy policy, WorldObject agent, bool speechSlot)
+    {
+        // the handler may have destroyed the actor (an NPC's own depart)
+        if (!_engine.World.HasObject(agent.Id))
+            return;
+        var choices = SlotChoices(agent, speechSlot);
+        if (choices.Count == 0)
+            return;
+        var selection = policy.ChooseActionAsync(_engine, agent, choices, CancellationToken.None);
+        _inFlightSlots[agent.Id] = new SlotSelection(selection, speechSlot);
+        // synchronous policies (random, an already-decided LLM line) land
+        // at once; async ones complete on a later pump
+        if (selection.IsCompletedSuccessfully && selection.Result is { } chosen)
+        {
+            var match = choices.FirstOrDefault(a =>
+                a.Verb == chosen.Verb && a.TargetId == chosen.TargetId &&
+                a.AuxTargetId == chosen.AuxTargetId);
+            if (match is not null)
+            {
+                _inFlightSlots.Remove(agent.Id);
+                PerformAction(agent, match, chosen.Text);
             }
         }
     }
@@ -870,9 +1041,117 @@ public sealed class TurnManager
         return min + _engine.Random.Next(max - min + 1);
     }
 
+    /// <summary>
+    /// Record what the agent is busy doing, as an observable world field
+    /// (agent-module `activity`) — "Maya (massaging Alex's shoulders)" in
+    /// listings, "Maya is massaging Alex's shoulders." on examine. Only
+    /// actions of 3+ seconds register: briefer gestures are over before
+    /// they're worth reporting. Cleared when the busy spell expires.
+    /// </summary>
+    private void RecordActivity(
+        WorldObject agent, AvailableAction action,
+        Modules.AffordanceDefinition? affordance, int duration)
+    {
+        // the handler may have destroyed the actor (an NPC's own depart)
+        if (duration < 3 || !agent.HasModule("agent") || !_engine.World.HasObject(agent.Id))
+            return;
+        var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
+            ? _engine.World.GetObject(action.TargetId)
+            : null;
+        // part targets render possessively ("Sam's shoulders"); agents by
+        // the name the actor can print; plain objects with an article
+        string targetName;
+        if (target is null)
+            targetName = "";
+        else if (target.HasModule("bodypart") && target.Parent.Length > 0 &&
+                 _engine.World.HasObject(target.Parent) &&
+                 _engine.World.GetObject(target.Parent).HasModule("agent"))
+            targetName = Actions.Knowledge.NameFor(
+                _engine.ModuleRegistry, agent, _engine.World.GetObject(target.Parent)) +
+                $"'s {target.Name}";
+        else if (target.HasModule("agent"))
+            targetName = Actions.Knowledge.NameFor(_engine.ModuleRegistry, agent, target);
+        else
+            targetName = Actions.Perception.WithDefiniteArticle(target.Name);
+        var described = affordance?.Activity is { Length: > 0 } custom
+            ? custom.Replace("{target}", targetName, StringComparison.Ordinal)
+            : Gerund(action.Verb) + (targetName.Length > 0 ? " " + targetName : "");
+        _engine.World.SetFieldOverride(agent.Id, "agent", "activity",
+            World.World.ToJson(described));
+        _activityUntil[agent.Id] = Turn + duration;
+    }
+
+    /// <summary>The activity a body-track action is keeping the agent busy with, or null when free.</summary>
+    public string? ActivityOf(string agentId)
+    {
+        if (!_engine.World.HasObject(agentId))
+            return null;
+        var agent = _engine.World.GetObject(agentId);
+        var activity = _engine.ModuleRegistry.ResolveString(agent, "agent", "activity") ?? "";
+        return activity.Length > 0 ? activity : null;
+    }
+
+    /// <summary>
+    /// A naive English gerund for the fallback activity text:
+    /// drop a trailing 'e' ("massage" → "massaging"), turn trailing "ie"
+    /// into "ying" ("lie" → "lying"), and double a single trailing
+    /// consonant after a single vowel ("sit" → "sitting"). Data's
+    /// <c>activity</c> overrides always win for irregular verbs.
+    /// </summary>
+    private static string Gerund(string verb)
+    {
+        if (verb.EndsWith("ie", StringComparison.Ordinal))
+            return verb[..^2] + "ying";
+        if (verb.EndsWith('e'))
+            return verb[..^1] + "ing";
+        if (verb.Length >= 3 &&
+            !IsVowel(verb[^3]) && IsVowel(verb[^2]) && !IsVowel(verb[^1]) &&
+            verb[^1] is not ('w' or 'x' or 'y'))
+            return verb + verb[^1] + "ing";
+        return verb + "ing";
+    }
+
+    private static bool IsVowel(char c) => c is 'a' or 'e' or 'i' or 'o' or 'u';
+
+    /// <summary>
+    /// Mark that the agent is holding words back until their speech track
+    /// frees (an LLM plan's next line is speech; the previous line is
+    /// still pacing) — rendered as "about to say something" rather than
+    /// claiming they're talking, which isn't interesting.
+    /// </summary>
+    public void NotePendingSpeech(string agentId)
+    {
+        if (_engine.World.HasObject(agentId) &&
+            _engine.World.GetObject(agentId).HasModule("agent"))
+            _engine.World.SetFieldOverride(agentId, "agent", "speakingSoon",
+                World.World.ToJson(true));
+    }
+
+    private void ClearPendingSpeech(string agentId)
+    {
+        if (_engine.World.HasObject(agentId) &&
+            _engine.World.GetObject(agentId).HasModule("agent"))
+            _engine.World.SetFieldOverride(agentId, "agent", "speakingSoon",
+                World.World.ToJson(false));
+    }
+
+    private void ExpireActivity()
+    {
+        foreach (var (agentId, until) in _activityUntil.ToArray())
+        {
+            if (Turn < until)
+                continue;
+            _activityUntil.Remove(agentId);
+            if (_engine.World.HasObject(agentId))
+                _engine.World.SetFieldOverride(agentId, "agent", "activity",
+                    World.World.ToJson(""));
+        }
+    }
+
     private void AdvanceTurn()
     {
         Turn++;
+        ExpireActivity();
         _engine.Reactions.ExpireDue(Turn); // reaction deadlines pick the default
         // in real-time mode each tick is one second for everyone; in
         // turn-based mode ambient time is advanced per actor by
@@ -881,6 +1160,7 @@ public sealed class TurnManager
         {
             AdvanceAmbient(1, onlyHolderId: null);
             Metabolism.Advance(_engine, 1);
+            Chatter.Advance(_engine, 1);
         }
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))
         {

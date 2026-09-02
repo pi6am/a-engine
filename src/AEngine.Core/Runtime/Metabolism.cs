@@ -27,10 +27,19 @@ public static class Metabolism
     /// </summary>
     private sealed record Stage(double Min, string TemplateId);
 
-    /// <summary>Advance every metabolizing agent by seconds of world time.</summary>
-    public static void Advance(GameEngine engine, double seconds)    {
+    /// <summary>
+    /// Advance every metabolizing agent by seconds of world time. In
+    /// turn-based mode pass <paramref name="onlyAgentId"/> so each action
+    /// advances only its ACTOR's metabolism — otherwise N agents acting
+    /// once per round would burn N× the seconds per action, and everyone
+    /// sobers up (and fills up) at the cast size's pace instead of their
+    /// own (the same simultaneity rule the ambient timers follow).
+    /// </summary>
+    public static void Advance(GameEngine engine, double seconds, string? onlyAgentId = null)
+    {
         var agents = engine.World.Objects.Values
             .Where(o => o.HasModule("agent") && o.HasModule("metabolism"))
+            .Where(o => onlyAgentId is null || o.Id == onlyAgentId)
             .ToList();
         foreach (var agent in agents)
         {

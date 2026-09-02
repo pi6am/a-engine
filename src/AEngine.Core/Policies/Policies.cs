@@ -97,8 +97,11 @@ public sealed class RandomPolicy : IAgentPolicy
         GameEngine engine, WorldObject defender,
         PendingReaction reaction, CancellationToken ct)
     {
-        var option = reaction.Options[engine.Random.Next(reaction.Options.Count)];
-        return Task.FromResult<string?>(option.Id);
+        // no coin flips on someone's yes or no: the data's effective
+        // default decides (the static Default, or the first option whose
+        // DefaultWhen field condition holds on the defender — a date
+        // melts when comfortable, deflects when not)
+        return Task.FromResult<string?>(engine.Reactions.EffectiveDefault(reaction).Id);
     }
 }
 

@@ -34,19 +34,29 @@ public class LodTests
         engine.World.AddModule("room_c", "room");
         engine.World.CreateObject("carol", "room_c", "Carol");
         engine.World.AddModule("carol", "agent");
+        engine.World.AddModule("carol", "can_speak");
         engine.World.SetFieldOverride("carol", "agent", "policy", Core.World.World.ToJson("random"));
         return engine;
     }
 
     private static (int Bob, int Carol) RunTurns(GameEngine engine, int turns)
     {
+        // action counts (outcome queue), not memory sizes: snapshots
+        // collapse in memory and say-slots add entries, both of which
+        // made memory a misleading rate proxy
         var alice = engine.World.GetObject("alice");
+        var (bob, carol) = (0, 0);
         for (var i = 0; i < turns; i++)
         {
             engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wait"));
+            // two pumps per round, like the CLI: complete in-flight
+            // selections, then grant the next round's
             engine.TurnManager.RunNpcTurns();
+            engine.TurnManager.RunNpcTurns();
+            bob += engine.TurnManager.DrainOutcomes("bob").Count;
+            carol += engine.TurnManager.DrainOutcomes("carol").Count;
         }
-        return (engine.Memory.Recall("bob").Count, engine.Memory.Recall("carol").Count);
+        return (bob, carol);
     }
 
     [Fact]

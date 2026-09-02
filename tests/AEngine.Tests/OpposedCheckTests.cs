@@ -137,7 +137,7 @@ public class OpposedCheckTests
 
         var result = engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "shove", "bob"));
         Assert.True(result.Success);
-        Assert.Equal("You shove the Bob to the ground.", result.Message);
+        Assert.Equal("You shove Bob to the ground.", result.Message);
         Assert.Equal(Postures.Prone, Postures.Of(engine.World, engine.ModuleRegistry, bob));
         Assert.Contains(engine.SignalBus.Drain("bob"), s => s.Text.Contains("shoves"));
         // the room listing marks him

@@ -239,7 +239,7 @@ public class GrappleTests
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "choke", "bob"));
         Assert.True(result.Success);
-        Assert.Equal("You choke the Bob for 3 damage.", result.Message);
+        Assert.Equal("You choke Bob for 3 damage.", result.Message);
         Assert.Equal(7, engine.ModuleRegistry.ResolveInt(bob, "health", "hp"));
     }
 
@@ -271,7 +271,7 @@ public class GrappleTests
         var result = engine.TurnManager.PerformAction(
             engine.World.GetObject("alice"), TestWorlds.Find(engine, "alice", "release", "bob"));
         Assert.True(result.Success);
-        Assert.Equal("You release the Bob.", result.Message);
+        Assert.Equal("You release Bob.", result.Message);
         Assert.Equal("room_a", bob.Parent);
         Assert.Equal(Postures.Standing, Postures.Of(engine.World, engine.ModuleRegistry, bob));
         // free again: no escape, and grapple is offered once more

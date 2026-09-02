@@ -285,16 +285,21 @@ public sealed class SignalBus
         var throughPortal = observerRoomId != originRoomId;
 
         Signal? best = null;
+        // the agent a part-targeted action aims at (the holder of the
+        // touched body part) — audience filters key off this, so a touch's
+        // onlyTarget spec reaches the touched party, not nobody
+        var audienceTarget = AudienceTargetOf(target);
         foreach (var spec in specs)
         {
             // audience filters run before sense/portal rules: a spec can be
-            // reserved for the action's target (directed speech) or barred
-            // from it (a bystander's murmur)
+            // reserved for the action's target (directed speech, the
+            // touched party of a part-aimed touch) or barred from it (a
+            // bystander's murmur)
             if (spec.Audience == SignalAudience.OnlyTarget &&
-                (target is null || target.Id != observer.Id))
+                audienceTarget?.Id != observer.Id)
                 continue;
             if (spec.Audience == SignalAudience.ExceptTarget &&
-                target is not null && target.Id == observer.Id)
+                audienceTarget?.Id == observer.Id)
                 continue;
             // attenuation: the spec's strength pays the cheapest cost to
             // the observer's room; a negative remainder is imperceptible
@@ -318,6 +323,23 @@ public sealed class SignalBus
             }
         }
         return best;
+    }
+
+    /// <summary>
+    /// The agent an action is "aimed" at, for audience filtering: the
+    /// target itself when it's an agent, else the agent holding the target
+    /// (the owner of a touched body part), else null.
+    /// </summary>
+    private WorldObject? AudienceTargetOf(WorldObject? target)
+    {
+        if (target is null)
+            return null;
+        if (target.HasModule("agent"))
+            return target;
+        return target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
+               _world.GetObject(target.Parent).HasModule("agent")
+            ? _world.GetObject(target.Parent)
+            : null;
     }
 
     /// <summary>
@@ -381,6 +403,29 @@ public sealed class SignalBus
             _modules.ResolveBool(_world.GetObject(stateRef), "doorstate", "open");
     }
 
+    /// <summary>
+    /// An undirected action whose target is the acting agent themself
+    /// (a speech broadcast aims at the speaker) in a room holding exactly
+    /// two agents: with nobody else to address, what was said was said
+    /// to you — a two-agent conversation's ambient line deserves the
+    /// same memory weight as a directed one, so the partner doesn't
+    /// out-remember what you told them. Overhearing from another room
+    /// (or a third party present) stays cheap.
+    /// </summary>
+    private bool IsSoloAddressee(Signal signal, WorldObject observer)
+    {
+        if (signal.TargetId is null || signal.TargetId == observer.Id ||
+            !_world.HasObject(signal.TargetId))
+            return false;
+        var aimed = _world.GetObject(signal.TargetId);
+        if (!aimed.HasModule("agent") ||
+            _world.RoomOf(aimed.Id).Id != signal.OriginRoomId ||
+            _world.RoomOf(observer.Id).Id != signal.OriginRoomId)
+            return false;
+        return _world.Objects.Values.Count(o =>
+            o.HasModule("agent") && _world.RoomOf(o.Id).Id == signal.OriginRoomId) == 2;
+    }
+
     private void Enqueue(WorldObject observer, Signal signal, int? salienceOverride = null)
     {
         if (!_queues.TryGetValue(observer.Id, out var queue))
@@ -388,12 +433,18 @@ public sealed class SignalBus
         queue.Enqueue(signal);
         // observed signals are also remembered, so later plans/conversations
         // keep continuity even after the pending queue is drained. Salience:
-        // being the action's target (addressed!) buys the agent's boost, on
-        // top of any per-spec override riding the signal
+        // being who the action was aimed at (addressed, the owner of the
+        // touched body part, or the only other person in the room when the
+        // actor broadcast) buys the agent's boost, on top of any per-spec
+        // override riding the signal
+        var aimedId = signal.TargetId is not null && _world.HasObject(signal.TargetId)
+            ? AudienceTargetOf(_world.GetObject(signal.TargetId))?.Id
+            : null;
         var salience = salienceOverride ??
-                       (signal.TargetId == observer.Id
-                           ? _memory.SalienceBoostOf(observer)
-                           : 0) + signal.Salience;
+                       ((signal.TargetId == observer.Id || aimedId == observer.Id ||
+                         IsSoloAddressee(signal, observer))
+                            ? _memory.SalienceBoostOf(observer)
+                            : 0) + signal.Salience;
         _memory.Record(observer, signal.Text, salience: salience);
         // and overheard proper names are learned: hearing "Nix, pass the
         // salt" is how you come to know who Nix is
@@ -424,13 +475,35 @@ public sealed class SignalBus
                 StringComparison.Ordinal);
         else
             text = text.Replace("{target}", targetName ?? target?.Name ?? "", StringComparison.Ordinal);
+        // {holder}: the agent holding the target (a touched body part's
+        // owner), rendered observer-relatively — "Alex kisses Maya's neck"
+        // for a bystander, "you"/"your" when the observer is the holder
+        if (target is not null && target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
+            _world.GetObject(target.Parent).HasModule("agent"))
+        {
+            if (observer is not null && observer.Id == target.Parent)
+            {
+                text = text.Replace("{holder}'s", "your", StringComparison.Ordinal);
+                text = text.Replace("{holder}", "you", StringComparison.Ordinal);
+            }
+            else
+            {
+                text = text.Replace("{holder}",
+                    observer is null
+                        ? target.Parent
+                        : Knowledge.NameFor(_modules, observer, _world.GetObject(target.Parent)),
+                    StringComparison.Ordinal);
+            }
+        }
         if (extra is not null)
             foreach (var (placeholder, value) in extra)
                 text = text.Replace(placeholder, value, StringComparison.Ordinal);
         // {container} defaults to empty when the target wasn't in a holder;
-        // {item} likewise for one-object verbs
+        // {item} likewise for one-object verbs, {holder} when the target
+        // has no agent holder
         text = text.Replace("{container}", "", StringComparison.Ordinal);
         text = text.Replace("{item}", "", StringComparison.Ordinal);
+        text = text.Replace("{holder}", "", StringComparison.Ordinal);
         return CollapseDoubledArticles(text);
     }
 

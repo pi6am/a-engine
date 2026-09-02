@@ -149,7 +149,7 @@ public class GivePutTests
         Assert.Equal("apple", give.AuxTargetId); // ...the item rides along
 
         var parked = engine.TurnManager.PerformAction(alice, give);
-        Assert.Equal("You offer the apple to the Bob.", parked.Message);
+        Assert.Equal("You offer the apple to Bob.", parked.Message);
         Assert.Equal("alice", engine.World.GetObject("apple").Parent); // not yet handed over
 
         var pending = Assert.Single(engine.Reactions.Pending);

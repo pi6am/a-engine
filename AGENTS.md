@@ -99,12 +99,27 @@ working in that area, and update them when the behavior changes:
   (`metabolism` module) that burns alcohol into bladder across per-race
   capacities and attaches threshold-band conditions (tipsy/drunk/…). See
   `docs/architecture.md`.
+- **Part-targeted actions, chatter & handler data** — touching is
+  part-targeted: affordances with `targetParts` list one entry per body
+  part of each other agent (intimate parts only when their wear region is
+  uncovered — the `exposed` gate), the action targets the part, and the
+  reaction system resolves the defending holder; `{holder}` renders the
+  part's owner observer-relatively. Non-agent "voices" (a TV) are
+  `chatter` module objects that periodically emit a channel's line pool
+  as forgettable audible signals. Affordances carry a free `data` string
+  map for their handler (answers, intensities, set-style knob targets) —
+  prose and tuning stay in data.
 - **RPG systems** — staged, opt-in modules (stats/checks → opposed checks →
   health → combat → grappling → body parts + crunch levels); scenarios that
   don't reference them are unaffected. See `docs/rpg-systems.md`.
 - **Reactions** — affordances can telegraph and park while the target agent
   picks a response (dodge/block/parry…), with data-driven defaults and policy
-  support. See `docs/architecture.md`.
+  support. Reaction options may declare `defaultWhen` (a field condition on
+  the defender): the effective default becomes state-driven — the consent
+  layer of the extra repo's adult scenario (the defender melts into a touch
+  when comfortable, deflects when not)
+  without any policy or LLM round-trip. The random policy defers to the
+  effective default rather than flipping coins on someone's yes or no. See `docs/architecture.md`.
 - **Policies** — agents with `agent.policy != "player"` act autonomously through
   the same affordances via `IAgentPolicy` resolved through `PolicyRegistry`
   (built-ins `random`, `auto`; `llm` in AEngine.Llm).
@@ -161,10 +176,10 @@ working in that area, and update them when the behavior changes:
   degrade to "you hear X saying something" through doorways via
   `degrade` ladders; shout/whisper build on strength/attenuation the
   same way.)
-- **Label article doubling** — `Perception.WithDefiniteArticle` prepends
-  "the" to names that already embed one ("Nix the goblin" → "Examine the
-  Nix the goblin" in menu labels). Fix by detecting an embedded article
-  or reworking descriptive-name conventions.
+- **Label article doubling** — FIXED: `Perception.WithDefiniteArticle`
+  now skips the article for capitalized proper names ("Nix the goblin" →
+  "Examine Nix the goblin"), while lowercase descriptive names keep it
+  ("the arena duelist").
 - **Autonomous agents** — NPCs act through policies; planned: perception-driven
   policies (the random policy ignores signals), agenda-driven NPCs,
   multi-player (multiple players controlling different agents).

@@ -137,6 +137,31 @@ public sealed class AffordanceDefinition
     /// "say"; other speech verbs must declare it).
     /// </summary>
     public SpeechTargeting? SpeechTargets { get; init; }
+    /// <summary>
+    /// Offered from the agent's own modules once per BODY PART of each
+    /// other agent present ("Kiss Maya's neck", "Massage her shoulders")
+    /// — the touch family. Pairs with <see cref="IntimateParts"/>:
+    /// non-intimate parts (neck, shoulders) are always listed, intimate
+    /// ones (marked intimate on their bodypart module) only when their
+    /// region is uncovered. The action targets the PART; the reaction
+    /// system resolves the defending holder from its parent.
+    /// </summary>
+    public bool TargetParts { get; init; }
+    /// <summary>With TargetParts: list intimate parts (exposed ones) instead of non-intimate ones.</summary>
+    public bool IntimateParts { get; init; }
+    /// <summary>
+    /// Free string payload for the affordance's handler (answers for ask
+    /// verbs, intensities for stimulation, targets for set-style verbs) —
+    /// keeps scenario text and tuning in data rather than handler code.
+    /// </summary>
+    public Dictionary<string, string>? Data { get; init; }
+    /// <summary>
+    /// Present-tense description of performing this action ("massaging
+    /// {target}"), shown while the actor is busy with it — in room
+    /// listings, examine, and LLM contexts. Unset: a naive gerund of the
+    /// verb plus target ("kissing Maya's neck").
+    /// </summary>
+    public string? Activity { get; init; }
     public bool RepeatBackoff { get; init; }
     public int RepeatBackoffCap { get; init; } = 30;
     public List<string>? Postures { get; init; }
@@ -206,6 +231,14 @@ public sealed class ReactionOptionSpec
     public string? RequiresWornModule { get; init; }
     public bool NoResist { get; init; }
     public bool Default { get; init; }
+    /// <summary>
+    /// Dynamic default: while this field condition holds on the
+    /// defender, this option is the effective default (checked before
+    /// the static Default flag) — a date melts into a touch when her
+    /// relationship is high and gently stops it otherwise, without a
+    /// policy or LLM round-trip.
+    /// </summary>
+    public WhenSpec? DefaultWhen { get; init; }
     public string? Text { get; init; }
     public string? Report { get; init; }
 }
