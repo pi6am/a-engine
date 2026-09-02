@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AEngine.Cli;
@@ -42,6 +43,50 @@ public sealed class ConsolePrompt
     private ReactionMenu? _modalMenu; // the open F2 reaction popup
     private int _modalSel;
     private bool _wakePending; // Wake() asked the blocked ReadLine to return
+
+    public ConsolePrompt() => EnableVirtualTerminal();
+
+    /// <summary>
+    /// Windows 10's conhost does not interpret ANSI/VT escape sequences
+    /// until the process opts in (Windows 11 and every terminal emulator
+    /// enable it by default) — without this, the cursor-management codes
+    /// driving the completion popup and the reaction picker print
+    /// literally ("←[2K> /←[J") and corrupt the console. Best effort: if
+    /// the console refuses, the codes will print literally, so suggest a
+    /// VT-capable console and carry on.
+    /// </summary>
+    private static void EnableVirtualTerminal()
+    {
+        if (!OperatingSystem.IsWindows() || Console.IsOutputRedirected)
+            return;
+        try
+        {
+            const int stdOutputHandle = -11;
+            const uint enableVirtualTerminalProcessing = 0x0004;
+            var handle = GetStdHandle(stdOutputHandle);
+            if (!GetConsoleMode(handle, out var mode) ||
+                !SetConsoleMode(handle, mode | enableVirtualTerminalProcessing))
+                Console.WriteLine(
+                    "This console does not support ANSI control codes, so the input " +
+                    "experience will look garbled. Windows Terminal (free in the " +
+                    "Microsoft Store) fixes it.");
+        }
+        catch
+        {
+            // best effort — the game still runs
+        }
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr GetStdHandle(int nStdHandle);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
 
     /// <summary>Slash commands (with leading '/') and their summaries, for tab completion.</summary>
     public IReadOnlyList<(string Name, string Description)>? Completions { get; set; }
