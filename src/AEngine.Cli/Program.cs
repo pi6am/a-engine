@@ -204,7 +204,7 @@ slash.Register("actions", [], "List the actions currently available to you", _ =
         Console.WriteLine($"  {i + 1}. {list[i].Label}");
     return false;
 });
-slash.Register("about", [], "What this scenario is and where it came from", _ =>
+slash.Register("scenario", [], "What this scenario is and where it came from", _ =>
 {
     Console.WriteLine(engine.ScenarioAbout.Length > 0
         ? engine.ScenarioAbout

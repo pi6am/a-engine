@@ -48,7 +48,7 @@ text): `/actions` (numbered action list), `/showplan on|off` (log the
 extracted LLM plan, default off), `/narrate all|room|actions|off` (LLM
 narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
 (`/tb`), `/timescale N` (`/ts`), `/control ID` (play as another agent,
-see below), `/about` (the loaded scenario's about
+see below), `/scenario` (the loaded scenario's about
 blurb), `/quit` (`/exit`), `/help`. Output
 toggles live in `OutputSettings`.
 

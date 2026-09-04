@@ -39,7 +39,7 @@ public sealed class GameEngine
 
     /// <summary>
     /// About blurb of the loaded scenario (scenario root <c>about</c>) —
-    /// what it is, where it came from; shown by the CLI's /about.
+    /// what it is, where it came from; shown by the CLI's /scenario.
     /// </summary>
     public string ScenarioAbout { get; set; } = "";
 
