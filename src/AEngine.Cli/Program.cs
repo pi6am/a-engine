@@ -504,6 +504,14 @@ while (true)
             Console.WriteLine("You can't do that.");
             continue;
         }
+        // the planner's way of saying nothing maps: narrate why, in
+        // fiction, instead of a dead end — no turn is consumed
+        if (plan.Count == 1 &&
+            plan[0].Equals(LlmPlanner.CannotDoThat, StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine(Wrap(await planner.ExplainImpossibilityAsync(player, input)));
+            continue;
+        }
         if (output.ShowPlan)
         {
             Console.WriteLine("Plan:");

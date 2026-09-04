@@ -112,6 +112,11 @@ public sealed class AgentContextBuilder
             sb.AppendLine("Available actions (use these exact labels, one per line):");
             foreach (var action in actions)
                 sb.AppendLine($"- {action.Label}");
+            // the player's planner may be told a request is impossible;
+            // NPC plans never include the sentinel (it isn't advertised
+            // and the NPC instructions never mention it)
+            if (!npc)
+                sb.AppendLine($"- {LlmPlanner.CannotDoThat} (only if the request matches no other action)");
 
             return sb.ToString().TrimEnd();
         }

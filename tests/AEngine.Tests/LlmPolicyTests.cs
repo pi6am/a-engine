@@ -224,4 +224,54 @@ public class LlmPolicyTests
         Assert.Equal("cook", engine.World.GetObject("bread").Parent);
         Assert.Contains("Hey cook!", llm.LastMessages![1].Content);
     }
+
+    [Fact]
+    public void CannotDoThat_AdvertisedToThePlayer_NeverToNpcs()
+    {
+        var engine = NewEngine(new FakeLlmClient());
+        var player = engine.World.GetObject("player");
+        var cook = engine.World.GetObject("cook");
+
+        var playerContext = new AgentContextBuilder(engine).BuildContext(player, npc: false);
+        Assert.Contains(LlmPlanner.CannotDoThat, playerContext);
+        var planner = new LlmPlanner(new FakeLlmClient(), engine);
+        var playerMessages = planner.BuildMessages(player, "eat the brass key", npc: false);
+        Assert.Contains(LlmPlanner.CannotDoThat, playerMessages[0].Content);
+
+        var cookContext = new AgentContextBuilder(engine).BuildContext(cook, npc: true);
+        Assert.DoesNotContain(LlmPlanner.CannotDoThat, cookContext);
+        var cookMessages = planner.BuildMessages(cook, "choose", npc: true);
+        Assert.DoesNotContain(LlmPlanner.CannotDoThat, cookMessages[0].Content);
+    }
+
+    [Fact]
+    public void CannotDoThat_SurvivesPlanParsing_AsTheSoleLine()
+    {
+        var llm = new FakeLlmClient().Enqueue("You Cannot Do That");
+        var engine = NewEngine(llm);
+        var player = engine.World.GetObject("player");
+        var planner = new LlmPlanner(llm, engine);
+        var plan = planner.CreatePlanAsync(player, "eat the brass key", npc: false).Result;
+        var line = Assert.Single(plan);
+        Assert.Equal(LlmPlanner.CannotDoThat, line);
+    }
+
+    [Fact]
+    public void ExplainImpossibility_GroundsInTheRequest_FallsBackOnFailure()
+    {
+        var llm = new FakeLlmClient()
+            .Enqueue("The key is brass, not breakfast. Your teeth object on principle.");
+        var engine = NewEngine(llm);
+        var player = engine.World.GetObject("player");
+        var planner = new LlmPlanner(llm, engine);
+
+        var why = planner.ExplainImpossibilityAsync(player, "eat the brass key").Result;
+        Assert.Contains("brass", why);
+        Assert.Contains("eat the brass key", llm.LastMessages![1].Content);
+
+        // a failed narration call still produces a plain line
+        var broken = new LlmPlanner(new FakeLlmClient(), engine); // empty queue throws
+        var fallback = broken.ExplainImpossibilityAsync(player, "eat the brass key").Result;
+        Assert.Equal("That's not something you can do.", fallback);
+    }
 }
