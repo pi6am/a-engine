@@ -14,10 +14,13 @@ KoboldCPP) is manual.
 `OpenAiCompatibleClient` POSTs `{BaseUrl}/v1/chat/completions` (OpenAI chat
 schema, optional Bearer key; works against KoboldCPP/llama.cpp, OpenRouter,
 Kimi, DeepSeek); `FakeLlmClient` queues canned responses for tests.
-`AgentContextBuilder` renders the **public** world view only (room, visible
-items with closed-container contents hidden, exits open/closed, inventory,
-action menu labels; NPC extras: `agent` module `character`/`goals`/`traits`
-fields + the agent's memory of recent observations and actions).
+`AgentContextBuilder` renders the **public** world view only, ordered
+stable-to-transient so identity anchors the plan: the agent's self block
+first (NPC extras: `agent` module `character`/`goals`/`traits` fields,
+posture, felt/health status), then inventory and remembered notable-item
+whereabouts, then the room (visible items with closed-container contents
+hidden, exits open/closed), and finally the agent's memory of recent
+observations and actions plus the action menu labels.
 
 ## Planning and execution
 

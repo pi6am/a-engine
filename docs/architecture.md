@@ -329,8 +329,10 @@ validation, and debug API all inherit them; furniture occupants are scanned
 as action targets and say-addressees (grandchildren of the room). While
 `carried`, only the agent's own verbs (look/inventory/wait/say) are
 offered — no escape until the carrier drops them. Perception renders
-posture everywhere: look and the LLM context open with "You are sitting on
-the chair." / "You are being carried by the guest.", and room listings show
+posture everywhere: `look` opens with "You are sitting on
+the chair." / "You are being carried by the guest." (the LLM context
+carries the same line in its self block, after character/goals/traits),
+and room listings show
 occupants container-style: "the old cook (sitting on the chair)".
 
 ## Clothing
