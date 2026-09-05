@@ -14,7 +14,12 @@ public class SpawnTests
         "fields": [
           { "name": "alcohol", "type": "number", "default": 0.0 },
           { "name": "bladder", "type": "number", "default": 0.0 },
-          { "name": "capacity", "type": "number", "default": 1.0 }
+          { "name": "capacity", "type": "number", "default": 1.0 },
+          { "name": "motives", "type": "list", "default": [
+            { "id": "alcohol", "max": null,
+              "drift": [ { "mode": "linear", "target": 0, "rate": 0.002 } ] },
+            { "id": "bladder" }
+          ] }
         ],
         "affordances": []
       },
@@ -51,7 +56,8 @@ public class SpawnTests
         "affordances": [
           {
             "verb": "drink", "handler": "consume",
-            "when": [ { "module": "beverage", "field": "empty", "equals": false } ]
+            "when": [ { "module": "beverage", "field": "empty", "equals": false } ],
+            "data": { "impulse.alcohol": "alcohol" }
           }
         ]
       }

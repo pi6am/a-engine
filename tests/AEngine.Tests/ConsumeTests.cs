@@ -14,7 +14,13 @@ public class ConsumeTests
         "fields": [
           { "name": "alcohol", "type": "number", "default": 0.0 },
           { "name": "bladder", "type": "number", "default": 0.0 },
-          { "name": "capacity", "type": "number", "default": 1.0 }
+          { "name": "capacity", "type": "number", "default": 1.0 },
+          { "name": "motives", "type": "list", "default": [
+            { "id": "alcohol", "max": null,
+              "drift": [ { "mode": "linear", "target": 0, "rate": 0.002 } ],
+              "routes": [ { "to": "bladder", "factor": 1.0 } ] },
+            { "id": "bladder" }
+          ] }
         ],
         "affordances": []
       },
@@ -33,6 +39,10 @@ public class ConsumeTests
           {
             "verb": "drink", "handler": "consume", "duration": 5,
             "when": [ { "module": "beverage", "field": "empty", "equals": false } ],
+            "data": {
+              "impulse.alcohol": "alcohol",
+              "impulse.bladder": "volume"
+            },
             "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} drinks the {target}." } ]
           }
         ]
@@ -49,7 +59,27 @@ public class ConsumeTests
           {
             "verb": "eat", "handler": "consume", "duration": 15,
             "when": [ { "module": "food", "field": "empty", "equals": false } ],
+            "data": { "impulse.alcohol": "-sobering" },
             "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} eats the {target}." } ]
+          }
+        ]
+      },
+      {
+        "id": "flask", "name": "Flask",
+        "fields": [
+          { "name": "servings", "type": "int", "default": 3 },
+          { "name": "swigs", "type": "number", "default": 0.1 },
+          { "name": "empty", "type": "bool", "default": false },
+          { "name": "emptyName", "type": "string", "default": "" }
+        ],
+        "affordances": [
+          {
+            "verb": "swig", "handler": "consume", "duration": 3, "label": "Take a swig of the {target}",
+            "when": [ { "module": "flask", "field": "empty", "equals": false } ],
+            "data": {
+              "impulse.alcohol": "swigs",
+              "impulse.bladder": "0.05"
+            }
           }
         ]
       }
@@ -75,6 +105,10 @@ public class ConsumeTests
         world.AddModule("pill", "food");
         world.SetFieldOverride("pill", "food", "sobering", CoreWorld.ToJson(99));
         world.SetFieldOverride("pill", "food", "destroyOnConsume", CoreWorld.ToJson(true));
+
+        world.CreateObject("flask", "room_a", "hip flask");
+        world.AddModule("flask", "flask");
+        world.SetFieldOverride("flask", "flask", "emptyName", CoreWorld.ToJson("empty flask"));
         return engine;
     }
 
@@ -177,8 +211,37 @@ public class ConsumeTests
         world.SetFieldOverride("water", "beverage", "volume", CoreWorld.ToJson(0.5));
 
         var bob = world.GetObject("bob");
-        engine.TurnManager.Execute(bob, "consume", "water", verb: "drink");
+        engine.TurnManager.PerformAction(bob, TestWorlds.Find(engine, "bob", "drink", "water"));
         Assert.Equal(1.0, Bladder(engine, "bob"));
+    }
+
+    [Fact]
+    public void MultiServing_ItemsCountDown_ThenEmpty()
+    {
+        var engine = NewEngine();
+        var alice = engine.World.GetObject("alice");
+        world_alcohol(engine, 0.0);
+        var flask = engine.World.GetObject("flask");
+
+        // three swigs from a servings-3 flask: a custom module and verb,
+        // field-reference and literal impulse values alike
+        for (var i = 0; i < 3; i++)
+        {
+            Assert.False(engine.ModuleRegistry.ResolveBool(flask, "flask", "empty"));
+            engine.TurnManager.PerformAction(
+                alice, TestWorlds.Find(engine, "alice", "swig", "flask"));
+        }
+
+        // each swig applied its impulses: alcohol from the field, bladder
+        // from the literal (decay erodes a little along the way)
+        Assert.True(Alcohol(engine, "alice") > 0.25,
+            $"three swigs of 0.1 should bank alcohol, got {Alcohol(engine, "alice")}");
+        Assert.True(Bladder(engine, "alice") > 0.1,
+            $"three literal 0.05 swigs should fill the bladder, got {Bladder(engine, "alice")}");
+        // and the flask is spent — renamed, servings at zero
+        Assert.True(engine.ModuleRegistry.ResolveBool(flask, "flask", "empty"));
+        Assert.Equal(0, engine.ModuleRegistry.ResolveInt(flask, "flask", "servings"));
+        Assert.Equal("empty flask", flask.Name);
     }
 
     [Fact]

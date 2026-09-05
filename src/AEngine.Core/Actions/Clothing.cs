@@ -6,10 +6,16 @@ namespace AEngine.Core.Actions;
 /// <summary>
 /// Clothing model: a worn garment is a child of the agent (same place
 /// inventory lives) with <c>worn: true</c> on its <c>wearable</c>
-/// attachment. Garments declare the body regions they occupy
-/// (<c>wearable.regions</c>); at most one worn garment per region, so
-/// conflict is set intersection — layering (shirt + coat) is the author's
-/// choice of distinct region names. Fit is data-driven via the agent's
+/// attachment. Garments declare the body regions they COVER
+/// (<c>wearable.regions</c>) — any worn garment covering a region keeps
+/// its parts unexposed, whatever else is underneath — and a LAYER
+/// (<c>wearable.layer</c>, default the base layer): at most one
+/// garment per region per layer, so undergarments and outerwear stack
+/// (boxers under trousers, a dress over bra and panties) while two
+/// garments of the same layer still conflict. Regions are also the
+/// coverage granularity for through-clothes touching: splitting
+/// "bottom" into "hips" and "thighs" lets panties cover the sex
+/// without covering the thighs. Fit is data-driven via the agent's
 /// <c>body</c> module: the garment's regions must be a subset of
 /// <c>body.regions</c>, and an agent with no body can't wear anything.
 /// </summary>
@@ -23,9 +29,18 @@ public static class Clothing
     public static List<WorldObject> WornItems(World.World world, ModuleRegistry modules, WorldObject agent) =>
         world.ChildrenOf(agent.Id).Where(c => IsWorn(modules, c)).ToList();
 
-    /// <summary>The regions a garment occupies (empty if undeclared).</summary>
+    /// <summary>The regions a garment covers (empty if undeclared).</summary>
     public static List<string> GarmentRegions(ModuleRegistry modules, WorldObject garment) =>
         modules.ResolveStringList(garment, "wearable", "regions") ?? [];
+
+    /// <summary>
+    /// The garment's layer — the slot model: garments of the same layer
+    /// conflict over shared regions, different layers stack. Undeclared
+    /// means the base layer, so single-layer data behaves exactly as
+    /// before.
+    /// </summary>
+    public static string Layer(ModuleRegistry modules, WorldObject garment) =>
+        modules.ResolveString(garment, "wearable", "layer") ?? "";
 
     /// <summary>
     /// The agent's body regions, or null when the agent has no body module

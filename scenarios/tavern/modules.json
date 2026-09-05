@@ -329,16 +329,20 @@
         { "name": "alcohol", "type": "number", "default": 0.0 },
         { "name": "bladder", "type": "number", "default": 0.0 },
         { "name": "capacity", "type": "number", "default": 1.0 },
-        { "name": "alcoholDecayPerSec", "type": "number", "default": 0.002 },
-        { "name": "bladderFromAlcohol", "type": "number", "default": 1.0 },
-        { "name": "stages", "type": "list", "default": [
-          { "min": 0.25, "condition": "cond_tipsy" },
-          { "min": 0.5, "condition": "cond_drunk" },
-          { "min": 0.85, "condition": "cond_hammered" }
-        ] },
-        { "name": "bladderStages", "type": "list", "default": [
-          { "min": 0.7, "condition": "cond_pee" },
-          { "min": 0.95, "condition": "cond_bursting" }
+        { "name": "motives", "type": "list", "default": [
+          { "id": "alcohol", "max": null, "scaleField": "capacity",
+            "drift": [ { "mode": "linear", "target": 0, "rate": 0.002 } ],
+            "routes": [ { "to": "bladder", "factor": 1.0 } ],
+            "bands": [
+              { "min": 0.25, "condition": "cond_tipsy" },
+              { "min": 0.5, "condition": "cond_drunk" },
+              { "min": 0.85, "condition": "cond_hammered" }
+            ] },
+          { "id": "bladder",
+            "bands": [
+              { "min": 0.7, "condition": "cond_pee" },
+              { "min": 0.95, "condition": "cond_bursting" }
+            ] }
         ] }
       ],
       "affordances": []
@@ -362,6 +366,10 @@
           "duration": 5,
           "label": "Drink the {target}",
           "when": [ { "module": "beverage", "field": "empty", "equals": false } ],
+          "data": {
+            "impulse.alcohol": "alcohol",
+            "impulse.bladder": "volume"
+          },
           "gates": [
             {
               "kind": "condition",
@@ -376,10 +384,14 @@
         },
         {
           "verb": "clear",
-          "handler": "clear",
+          "handler": "destroy",
           "duration": 2,
           "label": "Clear away the {target}",
-          "when": [ { "module": "beverage", "field": "empty", "equals": true } ]
+          "when": [ { "module": "beverage", "field": "empty", "equals": true } ],
+          "data": { "self": "You clear away {target}." },
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} clears away the {target}." }
+          ]
         }
       ]
     },
@@ -401,16 +413,23 @@
           "duration": 15,
           "label": "Eat the {target}",
           "when": [ { "module": "food", "field": "empty", "equals": false } ],
+          "data": {
+            "impulse.alcohol": "-sobering"
+          },
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} eats the {target}." }
           ]
         },
         {
           "verb": "clear",
-          "handler": "clear",
+          "handler": "destroy",
           "duration": 2,
           "label": "Clear away the {target}",
-          "when": [ { "module": "food", "field": "empty", "equals": true } ]
+          "when": [ { "module": "food", "field": "empty", "equals": true } ],
+          "data": { "self": "You clear away {target}." },
+          "signals": [
+            { "sense": "visual", "priority": 5, "text": "{agent} clears away the {target}." }
+          ]
         }
       ]
     },
@@ -467,10 +486,19 @@
       "affordances": [
         {
           "verb": "use",
-          "handler": "relieve",
+          "handler": "set",
           "duration": 20,
           "label": "Use the {target}",
           "requires": "needs_to_pee, bursting",
+          "data": {
+            "on": "actor",
+            "module": "metabolism",
+            "field": "bladder",
+            "value": "0",
+            "self": "You use {target}.",
+            "sensationField": "reliefText",
+            "sensationFallback": "You feel enormously better."
+          },
           "signals": [
             { "sense": "visual", "priority": 5, "text": "{agent} uses the {target}." }
           ]

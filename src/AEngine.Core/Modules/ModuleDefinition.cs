@@ -150,6 +150,42 @@ public sealed class AffordanceDefinition
     /// <summary>With TargetParts: list intimate parts (exposed ones) instead of non-intimate ones.</summary>
     public bool IntimateParts { get; init; }
     /// <summary>
+    /// With TargetParts: list parts only while their wear region is
+    /// COVERED — the through-clothes family ("Rub her shoulders through
+    /// the sweater"), the counterpart of IntimateParts' uncovered rule.
+    /// Bare-skin and through-clothes variants are separate affordances
+    /// with their own text and tuning, each gated to its own state.
+    /// </summary>
+    public bool CoveredParts { get; init; }
+    /// <summary>
+    /// With TargetParts: also list the acting agent's OWN body parts
+    /// ("Massage your own neck") — self-touch. Same intimate/covered
+    /// filtering as other-agent parts; reactions are simply absent (you
+    /// don't telegraph to yourself).
+    /// </summary>
+    public bool SelfParts { get; init; }
+    /// <summary>
+    /// With TargetParts: list ONLY the actor's own parts — the private
+    /// family (masturbation), where offering the same verb on
+    /// other agents' parts would be wrong. Implies the self listing.
+    /// </summary>
+    public bool SelfOnly { get; init; }
+    /// <summary>
+    /// With TargetParts: list only parts currently HOLDING something
+    /// (deposits from emission) — the cleanup family, so "Clean" and
+    /// "Swallow" only appear where there is something to clean.
+    /// </summary>
+    public bool MessyParts { get; init; }
+    /// <summary>
+    /// Offered only while the actor (and the target, when the action has
+    /// an agent target) are members of the same embrace of the given kind
+    /// — sub-actions of an ongoing pair state ("Move in Maya" needs the
+    /// joined embrace). A string names the kind; an object may also pin
+    /// the Position. The execution-time `embraced` gate covers stale
+    /// plans; this hides the affordance from menus up front.
+    /// </summary>
+    public EmbraceRequirement? RequiresEmbrace { get; init; }
+    /// <summary>
     /// Free string payload for the affordance's handler (answers for ask
     /// verbs, intensities for stimulation, targets for set-style verbs) —
     /// keeps scenario text and tuning in data rather than handler code.
@@ -241,6 +277,15 @@ public sealed class ReactionOptionSpec
     public WhenSpec? DefaultWhen { get; init; }
     public string? Text { get; init; }
     public string? Report { get; init; }
+    /// <summary>
+    /// How a welcomed touch lands for the reacting defender's side of the
+    /// interaction, read by the touch handler: "welcome" (the default —
+    /// full effect, melt extras), "hesitate" (scaled by the affordance's
+    /// data), or "refuse" (the action fails gently, the moment cools).
+    /// Declared per option, so consent vocabulary is scenario data, not
+    /// handler-side word matching.
+    /// </summary>
+    public string? Effect { get; init; }
 }
 
 /// <summary>
@@ -267,6 +312,18 @@ public sealed class OpposedSpec
 {
     public string? Stat { get; init; }
     public string? Skill { get; init; }
+}
+
+/// <summary>
+/// The kind (and optional position) of embrace an affordance requires:
+/// both the actor and, when the action targets an agent, the target
+/// must be members of one embrace matching Kind, and Position when set.
+/// </summary>
+public sealed class EmbraceRequirement
+{
+    public required string Kind { get; init; }
+    /// <summary>Optional: the embrace must currently be in this position.</summary>
+    public string? Position { get; init; }
 }
 
 /// <summary>

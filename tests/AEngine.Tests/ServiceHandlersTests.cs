@@ -6,8 +6,9 @@ using CoreWorld = AEngine.Core.World.World;
 namespace AEngine.Tests;
 
 /// <summary>
-/// clear (bus empty vessels), relieve (use the toilet), leave (end the
-/// game via an exit object).
+/// clear (bus empty vessels), the data-driven toilet `use` (a set-handler
+/// write of the actor's bladder with a per-object relief sensation),
+/// leave (end the game via an exit object).
 /// </summary>
 public class ServiceHandlersTests
 {
@@ -18,7 +19,11 @@ public class ServiceHandlersTests
         "fields": [
           { "name": "alcohol", "type": "number", "default": 0.0 },
           { "name": "bladder", "type": "number", "default": 0.0 },
-          { "name": "capacity", "type": "number", "default": 1.0 }
+          { "name": "capacity", "type": "number", "default": 1.0 },
+          { "name": "motives", "type": "list", "default": [
+            { "id": "alcohol", "max": null },
+            { "id": "bladder" }
+          ] }
         ],
         "affordances": []
       },
@@ -30,10 +35,12 @@ public class ServiceHandlersTests
         ],
         "affordances": [
           { "verb": "drink", "handler": "consume",
-            "when": [ { "module": "beverage", "field": "empty", "equals": false } ] },
-          { "verb": "clear", "handler": "clear",
+            "when": [ { "module": "beverage", "field": "empty", "equals": false } ],
+            "data": { "impulse.alcohol": "alcohol" } },
+          { "verb": "clear", "handler": "destroy",
             "when": [ { "module": "beverage", "field": "empty", "equals": true } ],
-            "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} buses the {target}." } ] }
+            "data": { "self": "You clear away {target}." },
+            "signals": [ { "sense": "visual", "priority": 5, "text": "{agent} clears away the {target}." } ] }
         ]
       },
       {
@@ -45,7 +52,11 @@ public class ServiceHandlersTests
         "id": "toilet", "name": "Toilet",
         "fields": [ { "name": "reliefText", "type": "string", "default": "" } ],
         "affordances": [
-          { "verb": "use", "handler": "relieve", "requires": "needs_to_pee", "duration": 20 }
+          { "verb": "use", "handler": "set", "requires": "needs_to_pee", "duration": 20,
+            "data": { "on": "actor", "module": "metabolism", "field": "bladder", "value": "0",
+                      "self": "You use {target}.",
+                      "sensationField": "reliefText",
+                      "sensationFallback": "You feel enormously better." } }
         ]
       },
       {
@@ -95,12 +106,13 @@ public class ServiceHandlersTests
     }
 
     [Fact]
-    public void Clear_DestroysEmptyVessels_EmitsSignal()
+    public void Destroy_RemovesTheTarget_ItsSignalNamesTheDeparted()
     {
         var engine = NewEngine();
         var world = engine.World;
         var alice = world.GetObject("alice");
-        // a same-room observer: the handler's visual signal crosses no doors
+        // a same-room observer: the affordance's visual signal crosses no
+        // doors — and still names the mug, though it no longer exists
         world.CreateObject("carol", "room_a", "Carol");
         world.AddModule("carol", "agent");
 
@@ -110,18 +122,8 @@ public class ServiceHandlersTests
         Assert.Equal(ActionOutcome.Success, result.Outcome);
         Assert.Equal("You clear away the empty mug.", result.Message);
         Assert.False(engine.World.HasObject("mug"));
-        Assert.Contains(engine.SignalBus.Drain("carol"), s => s.Text.Contains("clears away"));
-    }
-
-    [Fact]
-    public void Clear_RefusesUnfinishedVessels()
-    {
-        var engine = NewEngine();
-        var alice = engine.World.GetObject("alice");
-
-        var result = engine.TurnManager.Execute(alice, "clear", "full_mug");
-        Assert.Equal(ActionOutcome.Noop, result.Outcome);
-        Assert.True(engine.World.HasObject("full_mug"));
+        Assert.Contains(engine.SignalBus.Drain("carol"),
+            s => s.Text == "Alice clears away the empty mug.");
     }
 
     [Fact]
@@ -160,19 +162,6 @@ public class ServiceHandlersTests
         // bands in this module set) — requires hides the affordance
         Assert.DoesNotContain(engine.ActionResolver.Resolve(alice),
             a => a.Verb == "use" && a.TargetId == "urinal");
-    }
-
-    [Fact]
-    public void Relieve_WithoutNeed_Noops()
-    {
-        var engine = NewEngine();
-        var alice = engine.World.GetObject("alice");
-        engine.World.SetFieldOverride("alice", "metabolism", "bladder", CoreWorld.ToJson(0.0));
-        Conditions.Attach(engine.World, engine.ModuleRegistry, alice, "cond_pee");
-
-        var result = engine.TurnManager.Execute(alice, "relieve", "urinal");
-        Assert.Equal(ActionOutcome.Noop, result.Outcome);
-        Assert.Equal("You don't need to go.", result.Message);
     }
 
     [Fact]

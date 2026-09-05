@@ -62,7 +62,8 @@ public sealed class GateRegistry
 
     /// <summary>The built-in gate kinds.</summary>
     public static IEnumerable<IActionGate> Builtins() =>
-        [new ConditionGate(), new FieldGate(), new ExposedGate()];
+        [new ConditionGate(), new FieldGate(), new ExposedGate(), new CoveredGate(),
+         new EmbracedGate(), new PartsFreeGate()];
 }
 
 /// <summary>
@@ -86,6 +87,104 @@ public sealed class ExposedGate : IActionGate
         var owner = ctx.World.GetObject(part.Parent);
         return owner.HasModule("agent") &&
                Clothing.CoversRegion(ctx.World, ctx.Modules, owner, region);
+    }
+}
+
+/// <summary>
+/// Embrace gate for sub-actions of an ongoing pair state. Args:
+/// <c>{ "kind"?, "position"?, "negate"? }</c> — blocks unless the
+/// actor (and the target, when it is another agent) share an embrace
+/// matching the kind/position; <c>negate</c> inverts it (blocks while
+/// embraced — reserving new pairings for the unattached). Covers
+/// stale plans the resolver's listing filter already hid.
+/// </summary>
+public sealed class EmbracedGate : IActionGate
+{
+    public string Id => "embraced";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var kind = GateArgs.String(spec.Args, "kind");
+        var position = GateArgs.String(spec.Args, "position");
+        var other = ctx.Target is not null && ctx.Target.HasModule("agent") &&
+                    ctx.Target.Id != ctx.Agent.Id
+            ? ctx.Target
+            : null;
+        var embrace = other is null
+            ? Embraces.Of(ctx.World, ctx.Modules, ctx.Agent)
+            : Embraces.Find(ctx.World, ctx.Modules, ctx.Agent, other);
+        var holds = embrace is not null &&
+                    (kind is null || Embraces.Kind(ctx.Modules, embrace) == kind) &&
+                    (position is null || Embraces.Position(ctx.Modules, embrace) == position);
+        var negate = spec.Args is { } args &&
+                     args.TryGetProperty("negate", out var n) && n.ValueKind == JsonValueKind.True;
+        return negate ? holds : !holds;
+    }
+}
+
+/// <summary>
+/// The inverse of the exposed gate: blocks when the target part's wear
+/// region is NOT covered — the execution-time guard for through-clothes
+/// affordances (listed via <c>coveredParts</c>), keeping stale plans from
+/// rubbing bare skin with the through-sweater verb.
+/// </summary>
+public sealed class CoveredGate : IActionGate
+{
+    public string Id => "covered";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var part = ctx.Target;
+        if (part is null || !part.HasModule("bodypart"))
+            return false;
+        var region = BodyParts.Region(ctx.Modules, part);
+        if (region.Length == 0 || !ctx.World.HasObject(part.Parent))
+            return false;
+        var owner = ctx.World.GetObject(part.Parent);
+        return owner.HasModule("agent") &&
+               !Clothing.CoversRegion(ctx.World, ctx.Modules, owner, region);
+    }
+}
+
+/// <summary>
+/// Busy-parts gate: blocks when a part this action engages is already
+/// held by an ongoing embrace — the embrace's template declares
+/// <c>occupiesA</c>/<c>occupiesB</c> part-name lists per side. The parts
+/// checked: the targeted part (when the action targets a body part),
+/// the actor's probe instrument (the affordance's <c>probe</c> data),
+/// and any parts the data names in <c>usesParts</c> (a comma list — the
+/// actor's mouth for a kiss). Quick touches while joined, lips while
+/// giving oral: bodies don't contort that way.
+/// </summary>
+public sealed class PartsFreeGate : IActionGate
+{
+    public string Id => "partsFree";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        // the targeted part, on its owner's side
+        if (ctx.Target is { } part && part.HasModule("bodypart") &&
+            ctx.World.HasObject(part.Parent) &&
+            ctx.World.GetObject(part.Parent).HasModule("agent") &&
+            Embraces.OccupiedParts(ctx.World, ctx.Modules, ctx.World.GetObject(part.Parent))
+                .Contains(part.Name))
+            return true;
+        // the actor's own engaged parts
+        var busy = Embraces.OccupiedParts(ctx.World, ctx.Modules, ctx.Agent);
+        if (ctx.Data is not null)
+        {
+            if (ctx.Data.TryGetValue("probe", out var probe) &&
+                probe.Length > 0 &&
+                BodyParts.InstrumentOf(ctx.World, ctx.Modules, ctx.Agent, probe) is { } instrument &&
+                busy.Contains(instrument.Name))
+                return true;
+            if (ctx.Data.TryGetValue("usesParts", out var uses))
+                foreach (var name in uses.Split(',',
+                             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    if (busy.Contains(name))
+                        return true;
+        }
+        return false;
     }
 }
 

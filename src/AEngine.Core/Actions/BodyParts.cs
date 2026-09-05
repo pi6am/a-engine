@@ -71,6 +71,41 @@ public static class BodyParts
     public static List<string> CrippleEffects(ModuleRegistry modules, WorldObject part) =>
         modules.ResolveStringList(part, "bodypart", "crippleEffects") ?? [];
 
+    /// <summary>
+    /// Resolve the actor's instrument for a probe tag ("tongue",
+    /// "fingers", "penis"): the body part declaring that
+    /// <c>bodypart.probe</c>, else a held object providing it on any of
+    /// its modules (a toy's <c>probe</c> field). Null when the actor has
+    /// nothing for it.
+    /// </summary>
+    public static WorldObject? InstrumentOf(
+        World.World world, ModuleRegistry modules, WorldObject agent, string probe)
+    {
+        foreach (var part in Of(world, agent))
+            if (modules.ResolveString(part, "bodypart", "probe") == probe)
+                return part;
+        foreach (var itemId in agent.Children)
+        {
+            if (!world.HasObject(itemId))
+                continue;
+            var item = world.GetObject(itemId);
+            if (Conditions.IsInternal(item))
+                continue;
+            foreach (var attachment in item.Modules)
+                if (modules.Has(attachment.ModuleId) &&
+                    modules.ResolveString(item, attachment.ModuleId, "probe") == probe)
+                    return item;
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// The probe tags a target part receives (<c>bodypart.receives</c> —
+    /// an orifice's compatibility list; empty for surfaces).
+    /// </summary>
+    public static List<string> Receives(ModuleRegistry modules, WorldObject part) =>
+        modules.ResolveStringList(part, "bodypart", "receives") ?? [];
+
     private static string Normalize(string s)
     {
         s = s.Trim();

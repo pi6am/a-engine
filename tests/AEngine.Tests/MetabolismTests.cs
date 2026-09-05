@@ -26,16 +26,20 @@ public class MetabolismTests
           { "name": "alcohol", "type": "number", "default": 0.0 },
           { "name": "bladder", "type": "number", "default": 0.0 },
           { "name": "capacity", "type": "number", "default": 1.0 },
-          { "name": "alcoholDecayPerSec", "type": "number", "default": 0.01 },
-          { "name": "bladderFromAlcohol", "type": "number", "default": 1.0 },
-          { "name": "stages", "type": "list", "default": [
-            { "min": 0.25, "condition": "cond_tipsy" },
-            { "min": 0.5, "condition": "cond_drunk" },
-            { "min": 0.85, "condition": "cond_hammered" }
-          ] },
-          { "name": "bladderStages", "type": "list", "default": [
-            { "min": 0.7, "condition": "cond_pee" },
-            { "min": 0.95, "condition": "cond_bursting" }
+          { "name": "motives", "type": "list", "default": [
+            { "id": "alcohol", "max": null, "scaleField": "capacity",
+              "drift": [ { "mode": "linear", "target": 0, "rate": 0.01 } ],
+              "routes": [ { "to": "bladder", "factor": 1.0 } ],
+              "bands": [
+                { "min": 0.25, "condition": "cond_tipsy" },
+                { "min": 0.5, "condition": "cond_drunk" },
+                { "min": 0.85, "condition": "cond_hammered" }
+              ] },
+            { "id": "bladder",
+              "bands": [
+                { "min": 0.7, "condition": "cond_pee" },
+                { "min": 0.95, "condition": "cond_bursting" }
+              ] }
           ] }
         ],
         "affordances": []
@@ -86,7 +90,7 @@ public class MetabolismTests
         Set(engine, "alice", "alcohol", 0.5);
         engine.TurnManager.EvaluateUpkeep(); // initial band sync
 
-        Metabolism.Advance(engine, 20); // decay 0.01/s → 0.2 burned
+        Motives.Advance(engine, 20); // decay 0.01/s → 0.2 burned
 
         Assert.Equal(0.3, Get(engine, "alice", "alcohol"), 6);
         Assert.Equal(0.2, Get(engine, "alice", "bladder"), 6);
@@ -138,7 +142,7 @@ public class MetabolismTests
         engine.TurnManager.EvaluateUpkeep();
         Assert.True(HasCond(engine, "alice", "drunk"));
 
-        Metabolism.Advance(engine, 20); // burn 0.2 → 0.4, down into the tipsy band
+        Motives.Advance(engine, 20); // burn 0.2 → 0.4, down into the tipsy band
 
         Assert.False(HasCond(engine, "alice", "drunk"));
         Assert.True(HasCond(engine, "alice", "tipsy"));
@@ -156,7 +160,7 @@ public class MetabolismTests
         Set(engine, "alice", "bladder", 0.65);
         engine.TurnManager.EvaluateUpkeep();
 
-        Metabolism.Advance(engine, 5); // burn 0.05 → bladder 0.7 crosses the band
+        Motives.Advance(engine, 5); // burn 0.05 → bladder 0.7 crosses the band
 
         Assert.True(HasCond(engine, "alice", "needs_to_pee"));
         Assert.Contains(engine.SignalBus.Drain("alice"), s => s.Text == "You need to pee.");
@@ -205,7 +209,7 @@ public class MetabolismTests
         Set(engine, "alice", "alcohol", 0.005);
         Set(engine, "alice", "bladder", 0.999);
 
-        Metabolism.Advance(engine, 100);
+        Motives.Advance(engine, 100);
 
         Assert.Equal(0.0, Get(engine, "alice", "alcohol"), 6);
         Assert.Equal(1.0, Get(engine, "alice", "bladder"), 6);

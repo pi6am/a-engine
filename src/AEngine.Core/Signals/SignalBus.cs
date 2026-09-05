@@ -498,6 +498,15 @@ public sealed class SignalBus
         if (extra is not null)
             foreach (var (placeholder, value) in extra)
                 text = text.Replace(placeholder, value, StringComparison.Ordinal);
+        // per-agent pronoun tags ({agent.possessive}, {holder.subject},
+        // …) render observer-relatively, like the names do
+        text = Pronouns.ReplaceReferent(text, "agent", actor, observer, _modules);
+        text = Pronouns.ReplaceReferent(text, "target",
+            target is not null && target.HasModule("agent") ? target : null, observer, _modules);
+        if (target is not null && target.Parent.Length > 0 && _world.HasObject(target.Parent) &&
+            _world.GetObject(target.Parent).HasModule("agent"))
+            text = Pronouns.ReplaceReferent(text, "holder",
+                _world.GetObject(target.Parent), observer, _modules);
         // {container} defaults to empty when the target wasn't in a holder;
         // {item} likewise for one-object verbs, {holder} when the target
         // has no agent holder
@@ -545,22 +554,8 @@ public sealed class SignalBus
     private static readonly Regex SubjectTarget =
         new(@"\{target\}(?: (\w+))?", RegexOptions.Compiled);
 
-    /// <summary>Third-person singular verb → second person: declines → decline, tries → try, watches → watch.</summary>
-    private static string SecondPerson(string verb)
-    {
-        if (verb.EndsWith("ies", StringComparison.Ordinal) && verb.Length > 3)
-            return verb[..^3] + "y";
-        if (verb.EndsWith("shes", StringComparison.Ordinal) ||
-            verb.EndsWith("ches", StringComparison.Ordinal) ||
-            verb.EndsWith("sses", StringComparison.Ordinal) ||
-            verb.EndsWith("xes", StringComparison.Ordinal) ||
-            verb.EndsWith("zes", StringComparison.Ordinal) ||
-            verb.EndsWith("oes", StringComparison.Ordinal))
-            return verb[..^2];
-        if (verb.EndsWith('s') && !verb.EndsWith("ss", StringComparison.Ordinal))
-            return verb[..^1];
-        return verb;
-    }
+    /// <summary>Third-person singular verb → second person (shared with pronoun rendering).</summary>
+    private static string SecondPerson(string verb) => Pronouns.ToSecondPerson(verb);
 
     /// <summary>
     /// Templates habitually write "the {target}" while descriptive names

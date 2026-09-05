@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using AEngine.Core.Runtime;
 using AEngine.Core.World;
 
 namespace AEngine.Core.Actions;
@@ -41,8 +42,9 @@ public static class BuiltinHandlers
         new RitualHandler(),
         new ConsumeHandler(),
         new SpawnHandler(),
-        new ClearHandler(),
-        new RelieveHandler(),
+        new DestroyHandler(),
+        new CleanHandler(),
+        new WashHandler(),
         new LeaveHandler(),
         new DepartHandler(),
     ];
@@ -55,6 +57,12 @@ public static class BuiltinHandlers
         var value = ctx.Modules.ResolveString(obj, module, field);
         return string.IsNullOrEmpty(value) ? null : value;
     }
+
+    /// <summary>The affordance Data payload key, or the fallback when unset/empty.</summary>
+    private static string Data(ActionContext ctx, string key, string fallback = "") =>
+        ctx.Data is not null && ctx.Data.TryGetValue(key, out var value) && value.Length > 0
+            ? value
+            : fallback;
 
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
@@ -602,6 +610,23 @@ public static class BuiltinHandlers
         {
             var target = ctx.Target ?? throw new InvalidOperationException("examine requires a target.");
             var sb = new StringBuilder();
+            // a body part: its own description (authored per part), plus
+            // any deposits held — "There is semen in it."
+            if (target.HasModule("bodypart"))
+            {
+                var owner = target.Parent.Length > 0 && ctx.World.HasObject(target.Parent)
+                    ? ctx.World.GetObject(target.Parent)
+                    : null;
+                var partName = owner is not null && owner.HasModule("agent") && owner.Id != ctx.Agent.Id
+                    ? $"{Knowledge.NameFor(ctx.Modules, ctx.Agent, owner)}'s {target.Name}"
+                    : $"Your {target.Name}";
+                sb.AppendLine(char.ToUpperInvariant(partName[0]) + partName[1..]);
+                if (target.Description.Length > 0)
+                    sb.AppendLine(target.Description);
+                if (ctx.World.ChildrenOf(target.Id).Any())
+                    sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "in it"));
+                return ActionResult.Ok(sb.ToString().TrimEnd());
+            }
             // names are observer-relative: strangers render by their
             // incognito description until the examiner has learned them
             var name = Knowledge.NameFor(ctx.Modules, ctx.Agent, target);
@@ -649,6 +674,11 @@ public static class BuiltinHandlers
                     sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "on it"));
                 else if (target.HasModule("container") && HandlerState.IsOpen(ctx, target))
                     sb.AppendLine(Perception.ContentsSentence(ctx.World, target));
+                else if (ctx.World.ChildrenOf(target.Id).Any())
+                    // anything else holding children still shows them —
+                    // body parts and garments with deposits ("There is
+                    // semen in it."), the generic emission rendering
+                    sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "in it"));
             }
             return ActionResult.Ok(sb.ToString().TrimEnd());
         }
@@ -683,6 +713,16 @@ public static class BuiltinHandlers
             return ActionResult.Noop(posture == Postures.Lying
                 ? $"You're already lying on the {target.Name}."
                 : $"You're already sitting on the {target.Name}.");
+        // already on the SAME support in the other posture: shift
+        // directly — lie <-> sit never passes through standing
+        if (ctx.Agent.Parent == target.Id)
+        {
+            ctx.World.SetFieldOverride(ctx.Agent.Id, "agent", "posture",
+                World.World.ToJson(posture));
+            return ActionResult.Ok(posture == Postures.Lying
+                ? $"You stretch out on the {target.Name}."
+                : $"You sit up on the {target.Name}.");
+        }
         if (Postures.Of(ctx.World, ctx.Modules, ctx.Agent) != Postures.Standing)
             return ActionResult.Fail("You need to stand up first.");
         var capacity = ctx.Modules.ResolveInt(target, supportModule, "capacity", 1);
@@ -751,11 +791,14 @@ public static class BuiltinHandlers
             if (!HandlerState.IsHeld(ctx, target))
                 return ActionResult.Fail($"You need to pick up the {target.Name} first.");
 
-            // one garment per region: conflict on any shared region
+            // one garment per region per LAYER: undergarments and
+            // outerwear stack over the same regions; only same-layer
+            // overlaps conflict
             foreach (var worn in Clothing.WornItems(ctx.World, ctx.Modules, ctx.Agent))
             {
                 var overlap = Clothing.GarmentRegions(ctx.Modules, worn).Intersect(regions).ToList();
-                if (overlap.Count > 0)
+                if (overlap.Count > 0 &&
+                    Clothing.Layer(ctx.Modules, worn) == Clothing.Layer(ctx.Modules, target))
                     return ActionResult.Fail(
                         $"You're already wearing the {worn.Name} there.");
             }
@@ -776,12 +819,18 @@ public static class BuiltinHandlers
             if (!Clothing.IsWorn(ctx.Modules, target))
                 return ActionResult.Noop($"You're not wearing the {target.Name}.");
 
-            // pulling a garment off another agent is an opposed check, rolled
-            // here (like attack) so self-removal stays check-free; the stats
-            // come from the combatant modules (strength/brawling vs agility)
+            // pulling a garment off another agent: a refusing reaction
+            // (effect "refuse") keeps it on — consent is deterministic,
+            // like the touch family; otherwise an opposed check, rolled
+            // here (like attack) so self-removal stays check-free; the
+            // stats come from the combatant modules
+            // (strength/brawling vs agility)
             if (target.Parent != ctx.Agent.Id && ctx.World.HasObject(target.Parent) &&
                 ctx.World.GetObject(target.Parent) is { } wearer && wearer.HasModule("agent"))
             {
+                if (ctx.Reaction?.Effect == "refuse")
+                    return ActionResult.Fail(
+                        $"You grab at the {target.Name}, but {wearer.Name} keeps it on.");
                 var random = ctx.Random ?? new Random();
                 var spec = new Modules.CheckSpec
                 {
@@ -959,11 +1008,14 @@ public static class BuiltinHandlers
         }
     }
 
-    // barter: the target is a ware another agent holds; the ware module's
-    // `wants` field names the item id the trader wants in exchange — the
-    // two items swap inventories. A missing offer is a real outcome, not
-    // a silent failure: when the ware declares a `refusal` line the holder
-    // speaks it aloud (audible to the room, remembered by the holder).
+    // barter — a `ware` module on the item names the seller (`trader`,
+    // optional), what it costs (`wants`, an item id the actor must hold
+    // or have already handed over), and a spoken `refusal` when the
+    // offer isn't enough. The holder consents or declines via the
+    // action's reaction; on consent the two items swap parents. All
+    // phrasing is data (self / self:gift for the two success forms,
+    // onNoHolder / onNotTrading / onDeclined / onWants / onTry for the
+    // refusals) with {holder}/{target}/{wants} placeholders.
     private sealed class TradeHandler : IActionHandler
     {
         public string Id => "trade";
@@ -973,20 +1025,34 @@ public static class BuiltinHandlers
             var ware = ctx.Target ?? throw new InvalidOperationException("trade requires a target ware.");
             var holder = ware.Parent.Length > 0 && ctx.World.HasObject(ware.Parent)
                 ? ctx.World.GetObject(ware.Parent) : null;
+            var holderName = holder is null
+                ? ""
+                : Knowledge.NameFor(ctx.Modules, ctx.Agent, holder);
+            string Render(string template, string? wantsName = null) =>
+                Capitalize(template
+                    .Replace("{holder}", holderName, StringComparison.Ordinal)
+                    .Replace("{target}", Perception.WithDefiniteArticle(ware.Name), StringComparison.Ordinal)
+                    .Replace("{wants}",
+                        wantsName is null ? "" : Perception.WithDefiniteArticle(wantsName),
+                        StringComparison.Ordinal));
             if (holder is null || !holder.HasModule("agent"))
-                return ActionResult.Fail($"There's nobody here to trade the {ware.Name} with.");
+                return ActionResult.Fail(Render(Data(ctx, "onNoHolder",
+                    "There's nobody here to trade {target} with.")));
             if (holder.Id == ctx.Agent.Id)
                 return ActionResult.Noop($"You're already carrying the {ware.Name}.");
             // a ware with a `trader` sells only through that agent
             if (ctx.Modules.ResolveString(ware, "ware", "trader") is { Length: > 0 } trader &&
                 holder.Id != trader)
-                return ActionResult.Fail($"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} isn't trading the {ware.Name}.");
+                return ActionResult.Fail(Render(Data(ctx, "onNotTrading",
+                    "{holder} isn't trading {target}.")));
             // the holder consented or declined via the trade's reaction
             if (ctx.Reaction is { NoResist: false })
-                return ActionResult.Fail($"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} declines the offer.");
+                return ActionResult.Fail(Render(Data(ctx, "onDeclined",
+                    "{holder} declines the offer.")));
             var wantsId = ctx.Modules.ResolveString(ware, "ware", "wants");
             if (wantsId is null || !ctx.World.HasObject(wantsId))
-                return ActionResult.Fail($"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} isn't trading the {ware.Name}.");
+                return ActionResult.Fail(Render(Data(ctx, "onNotTrading",
+                    "{holder} isn't trading {target}.")));
             var wants = ctx.World.GetObject(wantsId);
             // the wanted item counts whether the actor still holds it or has
             // already handed it over (a gift ahead of the barter)
@@ -1005,19 +1071,21 @@ public static class BuiltinHandlers
                             Text = "{agent} says: \"{arg}\"",
                         }],
                         refusal);
-                    return ActionResult.Fail(
-                        $"You try to barter for {Perception.WithDefiniteArticle(ware.Name)}.");
+                    return ActionResult.Fail(Render(Data(ctx, "onTry",
+                        "You try to barter for {target}.")));
                 }
-                return ActionResult.Fail(
-                    $"{Capitalize(Knowledge.NameFor(ctx.Modules, ctx.Agent, holder))} wants {Perception.WithDefiniteArticle(wants.Name)} in exchange.");
+                return ActionResult.Fail(Render(Data(ctx, "onWants",
+                    "{holder} wants {wants} in exchange."), wants.Name));
             }
             // in the gift-ahead case the actor gives nothing now, so say so
             var wantsInHand = wants.Parent == ctx.Agent.Id;
             ctx.World.MoveObject(wants.Id, holder.Id);
             ctx.World.MoveObject(ware.Id, ctx.Agent.Id);
-            return ActionResult.Ok(wantsInHand
-                ? $"You trade {Perception.WithDefiniteArticle(wants.Name)} for {Perception.WithDefiniteArticle(ware.Name)}."
-                : $"{Capitalize(holder.Name)} hands you {Perception.WithDefiniteArticle(ware.Name)}.");
+            return ActionResult.Ok(Render(Data(ctx, wantsInHand ? "self" : "self:gift",
+                    wantsInHand
+                        ? "You trade {wants} for {target}."
+                        : "{holder} hands you {target}."),
+                wants.Name));
         }
     }
 
@@ -1028,7 +1096,9 @@ public static class BuiltinHandlers
     // and an epilogue; `endsGame` ends the game with that epilogue. Two
     // directions share the handler: the supplicant asks (actor = supplicant,
     // target = host) or the host performs (a targetOthers affordance —
-    // actor = host, target = supplicant).
+    // actor = host, target = supplicant). The refusal phrasing is data
+    // (onNeeds with {host}/{items}, onAsk for the ask-direction prefix);
+    // the epilogue is the module's `epilogue` field.
     private sealed class RitualHandler : IActionHandler
     {
         public string Id => "ritual";
@@ -1052,12 +1122,16 @@ public static class BuiltinHandlers
             {
                 var names = missing.Select(id =>
                     ctx.World.HasObject(id) ? ctx.World.GetObject(id).Name : id);
-                var lack = $"{Capitalize(host.Name)} shakes their head — the rite still needs: {string.Join(", ", names)}.";
+                var lack = Capitalize(Data(ctx, "onNeeds",
+                        "{host} shakes their head — the rite still needs: {items}.")
+                    .Replace("{host}", host.Name, StringComparison.Ordinal)
+                    .Replace("{items}", string.Join(", ", names), StringComparison.Ordinal));
                 // the ask direction reads as an answer to the question;
                 // otherwise the refusal appears with no visible trigger
                 return ActionResult.Fail(ReferenceEquals(host, ctx.Agent)
                     ? lack
-                    : $"You ask {host.Name} for the rite. {lack}");
+                    : Data(ctx, "onAsk", "You ask {host} for the rite.")
+                        .Replace("{host}", host.Name, StringComparison.Ordinal) + " " + lack);
             }
             foreach (var id in ctx.Modules.ResolveStringList(host, "ritual", "consumesItems") ?? [])
                 if (IsAtHand(id))
@@ -1073,13 +1147,19 @@ public static class BuiltinHandlers
         }
     }
 
-    // consuming food and drink — the verb comes from the affordance
-    // ("drink" the ale, "eat" the fries). A `beverage` module carries
-    // `alcohol`/`volume` units applied to the consumer's `metabolism`
-    // (bladder fills, alcohol absorbs); a `food` module carries
-    // `sobering` units that burn alcohol off. The vessel (mug, plate)
-    // stays behind empty for the barmaid to clear, unless the data says
-    // destroyOnConsume (a swallowed pill, a gum wrapper world).
+    // consuming food and drink — one generic handler, everything a
+    // scenario tunes lives in the affordance's data. The verb comes
+    // from the affordance ("drink" the ale, "eat" the fries); actor
+    // effects are `impulse.<motive>` keys naming motive deltas as a
+    // field of the consumable (an optional leading '-' negates — food's
+    // sobering burns alcohol off) or a literal number, applied through
+    // the motive simulation (clamping and band sync included; agents
+    // without the matching motives just consume with no effect).
+    // Multi-serving items declare a `servings` count (default 1): each
+    // consume takes one, and the last empties the vessel — which
+    // visibly becomes an empty one (`emptyName`/`emptyDescription`)
+    // for the barmaid to clear, unless the data says destroyOnConsume
+    // (a swallowed pill, a gum wrapper world).
     private sealed class ConsumeHandler : IActionHandler
     {
         public string Id => "consume";
@@ -1087,10 +1167,13 @@ public static class BuiltinHandlers
         public ActionResult Execute(ActionContext ctx)
         {
             var target = ctx.Target ?? throw new InvalidOperationException("consume requires a target.");
-            var moduleId = target.HasModule("beverage") ? "beverage"
-                : target.HasModule("food") ? "food"
-                : null;
-            if (moduleId is null)
+            // the affordance's module names the consumable kind; direct
+            // handler execution (no affordance) falls back to sniffing
+            // the classic modules
+            var moduleId = ctx.ModuleId ??
+                (target.HasModule("beverage") ? "beverage"
+                    : target.HasModule("food") ? "food" : null);
+            if (moduleId is null || !target.HasModule(moduleId))
                 return ActionResult.Fail($"You can't consume {Perception.WithDefiniteArticle(target.Name)}.");
             if (ctx.Modules.ResolveBool(target, moduleId, "empty"))
                 return ActionResult.Noop(
@@ -1101,26 +1184,16 @@ public static class BuiltinHandlers
 
             var verb = ctx.Verb ?? "consume";
             var taste = Field(ctx, target, moduleId, "taste");
-            if (ctx.Agent.HasModule("metabolism"))
-            {
-                if (moduleId == "beverage")
-                {
-                    var alcohol = ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "alcohol") +
-                                   ctx.Modules.ResolveDouble(target, "beverage", "alcohol");
-                    var bladder = Math.Min(1.0,
-                        ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "bladder") +
-                        ctx.Modules.ResolveDouble(target, "beverage", "volume"));
-                    ctx.World.SetFieldOverride(ctx.Agent.Id, "metabolism", "alcohol", World.World.ToJson(alcohol));
-                    ctx.World.SetFieldOverride(ctx.Agent.Id, "metabolism", "bladder", World.World.ToJson(bladder));
-                }
-                else
-                {
-                    var alcohol = Math.Max(0,
-                        ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "alcohol") -
-                        ctx.Modules.ResolveDouble(target, "food", "sobering"));
-                    ctx.World.SetFieldOverride(ctx.Agent.Id, "metabolism", "alcohol", World.World.ToJson(alcohol));
-                }
-            }
+            var deltas = ImpulseDeltas(ctx, target, moduleId);
+            if (deltas.Count > 0)
+                Motives.Impulse(ctx.World, ctx.Modules, ctx.Signals, ctx.Agent, deltas);
+            // multi-serving vessels count down; the last serving empties
+            var remaining = ctx.Modules.ResolveInt(target, moduleId, "servings", 1) - 1;
+            if (ctx.Modules.ResolveField(target, moduleId, "servings") is not null)
+                ctx.World.SetFieldOverride(
+                    target.Id, moduleId, "servings", World.World.ToJson(Math.Max(0, remaining)));
+            if (remaining > 0)
+                return Finish(ctx, target, moduleId, consumedName, verb, taste);
             if (ctx.Modules.ResolveBool(target, moduleId, "destroyOnConsume"))
                 ctx.World.DestroyObject(target.Id);
             else
@@ -1134,9 +1207,53 @@ public static class BuiltinHandlers
                 if (Field(ctx, target, moduleId, "emptyDescription") is { } emptyDescription)
                     target.Description = emptyDescription;
             }
+            return Finish(ctx, target, moduleId, consumedName, verb, taste);
+        }
+
+        /// <summary>The shared tail: the taste sensation and result message.</summary>
+        private static ActionResult Finish(
+            ActionContext ctx, WorldObject target, string moduleId,
+            string consumedName, string verb, string? taste)
+        {
             if (taste is not null)
                 ctx.Signals.SendTo(ctx.Agent, taste);
-            return ActionResult.Ok($"You {verb} {Perception.WithDefiniteArticle(consumedName)}.");
+            var message = Data(ctx, "self") is { Length: > 0 } self
+                ? self.Replace("{target}",
+                    Perception.WithDefiniteArticle(consumedName), StringComparison.Ordinal)
+                : $"You {verb} {Perception.WithDefiniteArticle(consumedName)}.";
+            return ActionResult.Ok(message);
+        }
+
+        /// <summary>
+        /// The affordance data's `impulse.<motive>` keys: each names the
+        /// delta as a numeric field of the consumable (leading '-'
+        /// negates) or a literal number. Empty when the affordance
+        /// carries none (direct handler execution, or a consumable with
+        /// no motive effects).
+        /// </summary>
+        private static Dictionary<string, double> ImpulseDeltas(
+            ActionContext ctx, WorldObject target, string moduleId)
+        {
+            var deltas = new Dictionary<string, double>(StringComparer.Ordinal);
+            if (ctx.Data is null)
+                return deltas;
+            foreach (var (key, spec) in ctx.Data)
+            {
+                if (!key.StartsWith("impulse.", StringComparison.Ordinal))
+                    continue;
+                var negate = spec.StartsWith('-');
+                var name = negate ? spec[1..] : spec;
+                double amount;
+                if (ctx.Modules.ResolveField(target, moduleId, name) is
+                        { ValueKind: JsonValueKind.Number } field)
+                    amount = field.GetDouble();
+                else if (double.TryParse(name, out var literal))
+                    amount = literal;
+                else
+                    continue; // an unresolvable reference contributes nothing
+                deltas[key["impulse.".Length..]] = negate ? -amount : amount;
+            }
+            return deltas;
         }
     }
 
@@ -1175,52 +1292,124 @@ public static class BuiltinHandlers
         }
     }
 
-    // clearing away a finished vessel (an empty mug, a scraped plate) —
-    // the barmaid's bus tub. The affordance is data-gated to empty
-    // vessels (when: empty == true); the handler destroys the object and
-    // emits its own signal, since the target won't exist by the time
-    // affordance-level signals would fire.
-    private sealed class ClearHandler : IActionHandler
+    // cleaning deposits off a holder — a body part, a garment, a
+    // surface: everything under the target carrying the data-named
+    // mess module is destroyed (the emission's template gives its
+    // clones that module). Data: `messModule` (which children count as
+    // deposits), optional `toolModule` — a held item doing the wiping
+    // (a tissue), which spends itself: it gains `spent: true` on that
+    // module and renames to its `spentName` when authored, and a
+    // spent tool can't clean again. Without a tool the action is bare
+    // (swallowing, a finger-swipe) — prose decides what happened.
+    private sealed class CleanHandler : IActionHandler
     {
-        public string Id => "clear";
+        public string Id => "clean";
 
         public ActionResult Execute(ActionContext ctx)
         {
-            var target = ctx.Target ?? throw new InvalidOperationException("clear requires a target.");
-            var moduleId = target.HasModule("beverage") ? "beverage"
-                : target.HasModule("food") ? "food"
-                : null;
-            if (moduleId is null)
-                return ActionResult.Fail($"You can't clear the {target.Name}.");
-            if (!ctx.Modules.ResolveBool(target, moduleId, "empty"))
-                return ActionResult.Noop(
-                    $"{Capitalize(Perception.WithDefiniteArticle(target.Name))} isn't finished yet.");
-            ctx.Signals.Emit(ctx.Agent, target,
-                [new Signals.SignalSpec { Sense = Signals.SignalSense.Visual, Priority = 5, Text = "{agent} clears away the {target}." }]);
-            ctx.World.DestroyObject(target.Id);
-            return ActionResult.Ok($"You clear away the {target.Name}.");
+            var target = ctx.Target ?? throw new InvalidOperationException("clean requires a target.");
+            var messModule = Data(ctx, "messModule");
+            if (messModule.Length == 0)
+                return ActionResult.Fail("That isn't something you can clean.");
+            var deposits = ctx.World.ChildrenOf(target.Id)
+                .Where(c => c.HasModule(messModule))
+                .ToList();
+            if (deposits.Count == 0)
+                return ActionResult.Noop($"There is nothing to clean off {CleanableName(ctx, target)}.");
+
+            WorldObject? tool = null;
+            if (Data(ctx, "toolModule") is { Length: > 0 } toolModule)
+            {
+                tool = ctx.World.ChildrenOf(ctx.Agent.Id)
+                    .FirstOrDefault(i => i.HasModule(toolModule) &&
+                                         !ctx.Modules.ResolveBool(i, toolModule, "spent"));
+                if (tool is null)
+                    return ActionResult.Fail(Data(ctx, "onNoTool",
+                        "You have nothing to clean that up with."));
+            }
+
+            foreach (var deposit in deposits)
+                ctx.World.DestroyObject(deposit.Id);
+            var toolName = tool?.Name;
+            if (tool is not null && Data(ctx, "toolModule") is { Length: > 0 } tm)
+            {
+                ctx.World.SetFieldOverride(tool.Id, tm, "spent", World.World.ToJson(true));
+                if (ctx.Modules.ResolveString(tool, tm, "spentName") is { Length: > 0 } spentName)
+                    tool.Name = spentName;
+            }
+
+            var name = CleanableName(ctx, target);
+            return ActionResult.Ok(tool is not null
+                ? Data(ctx, "self", $"You clean {name} with the {toolName}.")
+                    .Replace("{target}", name, StringComparison.Ordinal)
+                    .Replace("{instrument}", toolName, StringComparison.Ordinal)
+                : Data(ctx, "self", $"You clean {name}.")
+                    .Replace("{target}", name, StringComparison.Ordinal));
         }
     }
 
-    // relieving oneself at a toilet or urinal: resets the bladder (the
-    // metabolism bands detach on the action's own upkeep pass, moments
-    // later). The affordance is requires-gated to agents carrying the
-    // bladder band condition.
-    private sealed class RelieveHandler : IActionHandler
+    /// <summary>A clean target's name, observer-relative ("Maya's sex", "your cock", "the bed").</summary>
+    private static string CleanableName(ActionContext ctx, WorldObject target)
     {
-        public string Id => "relieve";
+        if (target.HasModule("bodypart") &&
+            target.Parent.Length > 0 && ctx.World.HasObject(target.Parent))
+        {
+            var owner = ctx.World.GetObject(target.Parent);
+            if (owner.HasModule("agent"))
+                return owner.Id == ctx.Agent.Id
+                    ? $"your {target.Name}"
+                    : $"{Knowledge.NameFor(ctx.Modules, ctx.Agent, owner)}'s {target.Name}";
+        }
+        return Perception.WithDefiniteArticle(target.Name);
+    }
+
+    // washing the whole body at once — a shower: every deposit the
+    // agent's body holds (on any body part, or caught directly on the
+    // agent) is rinsed away. Data: `messModule` names the deposit
+    // module; `self` is the prose.
+    private sealed class WashHandler : IActionHandler
+    {
+        public string Id => "wash";
 
         public ActionResult Execute(ActionContext ctx)
         {
-            var target = ctx.Target ?? throw new InvalidOperationException("relieve requires a target.");
-            if (!ctx.Agent.HasModule("metabolism") ||
-                ctx.Modules.ResolveDouble(ctx.Agent, "metabolism", "bladder") <= 0)
-                return ActionResult.Noop("You don't need to go.");
-            ctx.World.SetFieldOverride(
-                ctx.Agent.Id, "metabolism", "bladder", World.World.ToJson(0.0));
-            ctx.Signals.SendTo(ctx.Agent,
-                Field(ctx, target, "toilet", "reliefText") ?? "You feel enormously better.");
-            return ActionResult.Ok($"You use the {target.Name}.");
+            var messModule = Data(ctx, "messModule");
+            if (messModule.Length == 0)
+                return ActionResult.Fail("That isn't something you can wash.");
+            var deposits = ctx.World.ChildrenOf(ctx.Agent.Id)
+                .Where(c => c.HasModule(messModule))
+                .Concat(ctx.World.ChildrenOf(ctx.Agent.Id)
+                    .SelectMany(part => ctx.World.ChildrenOf(part.Id))
+                    .Where(c => c.HasModule(messModule)))
+                .ToList();
+            foreach (var deposit in deposits)
+                ctx.World.DestroyObject(deposit.Id);
+            return ActionResult.Ok(Data(ctx, "self",
+                "You let the hot water carry it away."));
+        }
+    }
+
+    // destroying a world object outright — the generic removal verb.
+    // The affordance's when/gates data decide what may be destroyed (an
+    // empty vessel for the barmaid's bus tub, a note after reading);
+    // the observable outcome is the affordance's own signals (they
+    // render the target's name as captured before the handler ran, so
+    // they still read after the object is gone); the message comes from
+    // data.self ("You clear away {target}.")
+    private sealed class DestroyHandler : IActionHandler
+    {
+        public string Id => "destroy";
+
+        public ActionResult Execute(ActionContext ctx)
+        {
+            var target = ctx.Target ?? throw new InvalidOperationException("destroy requires a target.");
+            var name = target.Name;
+            ctx.World.DestroyObject(target.Id);
+            var message = Data(ctx, "self") is { Length: > 0 } self
+                ? self.Replace("{target}",
+                    Perception.WithDefiniteArticle(name), StringComparison.Ordinal)
+                : $"You destroy {Perception.WithDefiniteArticle(name)}.";
+            return ActionResult.Ok(message);
         }
     }
 

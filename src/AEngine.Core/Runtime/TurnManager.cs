@@ -73,16 +73,16 @@ public sealed class TurnManager
     public int Turn { get; private set; }
 
     /// <summary>
-    /// Re-evaluate upkeep-derived state (metabolism condition bands)
-    /// without advancing time — called once after a scenario loads so
-    /// agents start with the conditions their initial field values imply
-    /// (the drunk elf is drunk on turn 0).
+    /// Re-evaluate upkeep-derived state (motive condition bands) without
+    /// advancing time — called once after a scenario loads so agents
+    /// start with the conditions their initial field values imply (the
+    /// drunk elf is drunk on turn 0).
     /// </summary>
     public void EvaluateUpkeep()
     {
         lock (_engine.SyncRoot)
         {
-            Metabolism.Advance(_engine, 0);
+            Motives.Advance(_engine, 0);
         }
     }
 
@@ -150,7 +150,8 @@ public sealed class TurnManager
             var result = gateFailure
                          ?? EvaluateCheck(agent, action)
                          ?? Execute(agent, action.HandlerId, action.TargetId, text, action.Verb,
-                             auxTargetId: action.AuxTargetId, affordanceData: affordance?.Data);
+                             auxTargetId: action.AuxTargetId, affordanceData: affordance?.Data,
+                             moduleId: action.ModuleId);
             if (result.EndsGame)
                 _engine.GameOver ??= result.Message;
             // remember your own action and its outcome (a look result is too
@@ -172,7 +173,7 @@ public sealed class TurnManager
             var duration = BusyDuration(agent, action, result);
             // turn-based pacing: every action is one turn (classic
             // text-adventure semantics) — durations pace the world clock
-            // (metabolism, chatter) and real-time mode, not turns. Busy
+            // (motives, chatter) and real-time mode, not turns. Busy
             // spells last through the current round only.
             var busySpan = _engine.TimeMode == TimeMode.TurnBased ? 2 : duration;
             // speech rides its own track: it paces talking (and replanning,
@@ -190,13 +191,12 @@ public sealed class TurnManager
             if (_engine.TimeMode == TimeMode.TurnBased)
             {
                 // ambient time passes with the actor's own activity — and
-                // so do their metabolism and intimacy: each action
-                // advances only the ACTOR's per-agent clocks (the cast
-                // size must not speed up everyone's world), while the
-                // room-objects' chatter rides the player's clock (the POV
-                // experiences the TV)
+                // so do their motives: each action advances only the
+                // ACTOR's per-agent clocks (the cast size must not speed
+                // up everyone's world), while the room-objects' chatter
+                // rides the player's clock (the POV experiences the TV)
                 AdvanceAmbient(duration, agent.Id);
-                Metabolism.Advance(_engine, duration, agent.Id);
+                Motives.Advance(_engine, duration, agent.Id);
                 if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
                     Chatter.Advance(_engine, duration);
                 AdvanceTurn();
@@ -307,7 +307,7 @@ public sealed class TurnManager
         if (_engine.TimeMode == TimeMode.TurnBased)
         {
             AdvanceAmbient(parkDuration, agent.Id);
-            Metabolism.Advance(_engine, parkDuration, agent.Id);
+            Motives.Advance(_engine, parkDuration, agent.Id);
             if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
                 Chatter.Advance(_engine, parkDuration);
             AdvanceTurn();
@@ -376,14 +376,23 @@ public sealed class TurnManager
             // the defender's choice is felt and shown BEFORE the outcome
             // resolves ("You try to dodge the blow." ahead of the hit) —
             // SendTo both records it to their memory and queues it for
-            // display; the actor sees the option's report instead
+            // display; the actor sees the option's report instead.
+            // Pronoun tags render from the defender's chair: {agent.*}
+            // is the actor ("you catch his hand"), {target.*} is the
+            // defender themself ("you", "your")
             if (option.Text is not null)
-                _engine.SignalBus.SendTo(defender, option.Text);
+            {
+                var text = Pronouns.ReplaceReferent(
+                    option.Text, "agent", agent, defender, _engine.ModuleRegistry);
+                text = Pronouns.ReplaceReferent(
+                    text, "target", defender, defender, _engine.ModuleRegistry);
+                _engine.SignalBus.SendTo(defender, text);
+            }
             var result = EvaluateGates(agent, pending.Action, pending.Text, LookupAffordance(pending.Action))
                          ?? EvaluateCheck(agent, pending.Action, option)
                          ?? Execute(agent, pending.Action.HandlerId, pending.Action.TargetId,
                              pending.Text, pending.Action.Verb, option, pending.Action.AuxTargetId,
-                             LookupAffordance(pending.Action)?.Data);
+                             LookupAffordance(pending.Action)?.Data, pending.Action.ModuleId);
             if (result.EndsGame)
                 _engine.GameOver ??= result.Message;
             RecordOutcome(agent, pending.Action, result.Message);
@@ -416,6 +425,11 @@ public sealed class TurnManager
                 Actions.Knowledge.NameFor(_engine.ModuleRegistry, actor, defender)), StringComparison.Ordinal)
             .Replace("{target}", "you", StringComparison.Ordinal)
             .Replace("{item}", itemName ?? "", StringComparison.Ordinal);
+        // pronoun tags: {agent.*} is the reacting defender (third
+        // person to the actor reading this), {target.*} is the actor
+        // themself — the second person
+        text = Pronouns.ReplaceReferent(text, "agent", defender, actor, _engine.ModuleRegistry);
+        text = Pronouns.ReplaceReferent(text, "target", actor, actor, _engine.ModuleRegistry);
         return string.Concat(text[..1].ToUpperInvariant(), text.AsSpan(1));
     }
 
@@ -456,20 +470,20 @@ public sealed class TurnManager
     public ActionResult Execute(
         WorldObject agent, string handlerId, string? targetId = null, string? text = null,
         string? verb = null, Modules.ReactionOptionSpec? reaction = null, string? auxTargetId = null,
-        IReadOnlyDictionary<string, string>? affordanceData = null)
+        IReadOnlyDictionary<string, string>? affordanceData = null, string? moduleId = null)
     {
         lock (_engine.SyncRoot)
         {
             var handler = _engine.HandlerRegistry.Get(handlerId);
             return handler.Execute(
-                BuildContext(agent, targetId, text, verb, auxTargetId, reaction, affordanceData));
+                BuildContext(agent, targetId, text, verb, auxTargetId, reaction, affordanceData, moduleId));
         }
     }
 
     private ActionContext BuildContext(
         WorldObject agent, string? targetId, string? text, string? verb,
         string? auxTargetId, Modules.ReactionOptionSpec? reaction,
-        IReadOnlyDictionary<string, string>? affordanceData = null) =>
+        IReadOnlyDictionary<string, string>? affordanceData = null, string? moduleId = null) =>
         new()
         {
             World = _engine.World,
@@ -484,6 +498,7 @@ public sealed class TurnManager
                 ? _engine.World.GetObject(auxTargetId)
                 : null,
             Verb = verb,
+            ModuleId = moduleId,
             Random = _engine.Random,
             Reaction = reaction,
             Data = affordanceData,
@@ -505,7 +520,8 @@ public sealed class TurnManager
     {
         if (affordance?.Gates is not { Count: > 0 } specs)
             return null;
-        var ctx = BuildContext(agent, action.TargetId, text, action.Verb, action.AuxTargetId, null);
+        var ctx = BuildContext(agent, action.TargetId, text, action.Verb, action.AuxTargetId, null,
+            affordance?.Data, action.ModuleId);
         foreach (var spec in specs)
         {
             var gate = _engine.GateRegistry.Get(spec.Kind);
@@ -789,8 +805,9 @@ public sealed class TurnManager
     {
         if (!_engine.ModuleRegistry.Has(action.ModuleId))
             return;
-        var affordance = _engine.ModuleRegistry.Get(action.ModuleId).Affordances
-            .FirstOrDefault(a => a.Verb == action.Verb);
+        // index-aware: same-verb affordances (two kinds of sucking)
+        // must emit their own signals
+        var affordance = LookupAffordance(action);
         if (affordance is null || affordance.Signals.Count == 0)
             return;
         var target = action.TargetId is not null && _engine.World.HasObject(action.TargetId)
@@ -965,13 +982,8 @@ public sealed class TurnManager
         return Math.Min(scaled, Math.Max(baseDuration, affordance.RepeatBackoffCap));
     }
 
-    private Modules.AffordanceDefinition? LookupAffordance(AvailableAction action)
-    {
-        if (!_engine.ModuleRegistry.Has(action.ModuleId))
-            return null;
-        return _engine.ModuleRegistry.Get(action.ModuleId).Affordances
-            .FirstOrDefault(a => a.Verb == action.Verb);
-    }
+    private Modules.AffordanceDefinition? LookupAffordance(AvailableAction action) =>
+        _engine.ActionResolver.AffordanceOf(action);
 
     /// <summary>
     /// Advance ambient emission timers (a cursed mark burning, a charm
@@ -1159,7 +1171,7 @@ public sealed class TurnManager
         if (_engine.TimeMode == TimeMode.RealTime)
         {
             AdvanceAmbient(1, onlyHolderId: null);
-            Metabolism.Advance(_engine, 1);
+            Motives.Advance(_engine, 1);
             Chatter.Advance(_engine, 1);
         }
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))

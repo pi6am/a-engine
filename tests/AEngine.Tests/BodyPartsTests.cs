@@ -198,9 +198,13 @@ public class BodyPartsTests
         AddPart(engine, "bob", "head", "head", "head", 8);
         AddPart(engine, "bob", "torso", "torso", "top", 12);
 
-        // no actions target a part: not takeable, stealable, or examinable
+        // parts aren't items — not takeable or stealable — but examining
+        // them is universal (the touch family's visibility rules)
         var actions = engine.ActionResolver.Resolve(engine.World.GetObject("alice"));
-        Assert.DoesNotContain(actions, a => a.TargetId is "bob_head" or "bob_torso");
+        Assert.DoesNotContain(actions, a =>
+            a.TargetId is "bob_head" or "bob_torso" && a.Verb != "examine");
+        Assert.Contains(actions, a =>
+            a.TargetId == "bob_head" && a.Verb == "examine" && a.Label == "Examine Bob's head");
 
         // inventory and examine don't list parts as belongings (the
         // inventory's Health line is the self status report, not an item)

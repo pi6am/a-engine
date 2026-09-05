@@ -12,7 +12,7 @@ namespace AEngine.Core.Actions;
 /// LLM-driven behavior), `statMods` (string→int map summed into
 /// <see cref="Checks.Bonus"/> — drunk: agility −2, brawling +1).
 /// Conditions are attached by cloning a scenario template object
-/// (<see cref="Attach"/>) — from a metabolism pass, a one-shot handler,
+/// (<see cref="Attach"/>) — from a motive pass, a one-shot handler,
 /// or (stage 2) timed chains — and gate affordances through
 /// requires/excludes in the resolver and execution-time gates. Like body
 /// parts, conditions are part of the agent, not belongings: listings,

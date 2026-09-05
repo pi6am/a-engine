@@ -110,13 +110,8 @@ public sealed class LlmPolicy : IAgentPolicy
         return PlanExecutor.MatchAvailableOrPotential(engine, agent, plan[0]);
     }
 
-    private static bool IsSpeech(GameEngine engine, AvailableAction action)
-    {
-        if (!engine.ModuleRegistry.Has(action.ModuleId))
-            return false;
-        return engine.ModuleRegistry.Get(action.ModuleId).Affordances
-            .FirstOrDefault(a => a.Verb == action.Verb)?.Speech == true;
-    }
+    private static bool IsSpeech(GameEngine engine, AvailableAction action) =>
+        engine.ActionResolver.AffordanceOf(action)?.Speech == true;
 
     /// <summary>Ask the LLM for an in-character reaction to a telegraphed action.</summary>
     public Task<string?> ChooseReactionAsync(

@@ -59,8 +59,11 @@ extension seam). Built-ins: basic (flavor verbs, interpolates the verb into
 its message), look, go, open, close, take, drop, put, give, unlock, lock,
 pick, inventory, say, wait (`wait` just passes the turn; it is quiet — no
 signals), sit, lie, stand, wear, remove, shove, steal, examine, trade,
-ritual, consume (drink/eat), spawn (prefab instances), clear (bus empty
-vessels), relieve (use a toilet), leave (end the game). An affordance may declare a `label` to override the verb-generated
+ritual, consume (drink/eat), spawn (prefab instances), set (a data-named
+field knob), destroy (remove an object — the affordance's signals still
+name the departed), touch (part-targeted contact via motive impulses),
+embrace/reposition/disengage (ongoing pair states — hugs, laps, lovers),
+leave (end the game), depart (an NPC's exit). An affordance may declare a `label` to override the verb-generated
 menu text (`{target}` substitutes the target's name verbatim) — for
 phrasing the verb can't produce, like "Ask the sorcerer to remove the
 dragon-mark". `trade` is the barter verb: the affordance lives on a `ware`
@@ -338,15 +341,23 @@ occupants container-style: "the old cook (sitting on the chair)".
 ## Clothing
 
 Garments have the `wearable` module (`regions`: the body regions they
-occupy; `worn` flag) and are **worn as children of the agent** (same
-containment as inventory) with `worn: true`. `wear`/`remove` handlers
-(`Clothing` helper in Core/Actions): wearing requires holding the garment
-and a `body` module whose `regions` list covers the garment's (no body, no
-wearing — a horse has `back`, not `top`); at most one worn garment per
-region (conflict = region-set intersection, so layering is the author's
-choice of region names — shirt `["top"]`, coat `["outer"]`, armor
-`["top","bottom"]`; sizes are expressible the same way, e.g. `giant_top`).
-`drop` refuses worn items. `remove` on a garment worn by *another* agent is
+COVER; `layer`: their slot tier, default the base layer; `worn` flag)
+and are **worn as children of the agent** (same containment as
+inventory) with `worn: true`. `wear`/`remove` handlers (`Clothing`
+helper in Core/Actions): wearing requires holding the garment and a
+`body` module whose `regions` list covers the garment's (no body, no
+wearing — a horse has `back`, not `top`). **Slots are per region per
+layer**: at most one garment of a given layer over a given region, so
+undergarments and outerwear stack (boxers under trousers, a dress over
+bra and panties — put the pants back on without taking anything off)
+while two garments of the same layer still conflict by region-set
+intersection (sizes are expressible as distinct regions, e.g.
+`giant_top`). **Coverage is separate from slots**: any worn garment
+covering a region keeps its parts unexposed and through-clothes
+touchable, whatever else is underneath — and regions are the coverage
+granularity, so splitting "bottom" into "hips" and "thighs" lets
+panties cover the sex while the thighs stay bare skin. `drop` refuses
+worn items. `remove` on a garment worn by *another* agent is
 an opposed pull (see `docs/rpg-systems.md` stage 2); labels name the holder
 ("Take off the blue jeans from the arena duelist", "Steal the dagger from
 Bob") so the LLM planner and the player can tell whose item it is. Room
@@ -379,33 +390,41 @@ consume kinds for affordance gating (see Actions above); visible
 conditions render in room listings alongside posture ("the elf (drunk,
 sitting in the booth)") and in `look`/`inventory` self lines. Stage 2
 plans: one-shot conditions attached by handlers, `duration`/`onExpire`
-timers evaluated by the metabolism upkeep pass (chains like vomit →
+timers evaluated by the motive upkeep pass (chains like vomit →
 hungover), and per-agent condition variation.
 
 ## Consumables, metabolism & spawning
 
 Developed in `scenarios/tavern/` (the Green Gullet dive bar), all
-opt-in module conventions like the RPG systems. **Consumables**: a
-`beverage` module carries `alcohol`/`volume` units plus an `empty`
+opt-in module conventions like the RPG systems. **Consumables**: the
+`consume` handler is generic — the module names the consumable kind,
+the verb and phrasing come from the affordance, and the actor effects
+are pure data: `impulse.<motive>` keys name motive deltas as a field
+of the consumable (a leading `-` negates — food's `sobering` burns
+alcohol off) or a literal number, applied through the motive
+simulation (see the Motives section — the tavern's drunkenness sim is
+just data; an optional data `self` templates the message). A
+consumable carries its content in plain fields (`alcohol`/`volume` for
+the tavern's `beverage`, `sobering` for its `food`) plus an `empty`
 vessel flag (and optional `taste`, sent to the drinker as a private
-sensation); a `food` module carries `sobering`. The `consume` handler
-serves both verbs (drink/eat — phrasing comes from the affordance):
-beverages add to the drinker's metabolism and leave the empty vessel
+sensation); multi-serving items declare `servings` (default 1) — each
+consume takes one, and the last leaves the
+empty vessel
 behind for clearing, visibly renamed to its `emptyName`/
 `emptyDescription` when authored ("mug of Green Gullet ale" → "empty
 mug") so spent vessels are legible in menus instead of hiding their
-state in a field; food burns alcohol off and may `destroyOnConsume`. The `clear` handler destroys an empty vessel
-(handler-emitted signal, since the target is gone before
-affordance-level signals fire) — the barmaid's bus round. **Metabolism**
-is a module on agents: `alcohol`, `bladder` (numbers), `capacity`
-(per-race: the tavern's troll 4.0, orc 2.5, human 1.0, halfling 0.7,
-elf 0.8, goblin 0.6), decay rates, and `stages`/`bladderStages` —
-exclusive threshold bands (`[{min, condition}, …]`) as fractions of
-capacity. `Metabolism.Advance` is the **world-clock upkeep pass**:
-alcohol decays per second and the burned amount flows into the bladder;
-bands re-evaluate, attaching/detaching condition templates with private
-sensations on transitions ("You feel tipsy." / "The buzz softens.").
-Time semantics: turn-based mode advances everyone by each performed
+state in a field; `destroyOnConsume` skips the vessel (a swallowed
+pill). The generic `destroy` handler buses the finished vessel away —
+when-gated in data, observable through the affordance's own signals
+(they render the target's pre-destruction name, so they still read
+after it's gone), message from `data.self`. The tavern's
+`metabolism` module on agents carries the motive fields `alcohol`,
+`bladder`, and `capacity` (per-race: the tavern's troll 4.0, orc 2.5,
+human 1.0, halfling 0.7, elf 0.8, goblin 0.6) plus the `motives` list
+defining the dynamics: alcohol burns down linearly and the burned
+amount routes into the bladder, with `tipsy`/`drunk`/`hammered` and
+`needs_to_pee`/`bursting` bands as fractions of capacity. Time
+semantics: turn-based mode advances everyone by each performed
 action's duration (player AND NPC actions — time passes for the whole
 tavern); real-time ticks advance one second each. A zero-second pass
 re-evaluates bands only — the loader runs it once after a scenario
@@ -432,22 +451,105 @@ general tables get it, spawn-target counters don't, keeping menus lean
 for LLM consumers. The tavern pours onto the shared bar counter; the
 bartender's LLM traits make him furious when patrons pour their own. **Restrooms & endings**: a
 `toilet` module offers `use` (requires the bladder bands' condition
-kinds — any-of, so bursting still admits it) handled by `relieve`
-(resets the bladder; bands detach on the action's own upkeep), and an
+kinds — any-of, so bursting still admits it) as pure data through the
+`set` handler: the affordance's data resets the actor's `bladder`
+motive to zero (`on: actor`), reports "You use the …", and delivers
+the toilet's per-object `reliefText` as a private sensation (bands
+detach on the action's own upkeep), and an
 `exit` module offers the street's "Go home" in two audience-split
 forms: `leave` (playerOnly) ends the game with the module's text, while
 `depart` (npcOnly) removes the NPC from the world — destroyed, gone —
 announcing the exit module's `departText` to observers ("Thakra the orc
 steps onto the bus and leaves.") without ending anyone's game.
 
-## Part-targeted actions & chatter
+## Motives
+
+The general machinery both the drunkenness and intimacy simulations
+run on (`Runtime/Motives`): data-driven floating-point values on
+agents, simulated by the world-clock upkeep pass. Any module that
+declares a `motives` list field is a **motive group** — the scenario
+names it (`metabolism` in the tavern, `intimacy` in the adult
+scenario), and the engine scans for the field, so one pass serves any
+number of simulations and an agent can carry several. Each motive
+entry names its value field (same name on the module — overrides,
+`when` specs, gates, LLM contexts, and the debug API read it like any
+field) plus its dynamics as data:
+
+- **drift** — ordered rules, first match wins: `rate` (per second)
+  toward an optional `target` (a constant or another motive's name) in
+  `linear` mode (constant speed, hard-stopping at the target — no
+  overshoot when the target isn't a bound) or `proportional` mode
+  (exponential approach integrated exactly as
+  `x += (target − x)·(1 − e^(−rate·dt))` — stable at any step size).
+  Rules may carry `when` conditions on other motives' ranges
+  (`{field, min/max}` — frustration rising while arousal ≥ 0.5 and
+  pleasure < 0.2, falling otherwise). No drift rules = static: the
+  motive moves only through impulses.
+- **routes** — what a motive *loses* to drift flows into other
+  motives as gain × factor (alcohol burning into the bladder); the
+  routed amount is the actual post-clamp loss, and routing is one hop
+  (gains don't route further).
+- **bands** — exclusive threshold bands (highest `min` reached wins)
+  attaching condition templates with their selfText/clearText as
+  private transition sensations, exactly like the old metabolism
+  stages; `scaleField` divides the value first, so one band table
+  serves agents of different capacities (alcohol over capacity).
+- **onFull/onEmpty** — threshold events when a motive reaches a finite
+  bound: `set` (absolute) and `adjust` (delta) motive resets, `attach`
+  condition templates, a `self` text, an ambient `signal` spec — the
+  orgasm is pure data. `silentBands` mutes the band transitions the
+  event's resets cause (the falling-away flushed shouldn't talk over
+  the moment). The event's sets must move the motive off its bound or
+  it re-fires next pass.
+
+Stability is structural: each sub-step is Jacobi-style (all rules and
+targets read the pre-step snapshot, deltas apply together — motive
+order never matters, nothing feeds back into its own step), and steps
+are capped at the module's `maxStep` seconds (default 1, matching the
+real-time tick, so turn-based and real-time trajectories coincide; a
+5-second action equals five ticks exactly). Authoring guidance: keep
+band thresholds away from rule thresholds, or a motive sitting on both
+will flicker its condition once per second.
+
+`Motives.Advance` is the world-clock pass wired into the turn tails
+(turn-based: each action advances only its ACTOR's motives; real-time:
+one second per tick for everyone; zero seconds: band/event sync only —
+the initial state after load). `Motives.Impulse` is the event-driven
+side handlers call: clamped deltas to named motives (consume's
+`impulse.<motive>` data keys resolve through it), immediate
+band sync, and it returns the ids of fired events so handlers can
+react (the touch handler's `onEvent` suffix). `Motives.FindMotiveModule`
+resolves which module carries a motive name, for handlers that read or
+reset one without hardcoding the scenario's module id (the `relieve`
+handler's bladder reset).
+
+## Touch & embrace
+
+The interaction layer for contact between agents — a massage, a hug,
+and more intimate exchanges are one engine with different scenario
+data; the handlers know nothing about what a touch means. The adult
+scenario's simulation is an `intimacy` motive group per agent:
+`arousal` drifts proportionally toward the agent's `horniness`
+setpoint (desire persists, it doesn't evaporate), `pleasure` decays
+linearly without stimulation, `frustration` follows conditional rules
+(rising while arousal runs high and unfulfilled, easing when calm),
+`comfort` (0..100) is static — it moves only through impulses from
+actions (cuddles, deflected advances −2). Arousal/frustration bands
+attach conditions (flushed, breathless, frustrated) like alcohol
+bands. A full pleasure pool fires the `climax` onFull event: the
+resets, the `satisfied` condition, and the self/ambient prose all live
+in the event definition.
 
 **Touching is part-targeted.** Body parts are children with the
 `bodypart` module (as in the RPG systems) plus `intimate` and
 `sensitivity` fields; affordances with `targetParts` (declared on the
 actor's own module, like speech) list one entry per part of each other
 agent present — "Kiss Maya's neck", via the label's `{holder}`/`{part}`
-placeholders. Non-intimate parts always list; intimate ones only when
+placeholders; `selfParts` adds the actor's own parts ("Massage your
+own neck" — self-touch, no reaction, impulses land on the self), and
+`selfOnly` restricts the listing to them — the private family
+(masturbation), where the same verb on another agent's parts would be
+a different action. Non-intimate parts always list; intimate ones only when
 their wear region is uncovered (garments cover `wearable.regions`; the
 resolver filters listing, the execution-time `exposed` gate enforces it
 against stale plans). The action targets the PART: the reaction system
@@ -455,6 +557,65 @@ resolves the defending holder from its parent, `onlyTarget` specs reach
 the part's owner, and `{holder}` renders the owner observer-relatively
 in signals ("Alex kisses Maya's neck", "your neck" for the owner). Free-text plans parse the same
 way ("kiss her neck", "massage Maya's shoulders" — `TryParseTouch`).
+
+The **`touch` handler** is one generic contact verb: `impulse.<motive>`
+deltas to the touched party (scaled by the part's `sensitivity` for
+the motives listed in `sensitivityScales`), a
+`giver.impulse.<motive>` set for the actor, `melt.impulse.*` extras
+when the reaction welcomes it and `stop.impulse.*` when it refuses,
+`pace.<position>` multipliers and `self.<position>` prose while the
+pair shares an embrace, and `onEvent`/`onSelfEvent` appended when the
+impulse fires a motive event (the climax). **Penetration is the same
+handler with a `probe` data tag**: the instrument resolves to the
+actor's body part declaring that `bodypart.probe` (tongue, fingers,
+penis) or a held object providing it on any module (a toy's `probe`
+field); the targeted part must list the tag in its `bodypart.receives`
+(an orifice's compatibility list — probe affordances list only
+receiving orifices, so "finger" offers the sex, not the thighs;
+surface touches of an instrument are authored without a probe); an
+instrument that wears a region
+must be out of it (parts without regions — tongue, fingers — are
+never blocked; that presence is the authoring knob); `{instrument}`
+renders in prose. **Toys are held objects** carrying a `probe` field
+on any module — the instrument resolution checks body parts first,
+then pockets, so a vibrator (or anything) becomes an instrument by
+being held. `usesParts` data declares any other actor parts an
+action engages (the lips for a kiss) for busy-part gating. The
+**inverted family** (`targetsProbes`) targets INSERTABLE parts: the
+affordance lists parts acting as the named probes — "Suck on Maya's
+fingers", "Suck on Alex's cock" — with the actor's own orifice
+implied by the verb, impulses flowing to the targeted part's owner
+and the giver set to the actor.
+
+**Through clothes is its own affordance**, not a parameter:
+`coveredParts` (with `targetParts`) lists parts only while their wear
+region is covered — the counterpart of intimate parts' uncovered
+listing — and the `covered` execution gate keeps stale plans from
+rubbing bare skin with the through-sweater verb. Bare-skin and
+through-clothes variants carry their own text and tuning.
+
+**Embraces** are ongoing pair states — hugs, cuddles, a lap to sit on,
+joined lovers: shared world objects at the root (like portal
+doorstates), cloned from scenario templates carrying an `embrace`
+module (`kind`, `positions`, `entryPosture` taken together on a
+lyable shared support, `exposeRequired` wear region, `autoEnd` for
+fleeting kinds — a hug dissolves with the action that creates it —
+`occupiesA`/`occupiesB` part-name lists for busy-part bookkeeping,
+and `traits`/`goals` that shift LLM behavior while held, like a
+condition's). The `embrace` handler enters (consent reaction, room
+proximity, clothing, one-embrace-per-agent), `reposition` shifts to a
+declared position, `disengage` dissolves with an optional
+"left unfinished" branch (condition kind + field threshold in data).
+Sub-actions gate on `requiresEmbrace` (listing) and the `embraced`
+gate (stale plans) — "Move in Maya" is a touch offered only while
+joined, its pacing read from the embrace's position. The `partsFree`
+gate blocks touches whose engaged parts are occupied by an ongoing
+embrace — the targeted part, the probe instrument, or the
+`usesParts` list — so lips giving oral are not also kissing, and a
+joined sex is not also being fingered. Members are a
+list and matching is "same embrace object", so multi-agent groups
+later add entry/disengage flows, not a rework.
+
 Handlers receive everything through the affordance's `data` string map —
 prose and tuning stay in data, handlers stay generic (see the `set`
 handler for the pattern: a field knob described entirely in data).
@@ -466,6 +627,28 @@ metabolism) emits one random line as a low-salience audible signal
 while `on`. Power and channel are plain affordances through the `set`
 handler, so the TV is data all the way down — no policy, no reactions,
 no room-granular ears.
+
+## Pronouns
+
+Agents carry a `pronouns` module: a `bundle` field naming a module
+DEFINITION whose field defaults are the table (`female_pronouns`,
+`male_pronouns`, any set the scenario invents — defined in
+modules.json, never attached), plus five optional per-agent form
+overrides — `subject`, `object`, `possessive` (adjective: her mouth),
+`possessivePronoun` (hers), `reflexive` (herself). Resolution: the
+agent's own override → the bundle's default → the generic
+they/them/their/theirs/themself, so agents without the module still
+render (`Pronouns` helper in Core/Actions). Templates interpolate
+`{agent.subject}`, `{holder.possessive}`, `{receiver.object}`, … in
+signals (agent/target/holder), touch-handler prose (receiver), and
+reaction texts (report: {agent} the reacting defender, {target} the
+actor; defender text: {agent} the actor) — rendered
+observer-relatively like names: the second person when the observer
+IS the referent, with a subject tag at sentence start de-conjugating
+its verb ("{agent.subject} takes" → "you take", the same rule as
+`{target}`). Number agreement stays with the author: a they-bundled
+agent takes plural verbs, so cast-neutral templates should phrase
+around names or plural-safe verbs.
 
 ## Reactions (quick-time events)
 
@@ -488,7 +671,11 @@ state-driven: the defender melts into a touch when comfortable,
 deflects when not (an intimacy scenario's consent layer) with no policy
 or LLM round-trip, and the
 random policy defers to that effective default instead of flipping coins
-on someone's yes or no. An option's `text` is the defender-side
+on someone's yes or no. Reaction options also declare their `effect`
+on the interaction — `welcome` (the default), `hesitate` (the touch
+handler scales its impulses), `refuse` (the action fails gently, the
+moment cools) — so consent vocabulary is scenario data, not
+handler-side word matching. An option's `text` is the defender-side
 line, delivered as a private sensation (`SendTo` — queued for display
 and recorded to memory) BEFORE the check/handler resolves, so the
 defender's log shows their choice ahead of the outcome ("You try to
@@ -578,7 +765,7 @@ next.
 and they differ in what a `duration` means. **Turn-based** is classic
 text-adventure pacing: every action takes one turn, the actor is busy
 only through the current round, and durations pace just the world clock
-(metabolism, chatter, ambient). Each player action grants the NPCs
+(motives, chatter, ambient). Each player action grants the NPCs
 **one round** (`NewNpcRound` — also bumped automatically by player-policy
 actions): per round an agent may perform **one body action and one speech
 action** (the companion slot — Maya says her line and sits, together).

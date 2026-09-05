@@ -76,6 +76,8 @@ public sealed class GameEngine
             engine.HandlerRegistry.Register(handler);
         foreach (var handler in new IActionHandler[] { new SetHandler() })
             engine.HandlerRegistry.Register(handler);
+        foreach (var handler in TouchHandlers.All())
+            engine.HandlerRegistry.Register(handler);
         foreach (var gate in GateRegistry.Builtins())
             engine.GateRegistry.Register(gate);
         engine.PolicyRegistry.Register(new RandomPolicy());

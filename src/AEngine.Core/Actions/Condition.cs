@@ -78,8 +78,8 @@ public static class Condition
     /// <summary>
     /// The agent's total hp pool: parts summed when present, else the
     /// monolithic health module; null when the agent has neither. Parts
-    /// without their own health module (non-combat anatomy — the
-    /// postdate's erogenous zones) don't count either way.
+    /// without their own health module (non-combat anatomy — erogenous
+    /// zones) don't count either way.
     /// </summary>
     public static (int Hp, int Max)? Pool(World.World world, ModuleRegistry modules, WorldObject agent)
     {

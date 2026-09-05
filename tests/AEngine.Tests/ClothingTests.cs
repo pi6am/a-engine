@@ -23,7 +23,8 @@ public class ClothingTests
         "id": "wearable", "name": "Wearable",
         "fields": [
           { "name": "regions", "type": "list", "default": [] },
-          { "name": "worn", "type": "bool", "default": false }
+          { "name": "worn", "type": "bool", "default": false },
+          { "name": "layer", "type": "string", "default": "" }
         ],
         "affordances": [
           { "verb": "wear", "handler": "wear",
@@ -113,6 +114,35 @@ public class ClothingTests
         Assert.False(engine.TurnManager.Execute(alice, "wear", "armor").Success);
         Assert.True(engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "remove", "pants")).Success);
         Assert.True(engine.TurnManager.PerformAction(alice, TestWorlds.Find(engine, "alice", "wear", "armor")).Success);
+    }
+
+    [Fact]
+    public void Wear_LayersStack_SameLayerStillExclusive()
+    {
+        var engine = NewEngine();
+        AddGarment(engine, "boxers", "boxers", "room_a", "bottom");
+        engine.World.SetFieldOverride("boxers", "wearable", "layer",
+            Core.World.World.ToJson("under"));
+        AddGarment(engine, "briefs", "briefs", "room_a", "bottom");
+        engine.World.SetFieldOverride("briefs", "wearable", "layer",
+            Core.World.World.ToJson("under"));
+        AddGarment(engine, "pants", "pants", "room_a", "bottom");
+        var alice = engine.World.GetObject("alice");
+        foreach (var id in new[] { "boxers", "briefs", "pants" })
+            engine.World.MoveObject(id, "alice");
+
+        // trousers go on OVER the boxers: different layers, same regions
+        Assert.True(engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "wear", "boxers")).Success);
+        Assert.True(engine.TurnManager.PerformAction(
+            alice, TestWorlds.Find(engine, "alice", "wear", "pants")).Success);
+        Assert.True(engine.ModuleRegistry.ResolveBool(
+            engine.World.GetObject("boxers"), "wearable", "worn"));
+
+        // but a second under-layer garment still conflicts with boxers
+        var conflict = engine.TurnManager.Execute(alice, "wear", "briefs");
+        Assert.False(conflict.Success);
+        Assert.Equal("You're already wearing the boxers there.", conflict.Message);
     }
 
     [Fact]

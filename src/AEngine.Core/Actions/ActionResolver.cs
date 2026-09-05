@@ -136,6 +136,24 @@ public sealed class ActionResolver
                 "examine", target.Id, $"Examine {The(agent, target)}", "examine", ""));
         }
 
+        // body parts are examinable too (their affordances come from the
+        // part-targeting family, but looking is universal): every part
+        // of each other agent present, and the actor's own, with the
+        // same visibility rule as touching — intimate parts only when
+        // their wear region is uncovered
+        foreach (var owner in others.Append(agent))
+            foreach (var part in BodyParts.Of(_world, owner))
+            {
+                if (_modules.ResolveBool(part, "bodypart", "intimate") &&
+                    RegionCovered(owner, part))
+                    continue;
+                var label = owner.Id == agent.Id
+                    ? $"Examine your own {part.Name}"
+                    : $"Examine {NameFor(agent, owner)}'s {part.Name}";
+                actions.Add(new AvailableAction(
+                    "examine", part.Id, label, "examine", ""));
+            }
+
         // collapse identical (verb, label) entries: interchangeable
         // objects sharing a name (three "empty mug"s) read as one action
         // — the LLM and the menus can't tell them apart anyway. The first
@@ -158,8 +176,10 @@ public sealed class ActionResolver
         {
             if (!_modules.Has(attachment.ModuleId))
                 continue;
-            foreach (var affordance in _modules.Get(attachment.ModuleId).Affordances)
+            var affordances = _modules.Get(attachment.ModuleId).Affordances;
+            for (var i = 0; i < affordances.Count; i++)
             {
+                var affordance = affordances[i];
                 if (!Applies(affordance, agent, target, stateFiltered))
                     continue;
                 // othersOnly: a service is never aimed at its own owner
@@ -176,7 +196,7 @@ public sealed class ActionResolver
                     foreach (var other in others)
                         actions.Add(new AvailableAction(
                             affordance.Verb, other.Id, LabelFor(affordance, agent, other),
-                            affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt, i));
                     continue;
                 }
                 // touch family (TargetParts): offered from the agent's own
@@ -188,27 +208,96 @@ public sealed class ActionResolver
                 // the defending holder from its parent.
                 if (affordance.TargetParts && target.Id == agent.Id)
                 {
-                    foreach (var other in others)
-                        foreach (var part in BodyParts.Of(_world, other))
+                    // a probe affordance (penetration) only targets
+                    // orifices that receive its tag — "finger" lists the
+                    // sex, not the thighs; surface touches carry no probe.
+                    // The inverted family targets INSERTABLE parts: a
+                    // targetsProbes affordance ("suck") lists parts acting
+                    // as those probes — fingers, a cock — the actor's own
+                    // orifice being implied by the verb.
+                    var probe = affordance.Data is not null &&
+                                affordance.Data.TryGetValue("probe", out var tag) &&
+                                tag.Length > 0
+                        ? tag
+                        : null;
+                    var targetsProbes = affordance.Data is not null &&
+                                        affordance.Data.TryGetValue("targetsProbes", out var tags) &&
+                                        tags.Length > 0
+                        ? tags.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        : null;
+                    // the cleanup family's deposit module: parts list only
+                    // while holding one of these, and the {mess} label
+                    // placeholder renders its name ("Swallow the semen")
+                    var messModule = affordance.Data is not null &&
+                                     affordance.Data.TryGetValue("messModule", out var mess) &&
+                                     mess.Length > 0
+                        ? mess
+                        : null;
+                    List<WorldObject> DepositsOf(WorldObject part) =>
+                        _world.ChildrenOf(part.Id)
+                            .Where(c => messModule is null || c.HasModule(messModule))
+                            .ToList();
+                    void AddPartEntries(WorldObject owner)
+                    {
+                        var self = owner.Id == agent.Id;
+                        foreach (var part in BodyParts.Of(_world, owner))
                         {
                             var intimate = _modules.ResolveBool(part, "bodypart", "intimate");
-                            if (affordance.IntimateParts)
+                            // the cleanup family lists any part holding a
+                            // deposit, intimacy and clothing aside
+                            if (!affordance.MessyParts)
                             {
-                                if (!intimate || RegionCovered(other, part))
+                                if (affordance.IntimateParts)
+                                {
+                                    if (!intimate)
+                                        continue;
+                                }
+                                else if (intimate)
                                     continue;
                             }
-                            else if (intimate)
+                            var covered = RegionCovered(owner, part);
+                            // exposure filter: intimate parts list bare
+                            // (uncovered) by default; CoveredParts flips
+                            // the rule to covered-only for every part —
+                            // the through-clothes family. Non-intimate
+                            // parts are unaffected unless CoveredParts,
+                            // and messy parts ignore clothing entirely.
+                            if (!affordance.MessyParts &&
+                                (affordance.IntimateParts || affordance.CoveredParts) &&
+                                (affordance.CoveredParts ? !covered : covered))
+                                continue;
+                            if (probe is not null &&
+                                !BodyParts.Receives(_modules, part).Contains(probe))
+                                continue;
+                            if (targetsProbes is not null &&
+                                !targetsProbes.Contains(_modules.ResolveString(part, "bodypart", "probe")))
+                                continue;
+                            // the cleanup family lists only parts holding
+                            // a deposit — no cleaning nothing
+                            var deposits = affordance.MessyParts ? DepositsOf(part) : [];
+                            if (affordance.MessyParts && deposits.Count == 0)
                                 continue;
                             actions.Add(new AvailableAction(
                                 affordance.Verb, part.Id,
-                                (affordance.Label ?? "{verb} {holder}'s {part}")
+                                (affordance.Label ?? (self ? "{verb} your own {part}" : "{verb} {holder}'s {part}"))
                                 .Replace("{verb}",
                                     char.ToUpperInvariant(affordance.Verb[0]) + affordance.Verb[1..],
                                     StringComparison.Ordinal)
-                                .Replace("{holder}", NameFor(agent, other), StringComparison.Ordinal)
-                                .Replace("{part}", part.Name, StringComparison.Ordinal),
-                                affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                                .Replace("{holder}", NameFor(agent, owner), StringComparison.Ordinal)
+                                .Replace("{part}", part.Name, StringComparison.Ordinal)
+                                .Replace("{mess}", deposits.Count > 0 ? deposits[0].Name : "", StringComparison.Ordinal),
+                                affordance.Handler, attachment.ModuleId, affordance.Prompt, i));
                         }
+                    }
+                    foreach (var other in others)
+                        if (!affordance.SelfOnly)
+                            AddPartEntries(other);
+                    // self-touch: the actor's own parts list alongside
+                    // the others ("Massage your own neck") with the same
+                    // intimate/covered filtering — or ALONE, when the
+                    // affordance is the private kind (masturbation)
+                    if (affordance.SelfParts || affordance.SelfOnly)
+                        AddPartEntries(agent);
                     continue;
                 }
                 // speech is parameterized: the label carries a {speech}
@@ -228,13 +317,13 @@ public sealed class ActionResolver
                     if (targeting != Modules.SpeechTargeting.Directed)
                         actions.Add(new AvailableAction(
                             affordance.Verb, agent.Id, $"{cap}: {{speech}}",
-                            affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt, i));
                     if (targeting != Modules.SpeechTargeting.Broadcast &&
                         (targeting == Modules.SpeechTargeting.Directed || others.Count > 1))
                         foreach (var other in others)
                             actions.Add(new AvailableAction(
                                 affordance.Verb, other.Id, $"{cap} to {NameFor(agent, other)}: {{speech}}",
-                                affordance.Handler, attachment.ModuleId, affordance.Prompt));
+                                affordance.Handler, attachment.ModuleId, affordance.Prompt, i));
                     continue;
                 }
                 // give is a two-object verb on the held item: one entry per
@@ -245,7 +334,7 @@ public sealed class ActionResolver
                     foreach (var other in others)
                         actions.Add(new AvailableAction(
                             "give", other.Id, $"Give {The(agent, target)} to {NameFor(agent, other)}",
-                            affordance.Handler, attachment.ModuleId, affordance.Prompt)
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt, i)
                         { AuxTargetId = target.Id });
                     continue;
                 }
@@ -262,7 +351,7 @@ public sealed class ActionResolver
                         var prep = target.HasModule("surface") ? "onto" : "into";
                         actions.Add(new AvailableAction(
                             "put", target.Id, $"Put {The(item)} {prep} {The(target)}",
-                            affordance.Handler, attachment.ModuleId, affordance.Prompt)
+                            affordance.Handler, attachment.ModuleId, affordance.Prompt, i)
                         { AuxTargetId = item.Id });
                     }
                     continue;
@@ -270,7 +359,7 @@ public sealed class ActionResolver
                 var label = LabelFor(affordance, agent, target);
                 actions.Add(new AvailableAction(
                     affordance.Verb, target.Id, label, affordance.Handler,
-                    attachment.ModuleId, affordance.Prompt));
+                    attachment.ModuleId, affordance.Prompt, i));
             }
         }
     }
@@ -316,6 +405,19 @@ public sealed class ActionResolver
             return false;
         if (!ConditionKindsApply(affordance.Excludes, all: false, agent))
             return false;
+        // sub-actions of an ongoing pair state: both the actor and,
+        // when the target is another agent, the target must share a
+        // matching embrace ("Move in Maya" needs the joined embrace)
+        if (affordance.RequiresEmbrace is { } requirement)
+        {
+            var embrace = target.HasModule("agent") && target.Id != agent.Id
+                ? Embraces.Find(_world, _modules, agent, target, requirement.Kind)
+                : EmbraceOfKind(agent, requirement.Kind);
+            if (embrace is null ||
+                requirement.Position is { } pinned &&
+                Embraces.Position(_modules, embrace) != pinned)
+                return false;
+        }
         // observable state of the target (or actor): hide "Drink the ale"
         // once the vessel is empty, show "Clear the mug" only once it is
         if (!WhenApplies(affordance, agent, target))
@@ -417,6 +519,31 @@ public sealed class ActionResolver
         return all
             ? split.Any(kind => Conditions.Has(_world, _modules, agent, kind))
             : split.All(kind => !Conditions.Has(_world, _modules, agent, kind));
+    }
+
+    /// <summary>
+    /// The affordance a resolved action entry refers to. Several may
+    /// share a verb on one module (three ways to shift an embrace,
+    /// two kinds of sucking): the entry's index disambiguates its
+    /// data, signals, and salience; hand-built entries fall back to
+    /// the first verb match.
+    /// </summary>
+    public Modules.AffordanceDefinition? AffordanceOf(AvailableAction action)
+    {
+        if (!_modules.Has(action.ModuleId))
+            return null;
+        var affordances = _modules.Get(action.ModuleId).Affordances;
+        var index = action.AffordanceIndex;
+        if (index >= 0 && index < affordances.Count && affordances[index].Verb == action.Verb)
+            return affordances[index];
+        return affordances.FirstOrDefault(a => a.Verb == action.Verb);
+    }
+
+    /// <summary>The agent's embrace of a given kind, if any (self-targeted sub-actions).</summary>
+    private WorldObject? EmbraceOfKind(WorldObject agent, string kind)
+    {
+        var embrace = Embraces.Of(_world, _modules, agent);
+        return embrace is not null && Embraces.Kind(_modules, embrace) == kind ? embrace : null;
     }
 
     /// <summary>

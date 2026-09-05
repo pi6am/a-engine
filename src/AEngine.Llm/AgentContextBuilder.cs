@@ -36,15 +36,24 @@ public sealed class AgentContextBuilder
                 var character = _engine.ModuleRegistry.ResolveString(agent, "agent", "character");
                 if (!string.IsNullOrWhiteSpace(character))
                     sb.AppendLine($"Character: {character}");
+                // an ongoing embrace shifts behavior like a condition does
+                // (joined lovers move together) — its traits/goals append
+                var embrace = Embraces.Of(_engine.World, _engine.ModuleRegistry, agent);
                 var goals = _engine.ModuleRegistry.ResolveString(agent, "agent", "goals");
                 var conditionGoals = Conditions.GoalText(_engine.World, _engine.ModuleRegistry, agent);
-                var allGoals = string.Join(" ", new[] { goals, conditionGoals }
+                var embraceGoals = embrace is null
+                    ? null
+                    : _engine.ModuleRegistry.ResolveString(embrace, "embrace", "goals");
+                var allGoals = string.Join(" ", new[] { goals, conditionGoals, embraceGoals }
                     .Where(s => !string.IsNullOrWhiteSpace(s)));
                 if (allGoals.Length > 0)
                     sb.AppendLine($"Goals: {allGoals}");
                 var traits = _engine.ModuleRegistry.ResolveString(agent, "agent", "traits");
                 var conditionTraits = Conditions.TraitText(_engine.World, _engine.ModuleRegistry, agent);
-                var allTraits = string.Join(" ", new[] { traits, conditionTraits }
+                var embraceTraits = embrace is null
+                    ? null
+                    : _engine.ModuleRegistry.ResolveString(embrace, "embrace", "traits");
+                var allTraits = string.Join(" ", new[] { traits, conditionTraits, embraceTraits }
                     .Where(s => !string.IsNullOrWhiteSpace(s)));
                 if (allTraits.Length > 0)
                     sb.AppendLine($"Traits: {allTraits}");

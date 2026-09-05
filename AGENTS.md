@@ -77,9 +77,15 @@ working in that area, and update them when the behavior changes:
 - **Signals** — ephemeral visual/audible observations delivered to per-agent
   queues (and agent memory), with room-granular propagation gated by portal-side
   transmission fields; templates format `{agent}`/`{target}`/`{arg}`/`{container}`
-  placeholders.
+  placeholders, plus per-agent pronoun tags (`{agent.possessive}`,
+  `{holder.subject}`…) from `pronouns` modules with data-defined bundles
+  (female_pronouns, …), rendered observer-relatively with second-person
+  verb agreement.
 - **Posture & clothing** — containment-derived postures (sit/lie/prone/carried)
-  gate affordances via data; garments wear onto data-driven body regions.
+  gate affordances via data; garments wear onto data-driven body regions,
+  one per region per `layer` (undergarments stack under outerwear), and
+  coverage is separate from slots — regions are the granularity for
+  exposure and through-clothes touching (hips vs thighs).
 - **Conditions** — buffs/debuffs as cloned child objects on agents
   (`condition` module: traits/goals text, stat mods, visibility); they gate
   affordances (resolver `requires`/`excludes`/`when`, execution-time
@@ -93,22 +99,56 @@ working in that area, and update them when the behavior changes:
   `lastSeen` map of holder + room, with unset-on-refuted rules) rendered
   into LLM contexts as "Important items: …". No module = knows everything
   (back-compat).
-- **Consumables & metabolism** — drinks/food as data (`beverage`/`food`
-  modules, `consume`/`clear` handlers), prefab spawning from templates
-  (`spawner` module, single-slot anti-flood), and a world-clock upkeep pass
-  (`metabolism` module) that burns alcohol into bladder across per-race
-  capacities and attaches threshold-band conditions (tipsy/drunk/…). See
+- **Motives** — the data-driven simulation layer (`Runtime/Motives`)
+  both the drunkenness and intimacy sims run on: any module declaring
+  a `motives` list field becomes a motive group whose entries define
+  floating-point values (plain fields on the module), drift rules
+  (linear stop-at-target or exact exponential approach, conditionally
+  gated on other motives' ranges), loss-to-gain routing between
+  motives, exclusive threshold bands attaching condition templates,
+  and onFull/onEmpty events (sets/adjusts, condition attach, texts).
+  Jacobi sub-steps capped at `maxStep` (default 1 s) keep it stable
+  and keep turn-based/real-time trajectories identical. See
   `docs/architecture.md`.
-- **Part-targeted actions, chatter & handler data** — touching is
-  part-targeted: affordances with `targetParts` list one entry per body
-  part of each other agent (intimate parts only when their wear region is
-  uncovered — the `exposed` gate), the action targets the part, and the
-  reaction system resolves the defending holder; `{holder}` renders the
-  part's owner observer-relatively. Non-agent "voices" (a TV) are
-  `chatter` module objects that periodically emit a channel's line pool
-  as forgettable audible signals. Affordances carry a free `data` string
-  map for their handler (answers, intensities, set-style knob targets) —
-  prose and tuning stay in data.
+- **Consumables** — the generic `consume` handler as data end-to-end:
+  `impulse.<motive>` keys map consumable fields (or literals) onto the
+  actor's motives, `servings` counts down multi-serving items, and the
+  empty vessel renames itself (`emptyName`) for the generic `destroy` handler.
+  Prefab spawning from templates (`spawner` module, single-slot
+  anti-flood).
+  The tavern's drunkenness sim (alcohol → bladder across per-race
+  capacities, tipsy/drunk/… bands) is a `metabolism` motive group. See
+  `docs/architecture.md`.
+- **Touch & embrace** — the generic interaction layer for contact,
+  with all vocabulary in scenario data: an `intimacy` motive group
+  (arousal banks toward a horniness setpoint, pleasure fades,
+  frustration accumulates, comfort moves only through actions;
+  climax is a data-defined event), the `touch` handler
+  (part-targeted impulses via `impulse.<motive>` data keys,
+  sensitivity scaling, reaction effects welcome/hesitate/refuse,
+  penetration via `probe`/`receives` part roles — body parts or held
+  toys as instruments, `{instrument}` in prose — the inverted
+  `targetsProbes` family for actions that take the target's
+  insertable part (sucking), and through-clothes
+  as separate `coveredParts` affordances),
+  and ongoing pair states — `embrace`/`reposition`/`disengage`
+  over shared world objects (hugs auto-end, laps and joined kinds
+  persist with `requiresEmbrace`-gated sub-actions and per-position
+  pacing; `occupiesA`/`occupiesB` + the `partsFree` gate keep busy
+  body parts busy). Touching is part-targeted:
+  affordances with `targetParts` list one entry per body part of each other
+  agent (intimate parts only when their wear region is uncovered — the
+  `exposed` gate), `selfParts` lists the actor's own parts; the action
+  targets the part, and the reaction system
+  resolves the defending holder; `{holder}` renders the part's owner
+  observer-relatively. Non-agent "voices" (a TV) are `chatter` module
+  objects that periodically emit a channel's line pool as forgettable
+  audible signals. Affordances carry a free `data` string map for their
+  handler (answers, intensities) — prose and tuning stay in data. The
+  adult scenario built on these lives in a separate repo
+  (`a-engine-extra`) to keep this one all-ages; engine tests cover the
+  mechanics with neutral fixtures (`TouchEmbraceTests`).
+
 - **RPG systems** — staged, opt-in modules (stats/checks → opposed checks →
   health → combat → grappling → body parts + crunch levels); scenarios that
   don't reference them are unaffected. See `docs/rpg-systems.md`.

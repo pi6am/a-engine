@@ -20,6 +20,13 @@ public sealed class ActionContext
     /// actions via TurnManager.Execute).
     /// </summary>
     public string? Verb { get; init; }
+    /// <summary>
+    /// The id of the module whose affordance fired ("toilet" for the
+    /// urinal's `use`) — handlers read per-object fields of the target
+    /// through it (the set handler's sensationField). Null when invoked
+    /// without an affordance.
+    /// </summary>
+    public string? ModuleId { get; init; }
     /// <summary>The engine's randomness source (checks, damage rolls).</summary>
     public Random? Random { get; init; }
     /// <summary>
@@ -88,10 +95,16 @@ public interface IActionHandler
     ActionResult Execute(ActionContext context);
 }
 
-/// <summary>A menu entry produced by the ActionResolver.</summary>
+/// <summary>
+/// A menu entry produced by the ActionResolver. <see cref="AffordanceIndex"/>
+/// is the affordance's position in its module's list — several may share a
+/// verb (three ways to shift an embrace), and the index disambiguates data,
+/// signals, and salience at execution time; -1 for synthetic entries
+/// (examine) and hand-built ones.
+/// </summary>
 public sealed record AvailableAction(
     string Verb, string? TargetId, string Label, string HandlerId,
-    string ModuleId, string? Prompt = null)
+    string ModuleId, string? Prompt = null, int AffordanceIndex = -1)
 {
     /// <summary>
     /// Optional free-text argument for prompted verbs (e.g. the words for
