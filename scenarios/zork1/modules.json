@@ -1662,7 +1662,53 @@
           "default": 2
         }
       ],
-      "affordances": []
+      "affordances": [
+        {
+          "verb": "stand",
+          "handler": "stand",
+          "when": [
+            {
+              "module": "agent",
+              "field": "posture",
+              "on": "actor",
+              "equals": "sitting"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "matchbook",
+      "name": "Matchbook (a book of matches)",
+      "fields": [
+        {
+          "name": "matches",
+          "type": "int",
+          "default": 5
+        },
+        {
+          "name": "onLight",
+          "type": "list",
+          "default": []
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "light",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "matchbook",
+              "field": "matches",
+              "min": 1
+            }
+          ],
+          "data": {
+            "effectsField": "onLight",
+            "self": "One of the matches flares into life."
+          }
+        }
+      ]
     }
   ]
 }

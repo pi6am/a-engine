@@ -632,6 +632,7 @@
           "name": "matchbook",
           "description": "A matchbook whose cover says \"Visit Beautiful FCD#3\".",
           "modules": [
+            "matchbook",
             "portable",
             "readable",
             {
@@ -650,7 +651,47 @@
               "module": "lightsource",
               "overrides": {
                 "fuel": 2,
-                "selfLighting": true
+                "selfLighting": false
+              }
+            },
+            {
+              "module": "matchbook",
+              "overrides": {
+                "matches": 5,
+                "onLight": [
+                  {
+                    "set": {
+                      "object": "self",
+                      "module": "lightsource",
+                      "field": "on",
+                      "value": true
+                    }
+                  },
+                  {
+                    "set": {
+                      "object": "self",
+                      "module": "lightsource",
+                      "field": "fuel",
+                      "value": 2
+                    }
+                  },
+                  {
+                    "set": {
+                      "object": "self",
+                      "module": "lightsource",
+                      "field": "dead",
+                      "value": false
+                    }
+                  },
+                  {
+                    "adjust": {
+                      "object": "self",
+                      "module": "matchbook",
+                      "field": "matches",
+                      "by": -1
+                    }
+                  }
+                ]
               }
             }
           ]

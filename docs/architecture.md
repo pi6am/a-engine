@@ -932,7 +932,10 @@ generic throughout.
   deterministic matcher LLM plan execution uses, with NPC rounds and
   default-resolved reactions between steps; it stops with the line
   number on the first unrecognized or failed command.
-  No LLM attached, byte-identical replays under a frozen seed.
+  No LLM attached, byte-identical replays under a frozen seed. The
+  Zork I scenario ships a complete 369-move walkthrough
+  (`scenarios/zork1/walkthrough.txt`) verified to 350 points and the
+  Stone Barrow at seed 42 — the original game, start to finish.
 
 ## Scenarios
 

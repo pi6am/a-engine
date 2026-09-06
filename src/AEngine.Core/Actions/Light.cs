@@ -85,13 +85,16 @@ public static class Light
         !modules.ResolveBool(obj, "lightsource", "dead");
 
     /// <summary>
-    /// Burn fuel on every burning light source with a finite fuel count,
-    /// by whole turns of world time. Each burnStages entry
+    /// Burn fuel on every burning, FINITE light source held by an agent,
+    /// by whole turns of world time — an untouched flame on a temple
+    /// altar doesn't burn (the clock starts when it's picked up,
+    /// matching the ambient-timer rule). Each burnStages entry
     /// ("<c>threshold|message</c>") announces itself to the light's
     /// holder the first time the remaining fuel drops below its
     /// threshold; fuel reaching zero snuffs the light (on=false,
-    /// dead=true) with the module's <c>outText</c> (default: "The {name}
-    /// has gone out."). Infinite fuel (-1, the default) never burns.
+    /// dead=true) with the module's <c>outText</c> (default: "The
+    /// {name} has gone out."). Infinite fuel (-1, the default) never
+    /// burns.
     /// </summary>
     public static void Advance(GameEngine engine, int turns)
     {
@@ -104,12 +107,12 @@ public static class Light
             var fuel = modules.ResolveInt(obj, "lightsource", "fuel", -1);
             if (fuel < 0 || !IsBurning(modules, obj))
                 continue;
+            var holder = HeldBy(world, obj);
+            if (holder is null)
+                continue; // unheld flames wait
             var before = fuel;
             var after = Math.Max(0, fuel - turns);
             world.SetFieldOverride(obj.Id, "lightsource", "fuel", World.World.ToJson(after));
-            var holder = obj.Parent.Length > 0 && world.HasObject(obj.Parent)
-                ? world.GetObject(obj.Parent)
-                : null;
             foreach (var stage in modules.ResolveStringList(obj, "lightsource", "burnStages") ?? [])
             {
                 var bar = stage.IndexOf('|');
@@ -117,19 +120,30 @@ public static class Light
                     !int.TryParse(stage[..bar], out var threshold) ||
                     !(before >= threshold && after < threshold))
                     continue;
-                if (holder is not null && holder.HasModule("agent"))
-                    engine.SignalBus.SendTo(holder, stage[(bar + 1)..]);
+                engine.SignalBus.SendTo(holder, stage[(bar + 1)..]);
             }
             if (after == 0 && before > 0)
             {
                 world.SetFieldOverride(obj.Id, "lightsource", "on", World.World.ToJson(false));
                 world.SetFieldOverride(obj.Id, "lightsource", "dead", World.World.ToJson(true));
-                if (holder is not null && holder.HasModule("agent"))
-                    engine.SignalBus.SendTo(holder,
-                        modules.ResolveString(obj, "lightsource", "outText") is { Length: > 0 } outText
-                            ? outText.Replace("{name}", obj.Name, StringComparison.Ordinal)
-                            : $"The {obj.Name} has gone out.");
+                engine.SignalBus.SendTo(holder,
+                    modules.ResolveString(obj, "lightsource", "outText") is { Length: > 0 } outText
+                        ? outText.Replace("{name}", obj.Name, StringComparison.Ordinal)
+                        : $"The {obj.Name} has gone out.");
             }
         }
+    }
+
+    /// <summary>The agent whose belongings hold this object, if any.</summary>
+    private static WorldObject? HeldBy(World.World world, WorldObject obj)
+    {
+        var current = obj;
+        while (current.Parent.Length > 0 && world.HasObject(current.Parent))
+        {
+            current = world.GetObject(current.Parent);
+            if (current.HasModule("agent"))
+                return current;
+        }
+        return null;
     }
 }

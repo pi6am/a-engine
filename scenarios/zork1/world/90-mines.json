@@ -1173,48 +1173,6 @@
       ]
     },
     {
-      "id": "gas_explosion_lamp",
-      "name": "gas_explosion_lamp",
-      "modules": [
-        "automation",
-        {
-          "module": "automation",
-          "overrides": {
-            "when": [
-              {
-                "of": "player",
-                "inRoom": "gas_room"
-              },
-              {
-                "of": "lamp",
-                "module": "lightsource",
-                "field": "on",
-                "equals": true
-              },
-              {
-                "holder": "player",
-                "holds": "lamp"
-              }
-            ],
-            "effects": [
-              {
-                "attach": {
-                  "condition": "cond_dead",
-                  "to": "player"
-                }
-              },
-              {
-                "say": {
-                  "to": "player",
-                  "text": "Oh dear. It seems that the match you are carrying has ignited the cloud of gas you have been walking through. There is a tremendous explosion, and you are blown quite out of the mine... and, it would appear, out of the world."
-                }
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "id": "gas_explosion_torch",
       "name": "gas_explosion_torch",
       "modules": [

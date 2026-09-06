@@ -1,0 +1,369 @@
+# Zork I: The Great Underground Empire — the complete adventure.
+# Deterministic under --seed 42. 350 points, then the Stone Barrow.
+#
+# Six spokes through the trophy case: the thief's hideaway, the dam,
+# the gates of Hades, the coal mine, the Egyptian tomb, and the river.
+
+# ---------- spoke 1: the egg, the troll, the maze, the cyclops, the thief
+Go north
+Go north
+Go up
+Take the jewel-encrusted egg
+Go down
+Go south
+Go southeast
+Open the kitchen window
+Go west
+Go west
+Take the brass lantern
+Take the elvish sword
+Turn on the brass lantern
+Go east
+Go up
+Take the rope
+Go down
+Go west
+Move the large oriental rug
+Open the trap door
+Go down
+Go north
+Attack the troll x40
+Go west
+Go south
+Go east
+Go up
+Take the leather bag of coins
+Take the skeleton key
+Go southwest
+Go east
+Go south
+Go southeast
+Speak to the cyclops :: ulysses
+Go up
+Give the jewel-encrusted egg to the thief
+Attack the thief x60
+Take the jewel-encrusted egg
+Take the golden clockwork canary
+Take the silver chalice
+Go down
+Go east
+Go east
+Open the trophy case
+Put the leather bag of coins into the trophy case
+Put the jewel-encrusted egg into the trophy case
+Put the golden clockwork canary into the trophy case
+Put the silver chalice into the trophy case
+
+# ---------- spoke 2: the gallery, the loud room, the dam, the drained reservoir
+Open the trap door
+Go east
+Open the brown sack
+Take the clove of garlic
+Go west
+Go down
+Go south
+Go east
+Take the painting
+Go west
+Go north
+Go north
+Go east
+Go east
+Go east
+Speak to the echo :: echo
+Take the platinum bar
+Go up
+Go east
+Go north
+Take the matchbook
+Go north
+Drop the elvish sword
+Take the wrench
+Take the screwdriver
+Press the yellow button
+Go south
+Go south
+Turn the bolt
+Drop the wrench
+Wait x8
+Drop the platinum bar
+Go west
+Go north
+Take the trunk of jewels
+Go south
+Go east
+Go south
+Go down
+Go west
+Go west
+Go west
+Go south
+Go up
+Put the trunk of jewels into the trophy case
+Put the painting into the trophy case
+Go down
+Go north
+Go east
+Go east
+Go east
+Go up
+Go east
+Take the platinum bar
+Go west
+Go north
+Go north
+Take the hand-held air pump
+Go north
+Take the crystal trident
+Go south
+Go south
+Go south
+Go east
+Go south
+Go down
+Go west
+Go west
+Go west
+Go south
+Go up
+Put the crystal trident into the trophy case
+Put the platinum bar into the trophy case
+
+# ---------- spoke 3: the dome, the torch, the exorcism, the skull
+Go down
+Go north
+Go east
+Go east
+Go southeast
+Go east
+Tie the rope to the railing
+Go down
+Take the flaming ivory torch
+Go south
+Take the brass bell
+Go south
+Take the pair of candles
+Take the black book
+Turn off the pair of candles
+Go down
+Go down
+Ring the brass bell
+Take the pair of candles
+Light the matchbook
+Light the pair of candles
+Read the black book
+Go south
+Take the crystal skull
+Go north
+Turn off the pair of candles
+Go up
+Go north
+Go north
+Go north
+Go west
+Go west
+Go south
+Go up
+Put the crystal skull into the trophy case
+Put the flaming ivory torch into the trophy case
+
+# ---------- spoke 4: the coal mine — jade, bracelet, diamond
+Go down
+Go north
+Go east
+Go east
+Go south
+Go south
+Rub the enormous mirror
+Go north
+Go west
+Go north
+Go west
+Go north
+Take the jade figurine
+Go east
+Go north
+Go down
+Take the sapphire-encrusted bracelet
+Go east
+Go northeast
+Go southeast
+Go southwest
+Go down
+Go down
+Go south
+Take the small pile of coal
+Go north
+Go up
+Go up
+Go north
+Go east
+Go south
+Go north
+Go up
+Go south
+Put the screwdriver into the basket
+Put the small pile of coal into the basket
+Light the matchbook
+Light the pair of candles
+Put the pair of candles into the basket
+Raise the basket
+Go north
+Go down
+Go east
+Go northeast
+Go southeast
+Go southwest
+Go down
+Go down
+Go west
+Drop the brass lantern
+Drop the clove of garlic
+Drop the jade figurine
+Drop the hand-held air pump
+Drop the black book
+Drop the sapphire-encrusted bracelet
+Go west
+Take the pair of candles
+Take the small pile of coal
+Take the screwdriver
+Go south
+Open the machine
+Put the small pile of coal into the machine
+Close the machine
+Turn the switch
+Open the machine
+Take the huge diamond
+Go north
+Put the huge diamond into the basket
+Put the screwdriver into the basket
+Put the pair of candles into the basket
+Go east
+Take the brass lantern
+Take the clove of garlic
+Take the jade figurine
+Take the hand-held air pump
+Take the black book
+Take the sapphire-encrusted bracelet
+Go east
+Go up
+Go up
+Go north
+Go east
+Go south
+Go north
+Go up
+Go south
+Raise the basket
+Take the huge diamond
+Take the pair of candles
+Turn off the pair of candles
+Go west
+Go south
+Go east
+Go south
+Go down
+Go up
+Put the jade figurine into the trophy case
+Put the sapphire-encrusted bracelet into the trophy case
+Put the huge diamond into the trophy case
+Put the black book into the trophy case
+
+# ---------- spoke 5: Egypt — the coffin and the sceptre, out by prayer
+Go down
+Go north
+Go east
+Go east
+Go southeast
+Go east
+Go down
+Go south
+Go east
+Open the gold coffin
+Take Ramses' sceptre
+Take the gold coffin
+Go west
+Go south
+Pray at the altar
+Go east
+Go south
+Go southeast
+Go west
+Go west
+Put the gold coffin into the trophy case
+
+# ---------- spoke 6: the Frigid River — emerald, scarab, pot of gold, bauble
+Go down
+Go north
+Go east
+Go east
+Go east
+Go up
+Go east
+Go down
+Drop the skeleton key
+Drop the clove of garlic
+Drop the matchbook
+Take the pile of plastic
+Inflate the pile of plastic
+Drop the magic boat
+Drop the hand-held air pump
+Put Ramses' sceptre into the magic boat
+Board the magic boat
+Launch the magic boat
+Wait x8
+Take the red buoy
+Land the magic boat
+Take Ramses' sceptre
+Get off the magic boat
+Go north
+Take the shovel
+Open the red buoy
+Take the large emerald
+Drop the red buoy
+Go northeast
+Dig the sand
+Dig the sand
+Dig the sand
+Take the jeweled scarab
+Drop the shovel
+Go southwest
+Go south
+Go south
+Wave Ramses' sceptre
+Go west
+Go west
+Take the pot of gold
+Go southwest
+Go up
+Go up
+Go northwest
+Go west
+Go west
+Go west
+Put the large emerald into the trophy case
+Put the jeweled scarab into the trophy case
+Put the pot of gold into the trophy case
+Put Ramses' sceptre into the trophy case
+Take the golden clockwork canary
+Go east
+Go east
+Go north
+Go north
+Wind the golden clockwork canary
+Take the brass bauble
+Go south
+Go southeast
+Go west
+Go west
+Put the brass bauble into the trophy case
+Put the golden clockwork canary into the trophy case
+Score
+
+# ---------- the end
+Read the ancient parchment
+Go east
+Go east
+Go north
+Go west
+Go southwest

@@ -429,12 +429,15 @@ public sealed class CarryingGate : IActionGate
             : !items.All(held.Contains);
     }
 
-    internal static void CollectHeld(ActionContext ctx, string holderId, HashSet<string> into)
+    internal static void CollectHeld(ActionContext ctx, string holderId,
+        HashSet<string> into, string? skipId = null)
     {
         foreach (var childId in ctx.World.GetObject(holderId).Children)
         {
+            if (childId == skipId)
+                continue; // stowed in the thing being boarded — freight, not cargo
             into.Add(childId);
-            CollectHeld(ctx, childId, into);
+            CollectHeld(ctx, childId, into, skipId);
         }
     }
 }
@@ -442,7 +445,10 @@ public sealed class CarryingGate : IActionGate
 /// <summary>
 /// NotCarrying gate. Args: <c>{ item: id | [ids] }</c> — blocks while the
 /// actor holds ANY of the named items. The bulk gate: "the gold coffin
-/// won't fit through the hole", "not with that inflated boat".
+/// won't fit through the hole", "not with that inflated boat". Stowed
+/// cargo doesn't count: the actor's subtree is walked EXCEPT the action's
+/// own target — a sword riding in the boat being boarded is freight,
+/// not a pocketknife.
 /// </summary>
 public sealed class NotCarryingGate : IActionGate
 {
@@ -454,7 +460,7 @@ public sealed class NotCarryingGate : IActionGate
         if (items.Count == 0)
             return false;
         var held = new HashSet<string>(StringComparer.Ordinal);
-        CarryingGate.CollectHeld(ctx, ctx.Agent.Id, held);
+        CarryingGate.CollectHeld(ctx, ctx.Agent.Id, held, ctx.Target?.Id);
         return items.Any(held.Contains);
     }
 }

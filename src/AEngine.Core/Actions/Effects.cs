@@ -141,6 +141,11 @@ public static class Effects
                 {
                     var obj = Sel(args, "object");
                     var dest = Sel(args, "to");
+                    // "actorRoom" drops the thing at the acting agent's
+                    // feet — the songbird's gift lands, it isn't handed over
+                    if (dest is null && Str(args, "to") == "actorRoom" &&
+                        ctx.Actor is { } actor)
+                        dest = world.RoomOf(actor.Id);
                     if (obj is not null && dest is not null && obj.Id != World.World.RootId)
                         MoveAndAward(engine, obj, dest.Id, ctx);
                     break;

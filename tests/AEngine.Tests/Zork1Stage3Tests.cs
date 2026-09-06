@@ -328,7 +328,7 @@ public class Zork1Stage3Tests
     }
 
     [Fact]
-    public void GasRoom_KillsOpenFlames()
+    public void GasRoom_KillsOpenFlames_ButNotTheElectricLamp()
     {
         var engine = NewEngine();
         var world = engine.World;
@@ -336,10 +336,22 @@ public class Zork1Stage3Tests
         world.MoveObject("player", "gas_room");
         LightLamp(engine);
 
+        // the battery lantern is not a flame: it walks the gas room safely
         var take = engine.ActionResolver.Resolve(player)
             .First(a => a.Verb == "take" && a.TargetId == "bracelet");
-        engine.TurnManager.PerformAction(player, take);
-        Assert.True(Conditions.Has(world, engine.ModuleRegistry, player, "dead"));
+        Assert.True(engine.TurnManager.PerformAction(player, take).Success);
+        Assert.False(Conditions.Has(world, engine.ModuleRegistry, player, "dead"));
+
+        // the torch is: carrying it in is the end
+        var engine2 = NewEngine();
+        var world2 = engine2.World;
+        var player2 = world2.GetObject("player");
+        world2.MoveObject("player", "gas_room");
+        world2.MoveObject("torch", "player");
+        var take2 = engine2.ActionResolver.Resolve(player2)
+            .First(a => a.Verb == "take" && a.TargetId == "bracelet");
+        engine2.TurnManager.PerformAction(player2, take2);
+        Assert.True(Conditions.Has(world2, engine2.ModuleRegistry, player2, "dead"));
     }
 
     [Fact]
@@ -423,7 +435,11 @@ public class Zork1Stage3Tests
         world.MoveObject("player", "forest_1");
         world.MoveObject("canary", "player");
 
-        Assert.True(RunScript(engine, ["Wind the golden clockwork canary"]).Success);
+        Assert.True(RunScript(engine,
+        [
+            "Wind the golden clockwork canary",
+            "Take the brass bauble",
+        ]).Success);
         Assert.Equal("player", world.GetObject("bauble").Parent);
     }
 }

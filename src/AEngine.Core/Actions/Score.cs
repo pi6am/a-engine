@@ -32,8 +32,11 @@ public static class Score
         if (modules.ResolveString(agent, "scorecard", "caseRef") is { } caseId &&
             world.HasObject(caseId))
         {
+            // only treasures carry deposit points; the case also holds
+            // whatever else an adventurer stuffs into it
             foreach (var child in world.ChildrenOf(caseId))
-                total += modules.ResolveInt(child, "treasure", "tvalue");
+                if (child.HasModule("treasure"))
+                    total += modules.ResolveInt(child, "treasure", "tvalue");
         }
         return total;
     }

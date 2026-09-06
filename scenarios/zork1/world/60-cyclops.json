@@ -354,7 +354,7 @@
               {
                 "move": {
                   "object": "bauble",
-                  "to": "actor"
+                  "to": "actorRoom"
                 },
                 "when": [
                   {
@@ -366,7 +366,7 @@
               {
                 "move": {
                   "object": "bauble",
-                  "to": "actor"
+                  "to": "actorRoom"
                 },
                 "when": [
                   {
@@ -378,7 +378,7 @@
               {
                 "move": {
                   "object": "bauble",
-                  "to": "actor"
+                  "to": "actorRoom"
                 },
                 "when": [
                   {
@@ -390,7 +390,7 @@
               {
                 "move": {
                   "object": "bauble",
-                  "to": "actor"
+                  "to": "actorRoom"
                 },
                 "when": [
                   {
@@ -402,7 +402,7 @@
               {
                 "move": {
                   "object": "bauble",
-                  "to": "actor"
+                  "to": "actorRoom"
                 },
                 "when": [
                   {

@@ -425,6 +425,11 @@
                   "object": "west_of_house",
                   "description": "You are standing in an open field west of a white house, with a boarded front door. A secret path leads southwest into the forest."
                 }
+              },
+              {
+                "reveal": {
+                  "object": "parchment"
+                }
               }
             ]
           }

@@ -47,6 +47,7 @@
           "name": "pile of plastic",
           "description": "A folded heap of plastic, with a valve at one corner.",
           "modules": [
+            "container",
             "sittable",
             "portable",
             "inflatable",
@@ -450,6 +451,12 @@
               "overrides": {
                 "capacity": 1
               }
+            },
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 100
+              }
             }
           ]
         }
@@ -577,6 +584,7 @@
           "name": "red buoy",
           "description": "A red buoy, bobbing placidly in the current. There is something odd about the way it floats.",
           "modules": [
+            "portable",
             "container",
             "openable",
             {
@@ -589,6 +597,12 @@
               "module": "openable",
               "overrides": {
                 "open": false
+              }
+            },
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 20
               }
             }
           ],
@@ -1538,6 +1552,11 @@
               {
                 "of": "player",
                 "inRoom": "river_1"
+              },
+              {
+                "holder": "pile_of_plastic",
+                "holds": "player",
+                "negate": true
               }
             ],
             "effects": [
@@ -1570,6 +1589,11 @@
               {
                 "of": "player",
                 "inRoom": "river_2"
+              },
+              {
+                "holder": "pile_of_plastic",
+                "holds": "player",
+                "negate": true
               }
             ],
             "effects": [
@@ -1602,6 +1626,11 @@
               {
                 "of": "player",
                 "inRoom": "river_3"
+              },
+              {
+                "holder": "pile_of_plastic",
+                "holds": "player",
+                "negate": true
               }
             ],
             "effects": [
@@ -1634,6 +1663,11 @@
               {
                 "of": "player",
                 "inRoom": "river_4"
+              },
+              {
+                "holder": "pile_of_plastic",
+                "holds": "player",
+                "negate": true
               }
             ],
             "effects": [
@@ -1666,6 +1700,11 @@
               {
                 "of": "player",
                 "inRoom": "river_5"
+              },
+              {
+                "holder": "pile_of_plastic",
+                "holds": "player",
+                "negate": true
               }
             ],
             "effects": [
