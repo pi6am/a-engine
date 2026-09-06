@@ -53,3 +53,6 @@ Thumbs.db
 ## Node / web client
 node_modules/
 client/dist/
+
+## Game saves (CLI /save)
+.saves/

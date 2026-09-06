@@ -318,10 +318,10 @@ slash.Register("control", [], "Play as another agent (/control ferret; /control 
     // --- save / load / undo / restart -----------------------------------
     // Saves are self-contained JSON documents (see GameSerializer): the
     // whole world, module definitions, turn clocks, memories, and the
-    // exact PRNG state. ./saves/ in the working directory.
-    var savesDir = Path.Combine(Directory.GetCurrentDirectory(), "saves");
+    // exact PRNG state. ./.saves/ in the working directory.
+    var savesDir = Path.Combine(Directory.GetCurrentDirectory(), ".saves");
     var undoRing = new UndoHistory();
-    slash.Register("save", [], "Save the game (/save [name] — files land in ./saves/)", args =>
+    slash.Register("save", [], "Save the game (/save [name] — files land in ./.saves/)", args =>
     {
         var name = args.Length > 0 && args[0].Trim().Length > 0
             ? SanitizeSaveName(args[0])
@@ -375,7 +375,7 @@ slash.Register("control", [], "Play as another agent (/control ferret; /control 
         }
         return false;
     });
-    slash.Register("saves", [], "List saved games in ./saves/", _ =>
+    slash.Register("saves", [], "List saved games in ./.saves/", _ =>
     {
         if (!Directory.Exists(savesDir))
         {

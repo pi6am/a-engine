@@ -59,7 +59,7 @@ All four are thin wrappers over `GameSerializer`
 (`src/AEngine.Core/Runtime/GameSerializer.cs`; see `docs/architecture.md`).
 A save is one self-contained JSON document — the whole world tree,
 module definitions, turn clocks, agent memories, and the exact PRNG
-state — written to `./saves/<name>.save.json` in the working directory
+state — written to `./.saves/<name>.save.json` in the working directory
 (default name: `<scenario>-<timestamp>`).
 
 - `/load` restores into the live engine in place: the engine keeps its
