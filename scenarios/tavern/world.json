@@ -400,7 +400,7 @@
         {
           "id": "urinal",
           "name": "urinal",
-          "description": "It works. Mostly.",
+          "description": "A porcelain urinal. It works. Mostly.",
           "modules": [
             { "module": "toilet", "overrides": { "reliefText": "You feel like a new person. A person with an empty bladder." } }
           ]

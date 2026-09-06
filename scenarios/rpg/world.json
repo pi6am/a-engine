@@ -204,7 +204,7 @@
         {
           "id": "dagger",
           "name": "dagger",
-          "description": "A short, quick blade.",
+          "description": "A short, quick dagger of arena steel.",
           "modules": [
             "portable",
             { "module": "wearable", "overrides": { "regions": ["held"] } },
@@ -224,7 +224,7 @@
         {
           "id": "padded_armor",
           "name": "padded armor",
-          "description": "A quilted gambeson, scuffed from many bouts.",
+          "description": "Padded armor: a quilted gambeson, scuffed from many bouts.",
           "modules": [
             "portable",
             { "module": "wearable", "overrides": { "regions": ["top"] } },
