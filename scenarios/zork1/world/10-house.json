@@ -1,0 +1,629 @@
+{
+  "world": [
+    {
+      "id": "west_of_house",
+      "name": "West of House",
+      "description": "You are standing in an open field west of a white house, with a boarded front door.",
+      "modules": [
+        {
+          "module": "room"
+        }
+      ],
+      "children": [
+        {
+          "id": "player",
+          "name": "the adventurer",
+          "description": "A brave and restless adventurer.",
+          "modules": [
+            {
+              "module": "agent"
+            },
+            {
+              "module": "can_speak"
+            },
+            {
+              "module": "scorecard",
+              "overrides": {
+                "caseRef": "trophy_case"
+              }
+            }
+          ]
+        },
+        {
+          "id": "front_door",
+          "name": "front door",
+          "description": "The door is boarded and you can't remove the boards.",
+          "modules": []
+        },
+        {
+          "id": "mailbox",
+          "name": "small mailbox",
+          "description": "It is securely anchored to the house.",
+          "modules": [
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 10
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "leaflet",
+              "name": "leaflet",
+              "description": "A small leaflet, folded once.",
+              "modules": [
+                "portable",
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 2
+                  }
+                },
+                "readable",
+                {
+                  "module": "readable",
+                  "overrides": {
+                    "text": "\"WELCOME TO ZORK!\n\nZORK is a game of adventure, danger, and low cunning. In it you will explore some of the most amazing territory ever seen by mortals. No computer should be without one!\""
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "woh_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "north_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "woh_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "south_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "woh_northeast",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "north_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "woh_southeast",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "south_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        }
+      ]
+    },
+    {
+      "id": "north_of_house",
+      "name": "North of House",
+      "description": "You are facing the north side of a white house. There is no door here, and all the windows are boarded up. To the north a narrow path winds through the trees.",
+      "modules": [
+        {
+          "module": "room"
+        }
+      ],
+      "children": [
+        {
+          "id": "noh_southwest",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "west_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "noh_southeast",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "east_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "noh_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "west_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "noh_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "east_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        }
+      ]
+    },
+    {
+      "id": "south_of_house",
+      "name": "South of House",
+      "description": "You are facing the south side of a white house. There is no door here, and all the windows are boarded.",
+      "modules": [
+        {
+          "module": "room"
+        }
+      ],
+      "children": [
+        {
+          "id": "soh_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "west_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "soh_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "east_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "soh_northwest",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "west_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "soh_northeast",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "east_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        }
+      ]
+    },
+    {
+      "id": "east_of_house",
+      "name": "Behind House",
+      "description": "You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar.",
+      "modules": [
+        {
+          "module": "room"
+        }
+      ],
+      "children": [
+        {
+          "id": "eoh_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "north_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "eoh_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "south_of_house"
+              }
+            }
+          ],
+          "name": "path around the house"
+        },
+        {
+          "id": "window_east",
+          "name": "kitchen window",
+          "description": "A small window, slightly ajar.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "window_state",
+                "direction": "west",
+                "to": "kitchen"
+              }
+            },
+            {
+              "module": "door"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "window_state",
+      "name": "kitchen window state",
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "description": "You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is slightly ajar.",
+      "modules": [
+        {
+          "module": "room",
+          "overrides": {
+            "value": 10
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "kitchen_table",
+          "name": "kitchen table",
+          "description": "A sturdy wooden table, scattered with crumbs.",
+          "modules": [
+            {
+              "module": "surface",
+              "overrides": {
+                "capacity": 50
+              }
+            },
+            "puttable"
+          ],
+          "children": [
+            {
+              "id": "sandwich_bag",
+              "name": "brown sack",
+              "description": "A brown sack, smelling faintly of hot peppers and garlic.",
+              "modules": [
+                {
+                  "module": "container",
+                  "overrides": {
+                    "capacity": 9
+                  }
+                },
+                {
+                  "module": "openable",
+                  "overrides": {
+                    "open": false
+                  }
+                },
+                {
+                  "module": "portable"
+                }
+              ],
+              "children": [
+                {
+                  "id": "lunch",
+                  "name": "hot pepper sandwich",
+                  "description": "It smells of hot peppers.",
+                  "modules": [
+                    {
+                      "module": "portable"
+                    }
+                  ]
+                },
+                {
+                  "id": "garlic",
+                  "name": "clove of garlic",
+                  "description": "A pungent clove of garlic.",
+                  "modules": [
+                    {
+                      "module": "portable"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "bottle",
+              "name": "glass bottle",
+              "description": "A small glass bottle, currently empty.",
+              "modules": [
+                {
+                  "module": "container",
+                  "overrides": {
+                    "capacity": 4
+                  }
+                },
+                {
+                  "module": "openable",
+                  "overrides": {
+                    "open": true
+                  }
+                },
+                {
+                  "module": "portable"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "window_west",
+          "name": "kitchen window",
+          "description": "A small window.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "window_state",
+                "direction": "east",
+                "to": "east_of_house"
+              }
+            },
+            {
+              "module": "door"
+            }
+          ]
+        },
+        {
+          "id": "kitchen_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "living_room"
+              }
+            }
+          ],
+          "name": "passage"
+        },
+        {
+          "id": "kitchen_up",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "attic"
+              }
+            }
+          ],
+          "name": "staircase"
+        }
+      ]
+    },
+    {
+      "id": "attic",
+      "name": "Attic",
+      "description": "This is the attic. The only exit is a stairway leading down.",
+      "modules": [
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "attic_down",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "kitchen"
+              }
+            }
+          ],
+          "name": "staircase"
+        },
+        {
+          "id": "rope",
+          "name": "rope",
+          "description": "A long, sturdy coil of rope.",
+          "modules": [
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 15
+              }
+            }
+          ]
+        },
+        {
+          "id": "knife",
+          "name": "nasty knife",
+          "description": "A vicious-looking knife with an oddly dull blade.",
+          "modules": [
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "living_room",
+      "name": "Living Room",
+      "description": "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.",
+      "modules": [
+        {
+          "module": "room"
+        }
+      ],
+      "children": [
+        {
+          "id": "lr_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "kitchen"
+              }
+            }
+          ],
+          "name": "doorway"
+        },
+        {
+          "id": "trophy_case",
+          "name": "trophy case",
+          "description": "A handsome display case, waiting to be filled with treasure.",
+          "modules": [
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 10000
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            }
+          ]
+        },
+        {
+          "id": "lamp",
+          "name": "brass lantern",
+          "description": "A battery-powered brass lantern, in good working order.",
+          "modules": [
+            {
+              "module": "lightsource",
+              "overrides": {
+                "fuel": 385,
+                "burnStages": [
+                  "185|The brass lantern appears a bit dimmer.",
+                  "85|The brass lantern is definitely dimmer now.",
+                  "15|The brass lantern is nearly out."
+                ]
+              }
+            },
+            {
+              "module": "portable"
+            }
+          ]
+        },
+        {
+          "id": "sword",
+          "name": "elvish sword",
+          "description": "An ancient elvish sword, its blade faintly etched with runes.",
+          "modules": [
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 30
+              }
+            }
+          ]
+        },
+        {
+          "id": "rug",
+          "name": "large oriental rug",
+          "description": "A large oriental rug, edges slightly rumpled.",
+          "modules": []
+        }
+      ]
+    }
+  ]
+}

@@ -134,9 +134,20 @@ then; and **`gates`** are execution-time prerequisites evaluated in
 `PerformAction` BEFORE reaction parking and the check roll: a blocked
 gate fails the attempt with its `failText` (turn consumed, failSignals
 fire) while the action stays listed, so agents can still try and be told
-why not ("Your bladder is bursting — not another drop."). Gate kinds
+ why not ("Your bladder is bursting — not another drop."). Gate kinds
 resolve by string id through a `GateRegistry` (built-ins `condition`,
-`field`; register new kinds like handlers — the extensible hook seam).
+`field` — whose args also accept `of: <objectId>` to test a third
+object's field, the passage-keyed-on-shared-state pattern — plus
+`carrying`/`notCarrying` (held item ids), `loadUnder` (a summed weight
+field over the actor's belongings against a literal or actor-field cap,
+optionally counting the action's target/aux — inventory limits and
+empty-handed crawls), and `allowOnly` (carries nothing outside the
+list); register new kinds like handlers — the extensible hook seam). A
+`when` spec may also be `{absent: true}` — matching while the referenced
+object does NOT carry the module (the `immobile` pattern: agents
+without it move). Objects with a `hideable` module at `concealed: true`
+are invisible everywhere (resolver, look, examine) until an effect
+reveals them — the rug-covered trap door, the not-yet-won map.
 The `spawn` handler is capacity-gated by the resolver: its affordance
 hides while the host spawner holds `maxChildren` items (default 1). `look` exits show `open`/`closed` only
 (never "locked"). `Perception` (Core/Actions) is the shared
@@ -796,6 +807,68 @@ starts only every `npcLodFactor` rounds (rules module, default 10, 1
 disables; staggered per agent id on the round clock) — in-flight policy
 decisions always finish.
 
+## Adventure systems (darkness, effects, automations, scoring)
+
+The classic-adventure substrate, developed for `scenarios/zork1` and
+generic throughout.
+
+- **Darkness & light** — a room with `room.dark: true` is unlit unless a
+  burning `lightsource` (module fields `on`, `fuel` — finite fuels burn
+  one unit per player turn with `burnStages` "threshold|message"
+  warnings and a final `outText` snuff — and `dead`) is visible in it:
+  lying in the room, on a surface, in an open container, held by anyone
+  present, or in the actor's own pockets. `agent.alwaysLit` (a ghost)
+  sees regardless. While unlit the resolver strips the room away — only
+  go/look/inventory/wait/say and self- or hand-targeted actions remain
+  (you can still turn on the lamp in your pocket) — and `look` prints
+  the rules module's `darkText` (default "It is pitch black."). Moving
+  while blind risks a data-defined hazard (`rules.darkHazardChance`, a
+  percentage per move; on a hit the `darkHazardCondition` template
+  attaches and `darkHazardText` reports — the engine knows nothing
+  about what hunts in the dark).
+- **The effect vocabulary** (`Core/Actions/Effects.cs`) — one JSON shape
+  shared by the `effect` handler (verbs as data: move/ring/wave/dig/
+  wind/pray/press/turn/tie/raise are affordances naming an effect list
+  inline or via an `effectsField` on the target's module, so per-object
+  overrides work), the `answer` handler (a prompted verb matching its
+  free text against a per-object answer table — "echo", "odysseus"),
+  and the automation pass below. Kinds: `set`/`adjust` fields,
+  `attach`/`detach` conditions, `move`/`teleport` (an agent's arrival
+  awards room-entry points), `scatter` (contents by filter module to
+  destinations or "here" with per-item `special` overrides — death
+  drops, robberies, curses), `destroy`, `spawn`, `transform` (replace
+  with a template at the same parent under the same id, so references
+  survive), `open`/`close`/`lock`/`unlock` (through shared doorstates),
+  `conceal`/`reveal`, `rename`, `addModule`/`removeModule`, `say`
+  (private sensation), `signal` (room observation), `endsGame`.
+  Selectors: object ids or `actor`/`target`/`aux`/`self`.
+- **Automations** (`Core/Runtime/Automations.cs`) — conditional rules
+  and timers as top-level objects with the `automation` module,
+  evaluated once per player turn on the world-clock pass (deterministic
+  id order). `when` conditions (all must match): a field on any object
+  (`{of, module, field, equals/min/max}`), a carried condition kind
+  (`{of, hasCondition}`), containment (`{holder, holds}`), presence
+  (`{of, inRoom}`). Timing: plain rules fire every pass while true;
+  `once` is edge-triggered and re-arms when conditions go false again
+  (die, resurrect, die again); `delay` fires n turns after truth
+  begins; `every` re-fires at an interval — the reservoir drains, the
+  flood rises, wounds heal, all as data.
+- **Scoring** (`Core/Actions/Score.cs`) — treasures carry `value`
+  (points on first take) and `tvalue` (points while deposited in the
+  scorecard's `caseRef` container — the live sum, so trophies can be
+  withdrawn again), rooms carry a one-time entry `value`, and
+  `Score.Adjust` covers penalties (deaths). Reaching the rules'
+  `winScore` flips `rules.won` once (gates and automations key on it)
+  and whispers `winText`; the `score` verb reports score, moves, and
+  the `ranks` list's title.
+- **Walkthrough verification** (`AEngine.Cli/Walkthrough.cs`, CLI
+  `--walkthrough FILE [--seed N]`) — replays exact action labels (plus
+  "Say: …" speech lines and "Label :: text" for other prompted verbs)
+  through the same deterministic matcher LLM plan execution uses, with
+  NPC rounds and default-resolved reactions between steps; it stops
+  with the line number on the first unrecognized or failed command.
+  No LLM attached, byte-identical replays under a frozen seed.
+
 ## Scenarios
 
 JSON files defining modules and an initial world tree; `ScenarioLoader`
@@ -806,7 +879,9 @@ and `defeatText` (ending text when the player is incapacitated).
 Packaging is
 pluggable via `IScenarioSource` (registered in `ScenarioSources`): a source
 turns a path into the raw JSON documents, and the loader merges them.
-Built-in sources: a directory holding `modules.json`/`world.json`; a zip
+Built-in sources: a directory holding `modules.json`/`world.json` (plus
+optional `world/*.json` fragments merged in sorted order after
+`world.json` — large scenarios split by area); a zip
 archive (recognized by the "PK" magic bytes, so any extension — `.zip`,
 `.scen` — works) holding those files at any depth; and an image card —
 PNG (zlib-compressed zTXt chunk; the scenario title rides in a standard

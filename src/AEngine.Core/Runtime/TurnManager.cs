@@ -198,7 +198,16 @@ public sealed class TurnManager
                 AdvanceAmbient(duration, agent.Id);
                 Motives.Advance(_engine, duration, agent.Id);
                 if ((_engine.ModuleRegistry.ResolveString(agent, "agent", "policy") ?? "player") == "player")
+                {
                     Chatter.Advance(_engine, duration);
+                    // the player's clock also drives the global systems:
+                    // light sources burn down, automation rules and timers
+                    // tick once per player move (the classic clocker), and
+                    // a score reaching the win threshold flips the won flag
+                    Light.Advance(_engine, 1);
+                    Automations.Advance(_engine, 1);
+                    Score.CheckWin(_engine);
+                }
                 AdvanceTurn();
             }
             return result;
@@ -486,6 +495,7 @@ public sealed class TurnManager
         IReadOnlyDictionary<string, string>? affordanceData = null, string? moduleId = null) =>
         new()
         {
+            Engine = _engine,
             World = _engine.World,
             Modules = _engine.ModuleRegistry,
             Signals = _engine.SignalBus,
@@ -500,6 +510,7 @@ public sealed class TurnManager
             Verb = verb,
             ModuleId = moduleId,
             Random = _engine.Random,
+            Turn = Turn,
             Reaction = reaction,
             Data = affordanceData,
             Args = text is null
@@ -1173,6 +1184,9 @@ public sealed class TurnManager
             AdvanceAmbient(1, onlyHolderId: null);
             Motives.Advance(_engine, 1);
             Chatter.Advance(_engine, 1);
+            Light.Advance(_engine, 1);
+            Automations.Advance(_engine, 1);
+            Score.CheckWin(_engine);
         }
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))
         {

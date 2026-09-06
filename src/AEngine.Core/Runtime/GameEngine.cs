@@ -74,7 +74,11 @@ public sealed class GameEngine
         var engine = new GameEngine();
         foreach (var handler in BuiltinHandlers.All())
             engine.HandlerRegistry.Register(handler);
-        foreach (var handler in new IActionHandler[] { new SetHandler() })
+        foreach (var handler in new IActionHandler[]
+                 {
+                     new SetHandler(), new ScoreHandler(),
+                     new EffectHandler(), new AnswerHandler(), new ReadHandler(),
+                 })
             engine.HandlerRegistry.Register(handler);
         foreach (var handler in TouchHandlers.All())
             engine.HandlerRegistry.Register(handler);

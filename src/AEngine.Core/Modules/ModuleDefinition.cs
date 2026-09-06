@@ -331,13 +331,19 @@ public sealed class EmbraceRequirement
 /// "target", the default, or "actor"), and the comparison the field must
 /// pass — a literal bool/number/string compared verbatim (JSON "equals"),
 /// or numeric Min/Max bounds. All specs on an affordance must match.
+/// An <see cref="Absent"/> spec inverts the module test itself: it
+/// matches while the referenced object does NOT carry the module (the
+/// `immobile` pattern — an agent without the module may move).
 /// </summary>
 public sealed class WhenSpec
 {
     public required string Module { get; init; }
-    public required string Field { get; init; }
+    /// <summary>Optional for <see cref="Absent"/> specs; required otherwise.</summary>
+    public string? Field { get; init; }
     /// <summary>"target" (default) or "actor".</summary>
     public string? On { get; init; }
+    /// <summary>Match while the referenced object does NOT have the module.</summary>
+    public bool Absent { get; init; }
     [JsonPropertyName("equals")]
     public JsonElement? EqualsValue { get; init; }
     public double? Min { get; init; }

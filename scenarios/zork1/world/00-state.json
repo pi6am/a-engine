@@ -1,0 +1,44 @@
+{
+  "name": "zork1",
+  "about": "Zork I: The Great Underground Empire — a data-driven reimplementation for a-engine. Room and object text adapted from the original Zork I source (MIT licensed, github.com/devshane/zork1). Not affiliated with Activision.",
+  "defeatText": "You have died. Your adventure ends here... but the Great Underground Empire endures.",
+  "world": [
+    {
+      "id": "game_rules",
+      "name": "rules",
+      "modules": [
+        {
+          "module": "rules",
+          "overrides": {
+            "diceCount": 2,
+            "diceSides": 3,
+            "winScore": 350,
+            "winText": "An almost inaudible voice whispers in your ear, 'Look to your treasures for the final secret.'",
+            "ranks": [
+              "350|Master Adventurer",
+              "330|Wizard",
+              "300|Master",
+              "200|Adventurer",
+              "100|Junior Adventurer",
+              "50|Novice Adventurer",
+              "25|Amateur Adventurer",
+              "0|Beginner"
+            ],
+            "darkText": "It is pitch black. You are likely to be eaten by a grue.",
+            "darkHazardChance": 80,
+            "darkHazardText": "You have walked into the slavering fangs of a lurking grue!",
+            "darkHazardCondition": "cond_dead",
+            "npcLodFactor": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "passage_state",
+      "name": "open passage",
+      "modules": [
+        { "module": "doorstate", "overrides": { "open": true, "locked": false } }
+      ]
+    }
+  ]
+}

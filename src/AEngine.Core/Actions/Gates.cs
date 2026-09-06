@@ -63,7 +63,8 @@ public sealed class GateRegistry
     /// <summary>The built-in gate kinds.</summary>
     public static IEnumerable<IActionGate> Builtins() =>
         [new ConditionGate(), new FieldGate(), new ExposedGate(), new CoveredGate(),
-         new EmbracedGate(), new PartsFreeGate()];
+         new EmbracedGate(), new PartsFreeGate(),
+         new CarryingGate(), new NotCarryingGate(), new LoadUnderGate(), new AllowOnlyGate()];
 }
 
 /// <summary>
@@ -216,10 +217,14 @@ public sealed class ConditionGate : IActionGate
 }
 
 /// <summary>
-/// Field gate. Args: <c>{ "on": "actor"|"target" (default target),
-/// "module", "field", "equals"?, "min"?, "max"? }</c> — blocks on a
-/// module-field comparison (same matching rules as the resolver's When
-/// specs: equals compares the literal verbatim, min/max bound a number).
+/// Field gate. Args: <c>{ on: "actor"|"target" (default target), of?,
+/// module, field, equals?, min?, max? }</c> — blocks on a module-field
+/// comparison (same matching rules as the resolver's When specs: equals
+/// compares the literal verbatim, min/max bound a number). <c>of</c>
+/// names any object by id (or "actor"/"target" selectors) and overrides
+/// <c>on</c> — the gate for passages keyed on a third object's state:
+/// "the troll fends you off" reads a shared troll_state object, "the
+/// reservoir is drained" a dam_state one.
 /// </summary>
 public sealed class FieldGate : IActionGate
 {
@@ -227,8 +232,14 @@ public sealed class FieldGate : IActionGate
 
     public bool Blocks(ActionContext ctx, GateSpec spec)
     {
-        var on = GateArgs.String(spec.Args, "on") ?? "target";
-        var obj = on == "actor" ? ctx.Agent : ctx.Target ?? ctx.Agent;
+        var of = GateArgs.String(spec.Args, "of");
+        WorldObject obj;
+        if (of is not null)
+            obj = Actions.Effects.Resolve(ctx.World, of,
+                     new EffectContext(ctx.Agent, ctx.Target, ctx.AuxTarget)) ??
+                 (GateArgs.String(spec.Args, "on") == "actor" ? ctx.Agent : ctx.Target ?? ctx.Agent);
+        else
+            obj = GateArgs.String(spec.Args, "on") == "actor" ? ctx.Agent : ctx.Target ?? ctx.Agent;
         var module = GateArgs.String(spec.Args, "module");
         var field = GateArgs.String(spec.Args, "field");
         if (module is null || field is null || !obj.HasModule(module))
@@ -237,6 +248,140 @@ public sealed class FieldGate : IActionGate
         return !FieldMatch.Matches(
             value, GateArgs.Element(spec.Args, "equals"),
             GateArgs.Number(spec.Args, "min"), GateArgs.Number(spec.Args, "max"));
+    }
+}
+
+/// <summary>
+/// Carrying gate. Args: <c>{ item: id | [ids], any?: bool }</c> — blocks
+/// unless the actor holds the named item(s): all of them, or any one
+/// when <c>any</c> is true. The "must wield the wrench to turn the bolt"
+/// family; the held item may be anywhere in the actor's belongings
+/// (a tool loose inside an open sack still turns a bolt).
+/// </summary>
+public sealed class CarryingGate : IActionGate
+{
+    public string Id => "carrying";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var items = GateArgs.Strings(spec.Args, "item");
+        if (items.Count == 0)
+            return false;
+        var held = new HashSet<string>(StringComparer.Ordinal);
+        CollectHeld(ctx, ctx.Agent.Id, held);
+        var any = spec.Args is { } args &&
+                  args.TryGetProperty("any", out var a) && a.ValueKind == JsonValueKind.True;
+        return any
+            ? !items.Any(held.Contains)
+            : !items.All(held.Contains);
+    }
+
+    internal static void CollectHeld(ActionContext ctx, string holderId, HashSet<string> into)
+    {
+        foreach (var childId in ctx.World.GetObject(holderId).Children)
+        {
+            into.Add(childId);
+            CollectHeld(ctx, childId, into);
+        }
+    }
+}
+
+/// <summary>
+/// NotCarrying gate. Args: <c>{ item: id | [ids] }</c> — blocks while the
+/// actor holds ANY of the named items. The bulk gate: "the gold coffin
+/// won't fit through the hole", "not with that inflated boat".
+/// </summary>
+public sealed class NotCarryingGate : IActionGate
+{
+    public string Id => "notCarrying";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var items = GateArgs.Strings(spec.Args, "item");
+        if (items.Count == 0)
+            return false;
+        var held = new HashSet<string>(StringComparer.Ordinal);
+        CarryingGate.CollectHeld(ctx, ctx.Agent.Id, held);
+        return items.Any(held.Contains);
+    }
+}
+
+/// <summary>
+/// Load gate. Args: <c>{ max?: number, maxField?: { module, field }?,
+/// module?: "portable", field?: "weight", includeTarget?: bool,
+/// includeAux?: bool }</c> — blocks when the summed weight field of the
+/// actor's carried items (plus the action's target and/or aux item when
+/// included) exceeds the cap. The cap is either a literal or read from
+/// the actor's own module field (wounds reducing one's load). The
+/// generic form of both Zork's 100-point load limit and the Timber
+/// Room's empty-handed crawl.
+/// </summary>
+public sealed class LoadUnderGate : IActionGate
+{
+    public string Id => "loadUnder";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var module = GateArgs.String(spec.Args, "module") ?? "portable";
+        var field = GateArgs.String(spec.Args, "field") ?? "weight";
+        double max;
+        if (GateArgs.Element(spec.Args, "maxField") is { ValueKind: JsonValueKind.Object } cap)
+        {
+            var capModule = GateArgs.String(cap, "module") ?? "agent";
+            var capField = GateArgs.String(cap, "field") ?? "loadMax";
+            if (!ctx.Agent.HasModule(capModule))
+                return false;
+            max = ctx.Modules.ResolveDouble(ctx.Agent, capModule, capField, 100);
+        }
+        else
+            max = GateArgs.Number(spec.Args, "max") ?? 100;
+
+        var load = 0.0;
+        void Add(WorldObject? obj)
+        {
+            if (obj is not null && obj.HasModule(module))
+                load += ctx.Modules.ResolveDouble(obj, module, field);
+        }
+        foreach (var childId in ctx.World.GetObject(ctx.Agent.Id).Children)
+            LoadOf(ctx, childId, module, field, ref load);
+        if (spec.Args is { } args)
+        {
+            if (args.TryGetProperty("includeTarget", out var t) && t.ValueKind == JsonValueKind.True)
+                Add(ctx.Target);
+            if (args.TryGetProperty("includeAux", out var x) && x.ValueKind == JsonValueKind.True)
+                Add(ctx.AuxTarget);
+        }
+        return load > max;
+    }
+
+    private static void LoadOf(
+        ActionContext ctx, string objId, string module, string field, ref double load)
+    {
+        var obj = ctx.World.GetObject(objId);
+        if (obj.HasModule(module))
+            load += ctx.Modules.ResolveDouble(obj, module, field);
+        foreach (var childId in obj.Children)
+            LoadOf(ctx, childId, module, field, ref load);
+    }
+}
+
+/// <summary>
+/// Allow-only gate. Args: <c>{ items: [ids] }</c> — blocks while the
+/// actor carries anything NOT in the list. The chimney rule ("the lamp
+/// and nothing else"), in one declaration.
+/// </summary>
+public sealed class AllowOnlyGate : IActionGate
+{
+    public string Id => "allowOnly";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var allowed = GateArgs.Strings(spec.Args, "items").ToHashSet(StringComparer.Ordinal);
+        if (allowed.Count == 0)
+            return false;
+        var held = new HashSet<string>(StringComparer.Ordinal);
+        CarryingGate.CollectHeld(ctx, ctx.Agent.Id, held);
+        return held.Except(allowed).Any();
     }
 }
 
@@ -324,7 +469,9 @@ public static class WhenSpecEval
 {
     public static bool Matches(ModuleRegistry modules, WorldObject obj, Modules.WhenSpec spec)
     {
-        if (!obj.HasModule(spec.Module))
+        if (spec.Absent)
+            return !obj.HasModule(spec.Module);
+        if (spec.Field is null || !obj.HasModule(spec.Module))
             return false;
         return FieldMatch.Matches(
             modules.ResolveField(obj, spec.Module, spec.Field),

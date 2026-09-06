@@ -32,6 +32,8 @@ const int defaultDebugPort = 5050;
 var debugApi = false;
 var debugPort = defaultDebugPort;
 var realTime = false;
+string? walkthroughPath = null;
+var seed = -1;
 string? scenarioArg = null;
 string? llmEndpoint = Environment.GetEnvironmentVariable("AENGINE_LLM_ENDPOINT");
 string? llmModel = Environment.GetEnvironmentVariable("AENGINE_LLM_MODEL");
@@ -61,6 +63,22 @@ for (var i = 0; i < args.Length; i++)
     else if (arg == "--real-time")
     {
         realTime = true;
+    }
+    else if (arg == "--walkthrough" && i + 1 < args.Length)
+    {
+        walkthroughPath = args[++i];
+    }
+    else if (arg.StartsWith("--walkthrough=", StringComparison.Ordinal))
+    {
+        walkthroughPath = arg["--walkthrough=".Length..];
+    }
+    else if (arg == "--seed" && i + 1 < args.Length)
+    {
+        seed = int.Parse(args[++i]);
+    }
+    else if (arg.StartsWith("--seed=", StringComparison.Ordinal))
+    {
+        seed = int.Parse(arg["--seed=".Length..]);
     }
     else if (arg.StartsWith("--llm-endpoint=", StringComparison.Ordinal))
     {
@@ -111,6 +129,13 @@ catch (Exception ex)
     Console.Error.WriteLine($"Failed to load scenario: {ex.Message}");
     return 1;
 }
+
+// deterministic replay: a walkthrough with a frozen seed never consults
+// an LLM and replays identically every time
+if (seed >= 0)
+    engine.Random = new Random(seed);
+if (walkthroughPath is not null)
+    return RunWalkthrough(walkthroughPath);
 
 var player = engine.World.GetObject("player");
 // /control POV switching. The switcher manages the displaced agents'
@@ -579,6 +604,36 @@ while (true)
     if (engine.TimeMode == TimeMode.TurnBased)
         RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
     await FinishActionAsync();
+}
+
+// Replay a walkthrough file: each command line echoes with its outcome,
+// the run fails loudly on the first unrecognized or failed command, and
+// the final score / ending print at the end. Exit 0 on success, 1 on
+// failure (usable from CI and shell scripts).
+int RunWalkthrough(string path)
+{
+    if (!File.Exists(path))
+    {
+        Console.Error.WriteLine($"Walkthrough file not found: {path}");
+        return 1;
+    }
+    var result = Walkthrough.Run(engine, "player", File.ReadLines(path),
+        line => Console.WriteLine(line));
+    Console.WriteLine();
+    var playerObj = engine.World.GetObject("player");
+    if (engine.GameOver is { } ending)
+        Console.WriteLine($"[game over] {ending}");
+    else
+        Console.WriteLine("[walkthrough complete — game still running]");
+    var score = engine.TurnManager.Execute(playerObj, "score", playerObj.Id);
+    Console.WriteLine($"[{score.Message}]");
+    if (!result.Success)
+    {
+        Console.Error.WriteLine($"[walkthrough FAILED] {result.Error}");
+        return 1;
+    }
+    Console.WriteLine("[walkthrough ok]");
+    return 0;
 }
 
 // Word-wrap narrated prose to the console width, capped at 80 columns,

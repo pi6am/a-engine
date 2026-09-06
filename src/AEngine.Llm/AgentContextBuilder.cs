@@ -103,11 +103,7 @@ public sealed class AgentContextBuilder
             if (exits.Count > 0)
             {
                 var parts = exits.Select(p =>
-                {
-                    var dir = _engine.ModuleRegistry.ResolveString(p, "portal", "direction") ?? "somewhere";
-                    var state = Perception.IsOpen(_engine.World, _engine.ModuleRegistry, p) ? "open" : "closed";
-                    return $"{dir} ({p.Name}, {state})";
-                });
+                    Perception.ExitLabel(_engine.World, _engine.ModuleRegistry, p));
                 sb.AppendLine("Exits: " + string.Join(", ", parts));
             }
 

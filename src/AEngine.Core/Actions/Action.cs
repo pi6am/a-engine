@@ -6,6 +6,8 @@ namespace AEngine.Core.Actions;
 /// <summary>Context handed to an action handler.</summary>
 public sealed class ActionContext
 {
+    /// <summary>The owning engine — effect application, game-over, world clock.</summary>
+    public required Runtime.GameEngine Engine { get; init; }
     public required World.World World { get; init; }
     public required ModuleRegistry Modules { get; init; }
     /// <summary>Signal delivery — handlers can emit observable outcomes beyond the affordance's declared specs (a trader's spoken refusal).</summary>
@@ -29,6 +31,11 @@ public sealed class ActionContext
     public string? ModuleId { get; init; }
     /// <summary>The engine's randomness source (checks, damage rolls).</summary>
     public Random? Random { get; init; }
+    /// <summary>
+    /// The current turn counter (for handlers that report progress —
+    /// the score verb's move count).
+    /// </summary>
+    public int Turn { get; init; }
     /// <summary>
     /// The reaction the target chose to this action (quick-time events),
     /// when the action was telegraphed and answered. Handler-rolled opposed

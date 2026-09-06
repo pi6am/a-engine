@@ -113,16 +113,22 @@ public sealed class ActionResolver
                     }
                 }
             }
-            if (child.HasModule("container") && IsOpenState(child) || child.HasModule("surface"))
-            {
-                foreach (var innerId in child.Children)
-                    AddFromModules(actions, agent, _world.GetObject(innerId), stateFiltered, others, examinable);
-            }
+            if ((child.HasModule("container") && IsOpenState(child)) ||
+                child.HasModule("surface"))
+                AddReachableContents(actions, agent, child, stateFiltered, others, examinable);
         }
 
-        // inventory
+        // inventory (recursing into open containers — the garlic inside
+        // your opened sack stays reachable wherever the sack goes)
         foreach (var itemId in agent.Children)
-            AddFromModules(actions, agent, _world.GetObject(itemId), stateFiltered, others, examinable);
+        {
+            var item = _world.GetObject(itemId);
+            AddFromModules(actions, agent, item, stateFiltered, others, examinable);
+            if (!item.HasModule("agent") &&
+                ((item.HasModule("container") && IsOpenState(item)) ||
+                 item.HasModule("surface")))
+                AddReachableContents(actions, agent, item, stateFiltered, others, examinable);
+        }
 
         // everything visible can be examined in detail — a universal verb
         // with no module/affordance of its own (moduleId "" skips
@@ -154,12 +160,52 @@ public sealed class ActionResolver
                     "examine", part.Id, label, "examine", ""));
             }
 
+        // darkness: in an unlit dark room you can still walk, look (into
+        // blackness), check your pockets, wait, and speak — and you can
+        // feel for anything ON your person (turning on a carried lamp) —
+        // but the room and everything in it is beyond reach
+        if (!Light.IsLit(_world, _modules, agent))
+            actions.RemoveAll(a => !UsableInDark(a, agent));
+
         // collapse identical (verb, label) entries: interchangeable
         // objects sharing a name (three "empty mug"s) read as one action
         // — the LLM and the menus can't tell them apart anyway. The first
         // occurrence wins, so choices made from this list always
         // reference an entry that survives later re-resolution
         return actions.DistinctBy(a => (a.Verb, a.Label)).ToList();
+    }
+
+    /// <summary>
+    /// Whether an action survives darkness: the self-verbs, movement
+    /// (portals), and anything whose target is the actor or in the
+    /// actor's hands.
+    /// </summary>
+    private static bool UsableInDark(AvailableAction action, WorldObject agent) =>
+        action.Verb is "go" or "look" or "inventory" or "wait" or "say" ||
+        (action.TargetId is not null && action.TargetId is var t &&
+            (t == agent.Id || (agent.Children.Contains(t))));
+
+    /// <summary>
+    /// The contents of a reachable open container or surface, recursive:
+    /// an open sack on a table offers its garlic too, and so does an
+    /// open box inside that sack. Tree invariants (no cycles) make
+    /// plain recursion safe. Agents' own pockets are not descended into
+    /// here — held items get their own scan by the caller.
+    /// </summary>
+    private void AddReachableContents(
+        List<AvailableAction> actions, WorldObject agent, WorldObject holder,
+        bool stateFiltered, IReadOnlyList<WorldObject> others, List<WorldObject> examinable)
+    {
+        foreach (var innerId in holder.Children)
+        {
+            var inner = _world.GetObject(innerId);
+            AddFromModules(actions, agent, inner, stateFiltered, others, examinable);
+            if (inner.HasModule("agent"))
+                continue;
+            if ((inner.HasModule("container") && IsOpenState(inner)) ||
+                inner.HasModule("surface"))
+                AddReachableContents(actions, agent, inner, stateFiltered, others, examinable);
+        }
     }
 
     private void AddFromModules(
@@ -170,6 +216,11 @@ public sealed class ActionResolver
         // affordances, no pocket scans, no examine entries — body parts get
         // wounded, conditions get attached and detached
         if (Conditions.IsInternal(target))
+            return;
+        // concealed objects are hidden until something reveals them (a
+        // moved rug, a drained reservoir, a won game): no affordances,
+        // no examine, not even a listing
+        if (Perception.IsConcealed(_modules, target))
             return;
         examinable.Add(target);
         foreach (var attachment in target.Modules)
@@ -550,6 +601,8 @@ public sealed class ActionResolver
     /// Evaluate an affordance's When specs: observable module-field state
     /// of the target (default) or the actor. Every spec must match —
     /// comparison semantics are shared with field gates (FieldMatch).
+    /// An Absent spec matches while the referenced object does NOT
+    /// carry the module at all.
     /// </summary>
     private bool WhenApplies(Modules.AffordanceDefinition affordance, WorldObject agent, WorldObject target)
     {
@@ -558,7 +611,13 @@ public sealed class ActionResolver
         foreach (var spec in specs)
         {
             var obj = spec.On == "actor" ? agent : target;
-            if (!obj.HasModule(spec.Module))
+            if (spec.Absent)
+            {
+                if (obj.HasModule(spec.Module))
+                    return false;
+                continue;
+            }
+            if (spec.Field is null || !obj.HasModule(spec.Module))
                 return false;
             var value = _modules.ResolveField(obj, spec.Module, spec.Field);
             if (!FieldMatch.Matches(value, spec.EqualsValue, spec.Min, spec.Max))

@@ -90,6 +90,19 @@ public static class BuiltinHandlers
             var room = HandlerState.RoomOf(ctx);
             var sb = new StringBuilder();
             sb.AppendLine(room.Name);
+            // an unlit dark room is pitch black: the name, the warning,
+            // and nothing else — no contents, no exits, no reading. The
+            // scenario overrides the line via the rules module's darkText
+            if (!Light.IsLit(ctx.World, ctx.Modules, ctx.Agent))
+            {
+                var rules = Checks.RulesHost(ctx.World);
+                var dark = rules is not null &&
+                           ctx.Modules.ResolveString(rules, "rules", "darkText") is { Length: > 0 } text
+                    ? text
+                    : "It is pitch black.";
+                sb.AppendLine(dark);
+                return ActionResult.Ok(sb.ToString().TrimEnd());
+            }
             if (room.Description.Length > 0)
                 sb.AppendLine(room.Description);
             if (Perception.PostureLine(ctx.World, ctx.Modules, ctx.Agent) is { } posture)
@@ -112,13 +125,10 @@ public static class BuiltinHandlers
             var exits = ctx.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
             if (exits.Count > 0)
             {
-                var parts = exits.Select(p =>
-                {
-                    var dir = ctx.Modules.ResolveString(p, "portal", "direction") ?? "somewhere";
-                    // lock state is not observable: exits show open/closed only
-                    var state = HandlerState.IsOpen(ctx, p) ? "open" : "closed";
-                    return $"{dir} ({p.Name}, {state})";
-                });
+                // bare passages show no state — only doors that can be
+                // closed announce "open"/"closed"; lock state is never
+                // observable either way
+                var parts = exits.Select(p => Perception.ExitLabel(ctx.World, ctx.Modules, p));
                 sb.AppendLine("Exits: " + string.Join(", ", parts));
             }
             return ActionResult.Ok(sb.ToString().TrimEnd());
@@ -145,6 +155,34 @@ public static class BuiltinHandlers
             var to = ctx.Modules.ResolveString(portal, "portal", "to");
             if (to is null || !ctx.World.HasObject(to))
                 return ActionResult.Fail("That way leads nowhere.");
+            // stumbling through darkness is a gamble: a scenario opts in
+            // via the rules module (darkHazardChance, a percentage per
+            // move made while unable to see — a lurking predator, a fatal
+            // misstep; the engine knows neither). A hit applies the data
+            // hazard: the named condition template attaches to the actor
+            // and the hazard text reports it.
+            var rules = Checks.RulesHost(ctx.World);
+            var hazardChance = rules is null
+                ? 0
+                : ctx.Modules.ResolveInt(rules, "rules", "darkHazardChance");
+            if (!Light.IsLit(ctx.World, ctx.Modules, ctx.Agent) && hazardChance > 0)
+            {
+                var roll = (ctx.Random ?? new Random()).Next(100);
+                if (roll < hazardChance)
+                {
+                    if (rules is not null &&
+                        ctx.Modules.ResolveString(rules, "rules", "darkHazardCondition") is
+                            { Length: > 0 } template &&
+                        ctx.World.HasObject(template))
+                        Conditions.Attach(ctx.World, ctx.Modules, ctx.Agent, template);
+                    return ActionResult.Fail(
+                        (rules is not null
+                            ? ctx.Modules.ResolveString(rules, "rules", "darkHazardText")
+                            : null) is { Length: > 0 } hazardText
+                            ? hazardText
+                            : "Something finds you in the dark. It is the last thing you learn.");
+                }
+            }
             ctx.World.MoveObject(ctx.Agent.Id, to);
             var room = ctx.World.GetObject(to);
             // the direction rides along ("You go east through the canvas
@@ -155,7 +193,21 @@ public static class BuiltinHandlers
             var via = direction.Length > 0
                 ? $"{direction} through the {portal.Name}"
                 : $"through the {portal.Name}";
-            return ActionResult.Ok($"You go {via} into {room.Name}.");
+            var message = $"You go {via} into {room.Name}.";
+            // first visit to a scored room (the kitchen, the cellar)
+            var points = Score.AwardRoom(ctx.World, ctx.Modules, room);
+            if (points != 0)
+            {
+                Score.Adjust(ctx.World, ctx.Modules, ctx.Agent, points);
+                message += $" [Your score just went up by {points}.]";
+            }
+            // arriving where you cannot see earns a warning
+            if (!Light.RoomIsLit(ctx.World, ctx.Modules, room, ctx.Agent) &&
+                rules is not null &&
+                ctx.Modules.ResolveString(rules, "rules", "darkArrivalText") is
+                    { Length: > 0 } arrival)
+                message += " " + arrival;
+            return ActionResult.Ok(message);
         }
     }
 
@@ -213,25 +265,61 @@ public static class BuiltinHandlers
 
             var room = HandlerState.RoomOf(ctx);
             WorldObject? holder = null;
-            if (target.Parent == room.Id)
+            if (target.Parent != room.Id)
             {
-                // directly in the room — fine
-            }
-            else if (target.Parent.Length > 0 && ctx.World.HasObject(target.Parent))
-            {
-                // on furniture the target is reachable; on a surface (a
-                // counter, a table) always; inside a container in the
-                // room, the container must be open
-                holder = ctx.World.GetObject(target.Parent);
-                if (holder.Parent != room.Id)
+                // up the containment chain toward the room: every
+                // intermediate holder must let contents out — surfaces
+                // and furniture always, containers while open (an open
+                // sack on a table offers its garlic; a key in a closed
+                // drawer stays put). Agents' pockets are steal's domain.
+                var node = target.Parent.Length > 0 && ctx.World.HasObject(target.Parent)
+                    ? ctx.World.GetObject(target.Parent)
+                    : null;
+                var reached = false;
+                while (node is not null)
+                {
+                    if (node.Id == room.Id)
+                    {
+                        reached = true;
+                        break;
+                    }
+                    holder ??= node; // innermost holder names the take
+                    node = node.Parent.Length > 0 && ctx.World.HasObject(node.Parent)
+                        ? ctx.World.GetObject(node.Parent)
+                        : null;
+                }
+                if (!reached || holder is null)
                     return ActionResult.Fail($"You don't see the {target.Name} here.");
-                if (!holder.HasModule("sittable") && !holder.HasModule("lyable") &&
-                    !holder.HasModule("surface") && !HandlerState.IsOpen(ctx, holder))
-                    return ActionResult.Fail($"The {target.Name} is inside the closed {holder.Name}.");
-            }
-            else
-            {
-                return ActionResult.Fail($"You don't see the {target.Name} here.");
+                for (var link = holder; link.Id != room.Id;
+                     link = ctx.World.GetObject(link.Parent))
+                {
+                    if (link.HasModule("surface") ||
+                        link.HasModule("sittable") || link.HasModule("lyable"))
+                    {
+                        // pass through
+                    }
+                    else if (link.HasModule("agent"))
+                    {
+                        return ActionResult.Fail($"You don't see the {target.Name} here.");
+                    }
+                    else if (link.HasModule("container") && HandlerState.IsOpen(ctx, link))
+                    {
+                        // pass through
+                    }
+                    else if (link.HasModule("container") || link.HasModule("openable"))
+                    {
+                        return ActionResult.Fail(
+                            $"The {target.Name} is inside the closed {link.Name}.");
+                    }
+                    else
+                    {
+                        return ActionResult.Fail($"You don't see the {target.Name} here.");
+                    }
+                }
+                // name the enclosing thing ("from the cupboard"); agents
+                // hold their belongings, not contain them
+                if (holder.HasModule("agent"))
+                    holder = null;
             }
 
             ctx.World.MoveObject(target.Id, ctx.Agent.Id);
@@ -240,11 +328,17 @@ public static class BuiltinHandlers
                 // clear any stored sit/lie so it can't go stale
                 ctx.World.SetFieldOverride(
                     target.Id, "agent", "posture", World.World.ToJson(Postures.Standing));
+            // a treasure's first acquisition is worth points
+            var points = Score.AwardItem(ctx.World, ctx.Modules, target);
+            if (points != 0)
+                Score.Adjust(ctx.World, ctx.Modules, ctx.Agent, points);
             // name the holder the item came out of ("from the cupboard")
             var from = holder is null || holder.HasModule("agent")
                 ? ""
                 : $" from the {holder.Name}";
-            return ActionResult.Ok($"You take the {target.Name}{from}.");
+            return ActionResult.Ok(
+                $"You take the {target.Name}{from}." +
+                (points != 0 ? $" [Your score just went up by {points}.]" : ""));
         }
     }
 

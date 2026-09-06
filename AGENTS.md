@@ -44,6 +44,7 @@ scenarios/npc/            # NPC demo: kitchen/dining hall, auto-policy cook
 scenarios/tavern/         # dive-bar sim: consumables, metabolism, conditions, prefab spawning
 scenarios/rpg/            # RPG systems demo: dueling arena, stats, combat, grappling, body parts
 scenarios/nail/           # full quest: barter, stealth/combat paths, persuasion-gated ritual, game over
+scenarios/zork1/          # Zork I: the Great Underground Empire (world/ fragments by area; walkthrough-verified)
 tests/AEngine.Tests/      # xUnit, includes scripted-playthrough integration test
 docs/                     # deep-dive documentation (see below)
 ```

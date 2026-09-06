@@ -13,6 +13,44 @@ namespace AEngine.Core.Actions;
 public static class Perception
 {
     /// <summary>
+    /// Whether an object is currently hidden from perception: a
+    /// `hideable` module with <c>concealed: true</c> — invisible under
+    /// the rug, buried in the sand, not yet won. Effects flip the flag
+    /// to reveal (see the effect vocabulary); until then the resolver
+    /// offers nothing targeting it and look skips it entirely.
+    /// </summary>
+    public static bool IsConcealed(ModuleRegistry modules, WorldObject obj) =>
+        obj.HasModule("hideable") &&
+        modules.ResolveBool(obj, "hideable", "concealed");
+
+    /// <summary>
+    /// Whether a portal side offers open/close at all — any attached
+    /// module with an `open` or `close` affordance. Bare passages (a
+    /// staircase, a path) never show state; real doors do.
+    /// </summary>
+    public static bool IsClosable(ModuleRegistry modules, WorldObject portal) =>
+        portal.Modules
+            .Where(a => modules.Has(a.ModuleId))
+            .SelectMany(a => modules.Get(a.ModuleId).Affordances)
+            .Any(affordance => affordance.Verb is "open" or "close");
+
+    /// <summary>
+    /// One exit entry for a look/context exit listing:
+    /// "north (front door, open)" for a closable side,
+    /// "down (staircase)" for a passage that simply leads on. Lock state
+    /// is never observable.
+    /// </summary>
+    public static string ExitLabel(
+        World.World world, ModuleRegistry modules, WorldObject portal)
+    {
+        var dir = modules.ResolveString(portal, "portal", "direction") ?? "somewhere";
+        if (!IsClosable(modules, portal))
+            return $"{dir} ({portal.Name})";
+        var state = IsOpen(world, modules, portal) ? "open" : "closed";
+        return $"{dir} ({portal.Name}, {state})";
+    }
+
+    /// <summary>
     /// Get the (stateObject, moduleId) that carries open/locked state for
     /// a target: the shared doorstate object for portals (via stateRef),
     /// the target itself for openables. Null when the target has no
@@ -66,7 +104,7 @@ public static class Perception
         var items = new List<string>();
         foreach (var child in world.ChildrenOf(room.Id))
         {
-            if (child.Id == agentId || child.HasModule("portal"))
+            if (child.Id == agentId || child.HasModule("portal") || IsConcealed(modules, child))
                 continue;
             var entry = NameFor(modules, observer, child) + Annotate(world, modules, child);
             // agent conditions gather into one parenthetical list:
@@ -93,18 +131,10 @@ public static class Perception
             if (conditions.Count > 0)
                 entry += $" ({string.Join(", ", conditions)})";
             items.Add(entry);
-            if (child.HasModule("container") && IsOpen(world, modules, child))
-            {
-                foreach (var inner in world.ChildrenOf(child.Id))
-                    items.Add($"{inner.Name} (in {child.Name})");
-            }
-            // a surface (counter, table) is always open: contents list as
-            // "on" rather than "in"
-            if (child.HasModule("surface"))
-            {
-                foreach (var inner in world.ChildrenOf(child.Id))
-                    items.Add($"{inner.Name} (on {child.Name})");
-            }
+            // contents of open containers ("in") and surfaces ("on"),
+            // recursive: an opened sack on the table shows its garlic
+            AddContents(child, "in", "container", IsOpen(world, modules, child));
+            AddContents(child, "on", "surface", true);
             // occupants of furniture (or of a carrier) list like container
             // contents: "the old cook (sitting on the chair)" — visible
             // status conditions ride along ("(sitting on the chair, drunk)")
@@ -131,6 +161,27 @@ public static class Perception
                 items.Add($"{NameFor(modules, observer, carried)} (carried by you)");
         }
         return items;
+
+        void AddContents(WorldObject obj, string prep, string module, bool open)
+        {
+            if (!open || !obj.HasModule(module))
+                return;
+            foreach (var inner in world.ChildrenOf(obj.Id))
+            {
+                if (IsConcealed(modules, inner))
+                    continue;
+                items.Add($"{inner.Name} ({prep} {obj.Name})");
+                // nested reachability: an open container or surface
+                // inside lists its own contents too (never an agent's
+                // pockets — occupants render separately)
+                if (inner.HasModule("agent"))
+                    continue;
+                if (inner.HasModule("container") && IsOpen(world, modules, inner))
+                    AddContents(inner, "in", "container", true);
+                if (inner.HasModule("surface"))
+                    AddContents(inner, "on", "surface", true);
+            }
+        }
     }
 
     /// <summary>
