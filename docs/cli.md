@@ -49,8 +49,39 @@ extracted LLM plan, default off), `/narrate all|room|actions|off` (LLM
 narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
 (`/tb`), `/timescale N` (`/ts`), `/control ID` (play as another agent,
 see below), `/scenario` (the loaded scenario's about
-blurb), `/quit` (`/exit`), `/help`. Output
-toggles live in `OutputSettings`.
+blurb), `/save [name]`, `/load <name|path>` (`/restore`),
+`/saves`, `/undo`, `/restart` (see below), `/quit` (`/exit`), `/help`.
+Output toggles live in `OutputSettings`.
+
+## Save / load / undo / restart
+
+All four are thin wrappers over `GameSerializer`
+(`src/AEngine.Core/Runtime/GameSerializer.cs`; see `docs/architecture.md`).
+A save is one self-contained JSON document — the whole world tree,
+module definitions, turn clocks, agent memories, and the exact PRNG
+state — written to `./saves/<name>.save.json` in the working directory
+(default name: `<scenario>-<timestamp>`).
+
+- `/load` restores into the live engine in place: the engine keeps its
+  identity (handler/policy registries, debug server) while its state is
+  replaced wholesale. The POV re-anchors to the saved player (or the
+  agent you controlled at save time).
+- `/undo` steps back to before your last input line — up to 10 steps.
+  A snapshot is pushed before each player-driven action, plan, or
+  numeric pick (not before meta commands or rejected input), so one
+  `/undo` reverts the whole input including its NPC round. After a
+  game over, the ending prompt offers `/undo` (step back past the
+  fatal move — restoring the pre-ending snapshot un-ends the game) and
+  `/restart`.
+- `/restart` reloads the scenario from disk and reseeds the RNG with
+  the original `--seed` (or a fresh one).
+- Saves deliberately do not carry ephemeral transport state:
+  undelivered signals, in-flight async policy selections, the spectator
+  outcome queues, and pending quick-time reactions (a save taken
+  mid-reaction-window drops the telegraphed attempt; the actor's busy
+  spell survives). Everything observable — motives, automation
+  armed/countdown state, light fuel, scores, chatter timers — lives in
+  module fields on world objects, so the world tree carries it.
 
 ## POV switching (/control)
 

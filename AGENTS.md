@@ -169,7 +169,10 @@ working in that area, and update them when the behavior changes:
   `docs/llm.md`.
 - **Runtime** — `GameEngine` + `TurnManager` run turn-based and real-time modes;
   actions leave the actor busy for their data-driven duration. `Scheduler`
-  exists for long-running actions (unused so far).
+  exists for long-running actions (unused so far). `GameSerializer` captures
+  the whole game (world, module definitions, clocks, memories, exact RNG
+  state) into one self-contained save; the CLI's `/save`, `/load`, `/undo`
+  (10-step snapshot ring), and `/restart` all restore in place.
 - **Debug tooling** — loopback-only REST API (off by default) plus a Vue web
   client. See `docs/debug-api.md`.
 

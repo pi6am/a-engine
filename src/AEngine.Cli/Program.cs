@@ -314,8 +314,194 @@ slash.Register("control", [], "Play as another agent (/control ferret; /control 
     Console.WriteLine(message);
     return false;
 });
-slash.Register("quit", ["exit"], "Leave the game", _ => true);
-console.Completions = slash.CompletionItems();
+    slash.Register("quit", ["exit"], "Leave the game", _ => true);
+    // --- save / load / undo / restart -----------------------------------
+    // Saves are self-contained JSON documents (see GameSerializer): the
+    // whole world, module definitions, turn clocks, memories, and the
+    // exact PRNG state. ./saves/ in the working directory.
+    var savesDir = Path.Combine(Directory.GetCurrentDirectory(), "saves");
+    var undoRing = new List<AEngine.Core.Runtime.GameSerializer.SaveData>();
+    const int undoCapacity = 10;
+    slash.Register("save", [], "Save the game (/save [name] — files land in ./saves/)", args =>
+    {
+        var name = args.Length > 0 && args[0].Trim().Length > 0
+            ? SanitizeSaveName(args[0])
+            : $"{SanitizeSaveName(scenarioName)}-{DateTime.Now:yyyyMMdd-HHmmss}";
+        try
+        {
+            Directory.CreateDirectory(savesDir);
+            var path = Path.Combine(savesDir, name + ".save.json");
+            string povId;
+            lock (engine.SyncRoot)
+            {
+                File.WriteAllText(path, AEngine.Core.Runtime.GameSerializer.Write(
+                    AEngine.Core.Runtime.GameSerializer.Capture(
+                        engine, scenarioName, scenarioPath, control.CurrentId)));
+                povId = control.CurrentId;
+            }
+            Console.WriteLine($"Saved to {path} (turn {engine.TurnManager.Turn}, {povId}).");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Save failed: {ex.Message}");
+        }
+        return false;
+    });
+    slash.Register("load", ["restore"], "Load a save (/load <name|path>)", args =>
+    {
+        if (args.Length == 0)
+        {
+            Console.WriteLine("Usage: /load <name|path> — /saves lists them.");
+            return false;
+        }
+        var path = ResolveSavePath(args[0]);
+        if (path is null)
+        {
+            Console.WriteLine($"No save '{args[0]}' found (looked in {savesDir}). Try /saves.");
+            return false;
+        }
+        try
+        {
+            AEngine.Core.Runtime.GameSerializer.SaveData save;
+            lock (engine.SyncRoot)
+                save = AEngine.Core.Runtime.GameSerializer.Read(File.ReadAllText(path));
+            RestoreInPlace(save);
+            Console.WriteLine($"Loaded {Path.GetFileName(path)}" +
+                (save.ScenarioName is { Length: > 0 } s ? $" — {s}" : "") +
+                $", turn {save.Turn}.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Load failed: {ex.Message}");
+        }
+        return false;
+    });
+    slash.Register("saves", [], "List saved games in ./saves/", _ =>
+    {
+        if (!Directory.Exists(savesDir))
+        {
+            Console.WriteLine($"No saves yet (nothing in {savesDir}). /save [name] creates one.");
+            return false;
+        }
+        var files = new DirectoryInfo(savesDir).GetFiles("*.json").OrderByDescending(f => f.LastWriteTime).ToList();
+        if (files.Count == 0)
+            Console.WriteLine("No saves yet. /save [name] creates one.");
+        foreach (var file in files)
+        {
+            string note;
+            try
+            {
+                var save = AEngine.Core.Runtime.GameSerializer.Read(File.ReadAllText(file.FullName));
+                note = $"{save.ScenarioName ?? "?"}, turn {save.Turn}, {save.SavedAtUtc.ToLocalTime():yyyy-MM-dd HH:mm}";
+            }
+            catch
+            {
+                note = "(unreadable)";
+            }
+            Console.WriteLine($"  {Path.GetFileNameWithoutExtension(file.FullName)} — {note}");
+        }
+        return false;
+    });
+    slash.Register("undo", [], "Step back to before your last command (up to 10 steps)", _ =>
+    {
+        if (undoRing.Count == 0)
+        {
+            Console.WriteLine("Nothing to undo.");
+            return false;
+        }
+        var snapshot = undoRing[^1];
+        undoRing.RemoveAt(undoRing.Count - 1);
+        RestoreInPlace(snapshot);
+        Console.WriteLine($"Undone — back to turn {snapshot.Turn}.");
+        return false;
+    });
+    slash.Register("restart", [], "Start the scenario over from the beginning", _ =>
+    {
+        try
+        {
+            lock (engine.SyncRoot)
+            {
+                AEngine.Core.Runtime.GameSerializer.Reset(engine);
+                ScenarioLoader.LoadFrom(engine, scenarioPath);
+                engine.Random = seed >= 0 ? new Random(seed) : new Random();
+            }
+            undoRing.Clear();
+            ReanchorPov();
+            Console.WriteLine($"=== {scenarioName} === (restarted)");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Restart failed: {ex.Message}");
+        }
+        return false;
+    });
+    // snapshot before each player-driven input line (not before meta
+    // commands): /undo steps back across the whole input, NPC round
+    // included
+    void PushUndo()
+    {
+        lock (engine.SyncRoot)
+        {
+            undoRing.Add(AEngine.Core.Runtime.GameSerializer.Capture(
+                engine, scenarioName, scenarioPath, control.CurrentId));
+        }
+        while (undoRing.Count > undoCapacity)
+            undoRing.RemoveAt(0);
+    }
+    // restore a save (or undo snapshot) into the live engine and re-anchor
+    // the POV: restored objects are NEW instances, so every cached
+    // reference (the `player` variable, the narrator's subject) must be
+    // re-resolved
+    void RestoreInPlace(AEngine.Core.Runtime.GameSerializer.SaveData save)
+    {
+        lock (engine.SyncRoot)
+            AEngine.Core.Runtime.GameSerializer.Restore(engine, save);
+        undoRing.Clear(); // no undoing across game boundaries
+        ReanchorPov();
+    }
+    void ReanchorPov()
+    {
+        string povId;
+        lock (engine.SyncRoot)
+        {
+            povId = engine.World.HasObject(control.CurrentId) &&
+                    engine.World.GetObject(control.CurrentId).HasModule("agent")
+                ? control.CurrentId
+                : engine.World.HasObject("player") ? "player"
+                : engine.World.Objects.Values.FirstOrDefault(o => o.HasModule("agent"))?.Id
+                  ?? throw new InvalidDataException("The save contains no agent to play.");
+            // the POV is externally driven, whatever the save said (the save
+            // may have been taken while its POV was a policy-driven NPC)
+            engine.World.SetFieldOverride(povId, "agent", "policy",
+                AEngine.Core.World.World.ToJson("player"));
+            player = engine.World.GetObject(povId);
+            lastRoomId = null; // the loop top prints the (possibly new) room
+        }
+        if (llmClient is not null)
+            narrator = new Narrator(llmClient, player.Name);
+    }
+    static string SanitizeSaveName(string raw)
+    {
+        var clean = string.Concat(raw.Trim().Select(c =>
+            char.IsAsciiLetterOrDigit(c) || c is '-' or '_' ? c : '-'));
+        return clean.Length > 0 ? clean : "save";
+    }
+    string? ResolveSavePath(string arg)
+    {
+        if (File.Exists(arg))
+            return arg;
+        var candidate = Path.Combine(savesDir, arg + ".save.json");
+        if (File.Exists(candidate))
+            return candidate;
+        if (arg.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            candidate = Path.Combine(savesDir, arg);
+            if (File.Exists(candidate))
+                return candidate;
+        }
+        return null;
+    }
+    console.Completions = slash.CompletionItems();
 
 // quick-time reactions: F2 opens a modal popup for a pending reaction
 // (the status line announces it in real-time mode; turn-based prompts
@@ -397,6 +583,15 @@ while (true)
     {
         Console.WriteLine();
         Console.WriteLine(Wrap(gameOverText));
+        // the classic ending menu: step back before the fatal move, start
+        // over, or leave. A piped script just ends here (EOF).
+        var after = console.ReadLine("[game over — /undo steps back, /restart begins again, anything else quits] ");
+        if (after is not null && SlashCommandRegistry.IsSlashCommand(after.Trim()))
+        {
+            if (slash.Dispatch(after.Trim()))
+                return 0;
+            continue; // restored or restarted — the loop top re-evaluates
+        }
         realTimeCts?.Cancel();
         turnPumpCts?.Cancel();
         return 0;
@@ -499,6 +694,7 @@ while (true)
             .FirstOrDefault(a => string.Equals(a.Label, input, StringComparison.OrdinalIgnoreCase));
         if (direct is not null)
         {
+            PushUndo();
             var directResult = engine.TurnManager.PerformAction(player, direct);
             // an ending prints once, at the top of the loop — not inline
             if (!directResult.EndsGame)
@@ -544,6 +740,7 @@ while (true)
                 Console.WriteLine($"  - {line}");
         }
         var executor = new PlanExecutor(engine, player);
+        PushUndo();
         var steps = executor.Execute(plan, step =>
         {
             // sync-over-async is safe here: no synchronization context in a
@@ -601,6 +798,7 @@ while (true)
         }
     }
 
+    PushUndo();
     var result = engine.TurnManager.PerformAction(player, action, text);
     if (!result.EndsGame) // an ending prints once, at the top of the loop
         await PrintResultAsync(action.Verb, result.Message);

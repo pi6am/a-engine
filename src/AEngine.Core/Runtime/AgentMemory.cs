@@ -158,6 +158,37 @@ public sealed class AgentMemory
     /// <summary>Forget everything (e.g. the agent was destroyed).</summary>
     public void Clear(string agentId) => _entries.Remove(agentId);
 
+    /// <summary>One remembered event as serializable data.</summary>
+    public sealed record MemoryEntryState(long Seq, string? Key, string Text, int Salience);
+
+    /// <summary>
+    /// Every agent's remembered events and sequence cursors, for
+    /// save/load: an agent's memory is lived experience, not ephemeral
+    /// transport state — a loaded game remembers what it saw.
+    /// </summary>
+    public sealed record MemoryState(
+        IReadOnlyDictionary<string, IReadOnlyList<MemoryEntryState>> Entries,
+        IReadOnlyDictionary<string, long> NextSeq);
+
+    /// <summary>Capture all agents' memories.</summary>
+    public MemoryState Capture() => new(
+        _entries.ToDictionary(
+            kv => kv.Key,
+            kv => (IReadOnlyList<MemoryEntryState>)kv.Value
+                .Select(e => new MemoryEntryState(e.Seq, e.Key, e.Text, e.Salience)).ToArray()),
+        new Dictionary<string, long>(_nextSeq));
+
+    /// <summary>Replace all memories with a captured state.</summary>
+    public void Restore(MemoryState state)
+    {
+        _entries.Clear();
+        _nextSeq.Clear();
+        foreach (var (agentId, entries) in state.Entries)
+            _entries[agentId] = [..entries.Select(e => (e.Seq, e.Key, e.Text, e.Salience))];
+        foreach (var (agentId, seq) in state.NextSeq)
+            _nextSeq[agentId] = seq;
+    }
+
     private int CapacityOf(WorldObject agent) =>
         agent.HasModule("agent")
             ? Math.Max(1, _modules.ResolveInt(agent, "agent", "memoryLength", DefaultCapacity))

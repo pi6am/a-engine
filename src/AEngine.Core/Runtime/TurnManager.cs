@@ -1204,4 +1204,73 @@ public sealed class TurnManager
             Execute(agent, scheduled.HandlerId, scheduled.TargetId);
         }
     }
+
+    /// <summary>A backoff-streak entry, as serializable data.</summary>
+    public sealed record RepeatStreakState(string Verb, int Count);
+
+    /// <summary>
+    /// The turn manager's own state, as serializable data: the turn and
+    /// round clocks, busy/speech/activity/ambient timers, repeat-backoff
+    /// streaks, and per-agent round consumption. In-flight policy
+    /// selections and the outcome queues are NOT state — restoring drops
+    /// them (a dropped selection simply restarts next round).
+    /// </summary>
+    public sealed record TurnManagerState(
+        int Turn,
+        int RoundEpoch,
+        IReadOnlyDictionary<string, int> BusyUntil,
+        IReadOnlyDictionary<string, int> SpeechBusyUntil,
+        IReadOnlyDictionary<string, int> RoundStartedAt,
+        IReadOnlyDictionary<string, int> ActivityUntil,
+        IReadOnlyDictionary<string, int> AmbientElapsed,
+        IReadOnlyDictionary<string, int> AmbientNextDue,
+        IReadOnlyDictionary<string, RepeatStreakState> RepeatStreaks,
+        IReadOnlyList<string> BusyInterruptible);
+
+    /// <summary>Capture the manager's state (for save/load and undo).</summary>
+    public TurnManagerState CaptureTurnState() =>
+        new(Turn,
+            _roundEpoch,
+            new Dictionary<string, int>(_busyUntil),
+            new Dictionary<string, int>(_speechBusyUntil),
+            new Dictionary<string, int>(_roundStartedAt),
+            new Dictionary<string, int>(_activityUntil),
+            new Dictionary<string, int>(_ambientElapsed),
+            new Dictionary<string, int>(_ambientNextDue),
+            _repeatStreaks.ToDictionary(kv => kv.Key,
+                kv => new RepeatStreakState(kv.Value.Verb, kv.Value.Count)),
+            _busyInterruptible.ToArray());
+
+    /// <summary>Restore a captured state; in-flight selections are dropped.</summary>
+    public void RestoreTurnState(TurnManagerState? state)
+    {
+        _inFlightSelections.Clear();
+        _inFlightSlots.Clear();
+        _outcomes.Clear();
+        _busyUntil.Clear();
+        _speechBusyUntil.Clear();
+        _roundStartedAt.Clear();
+        _activityUntil.Clear();
+        _ambientElapsed.Clear();
+        _ambientNextDue.Clear();
+        _repeatStreaks.Clear();
+        _busyInterruptible.Clear();
+        if (state is null)
+        {
+            Turn = 0;
+            _roundEpoch = 0;
+            return;
+        }
+        Turn = state.Turn;
+        _roundEpoch = state.RoundEpoch;
+        foreach (var (id, until) in state.BusyUntil) _busyUntil[id] = until;
+        foreach (var (id, until) in state.SpeechBusyUntil) _speechBusyUntil[id] = until;
+        foreach (var (id, at) in state.RoundStartedAt) _roundStartedAt[id] = at;
+        foreach (var (id, until) in state.ActivityUntil) _activityUntil[id] = until;
+        foreach (var (id, elapsed) in state.AmbientElapsed) _ambientElapsed[id] = elapsed;
+        foreach (var (id, due) in state.AmbientNextDue) _ambientNextDue[id] = due;
+        foreach (var (id, streak) in state.RepeatStreaks)
+            _repeatStreaks[id] = (streak.Verb, streak.Count);
+        foreach (var id in state.BusyInterruptible) _busyInterruptible.Add(id);
+    }
 }

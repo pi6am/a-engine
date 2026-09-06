@@ -90,6 +90,17 @@ public sealed class World
         _objects.Remove(id);
     }
 
+    /// <summary>
+    /// Destroy every object except the root — back to a pristine tree for
+    /// save/load restoration and scenario restarts. (DestroyObject refuses
+    /// the root; this empties its children instead.)
+    /// </summary>
+    public void Clear()
+    {
+        foreach (var child in _objects[RootId].Children.ToArray())
+            DestroyObject(child);
+    }
+
     /// <summary>Move an object to a new parent, rejecting cycles.</summary>
     public void MoveObject(string id, string newParentId)
     {

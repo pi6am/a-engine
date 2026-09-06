@@ -180,6 +180,9 @@ public sealed class SignalBus
     public IReadOnlyList<Signal> Peek(string agentId) =>
         _queues.TryGetValue(agentId, out var queue) ? queue.ToArray() : [];
 
+    /// <summary>Drop every undelivered signal — ephemeral by design, never restored.</summary>
+    public void Clear() => _queues.Clear();
+
     /// <summary>
     /// Deliver a private sensation to one agent (ambient module emissions —
     /// a curse burning, a charm tingling). No propagation, no observer

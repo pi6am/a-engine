@@ -806,6 +806,26 @@ player's room and adjacent (portal-linked) rooms, otherwise new work
 starts only every `npcLodFactor` rounds (rules module, default 10, 1
 disables; staggered per agent id on the round clock) — in-flight policy
 decisions always finish.
+**Save / load / undo / restart** (`GameSerializer`,
+Core/Runtime/GameSerializer.cs): a save captures everything a running
+game is into one self-contained JSON document — the world tree in child
+order (objects, module attachments, field overrides), the module
+registry's definitions, engine scalars and time mode, the turn clocks
+and busy timers (`TurnManager.CaptureTurnState`), every agent's memory,
+and the exact `System.Random` state (`RandomState` — a reflection walk
+over the runtime's private `_impl`, compatible with both the seeded
+compat PRNG and the unseeded xoshiro, writing struct state back as
+whole values). `Restore` applies a save to a live engine **in place**
+(the engine keeps its registries and identity — `Reset` blanks world,
+modules, memory, reactions, signals, and clocks first), so the CLI's
+`/load`, `/undo` (a 10-deep snapshot ring pushed before each player
+input), and `/restart` are all the same primitive. Fidelity is pinned
+by tests: a Zork game saved mid-adventure, diverged, and restored from
+disk finishes the original walkthrough to the letter — 350 points, the
+Stone Barrow, identical combat dice. Not carried (by design):
+undelivered signals, in-flight async policy selections, spectator
+outcome queues, and pending quick-time reactions (a save taken
+mid-window drops the telegraphed attempt; the busy spell survives).
 
 ## Adventure systems (darkness, effects, automations, scoring)
 

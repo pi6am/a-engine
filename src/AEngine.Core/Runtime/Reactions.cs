@@ -56,6 +56,22 @@ public sealed class ReactionManager
     }
 
     /// <summary>
+    /// Drop every pending and resolved reaction and all remembered
+    /// reaction choices — a pristine manager for save/load restoration
+    /// and restarts. A save captured mid-reaction-window discards the
+    /// telegraphed attempt (it never resolves); the actor stays busy.
+    /// </summary>
+    public void Clear()
+    {
+        lock (_engine.SyncRoot)
+        {
+            _pending.Clear();
+            _resolved.Clear();
+            _remembered.Clear();
+        }
+    }
+
+    /// <summary>
     /// Outcome messages of resolved reactions ("You hit the arena duelist
     /// for 6 damage."). Signals exclude the actor, so without these the
     /// actor never sees how their telegraphed action landed. UIs drain

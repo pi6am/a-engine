@@ -34,8 +34,11 @@ public sealed class GameEngine
     /// </summary>
     public string? GameOver { get; set; }
 
+    /// <summary>The stock defeat text; scenarios override via the scenario root <c>defeatText</c>.</summary>
+    public const string DefaultDefeatText = "Your journey ends here.";
+
     /// <summary>Ending text for player incapacitation (scenario root <c>defeatText</c>).</summary>
-    public string DefeatText { get; set; } = "Your journey ends here.";
+    public string DefeatText { get; set; } = DefaultDefeatText;
 
     /// <summary>
     /// About blurb of the loaded scenario (scenario root <c>about</c>) —

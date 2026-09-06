@@ -49,6 +49,9 @@ public sealed class ModuleRegistry
             throw new KeyNotFoundException($"No module with id '{id}'.");
     }
 
+    /// <summary>Drop every registered definition — a pristine registry for save/load restoration and restarts.</summary>
+    public void Clear() => _modules.Clear();
+
     /// <summary>Parse module definitions from a JSON array string.</summary>
     public static List<ModuleDefinition> ParseJson(string json)
     {
