@@ -1709,6 +1709,34 @@
           }
         }
       ]
+    },
+    {
+      "id": "grue",
+      "name": "The lurking grue (dark-only question)",
+      "fields": [
+        {
+          "name": "lore",
+          "type": "string",
+          "default": "The grue is a sinister, lurking presence in the dark places of the earth. Its favorite diet is adventurers, but its insatiable appetite is tempered by its fear of light. No grue has ever been seen by the light of day, and few have survived its fearsome jaws to tell the tale."
+        },
+        {
+          "name": "effects",
+          "type": "list",
+          "default": []
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "ask",
+          "handler": "effect",
+          "label": "What is a grue?",
+          "darkOnly": true,
+          "data": {
+            "effectsField": "effects",
+            "selfField": "lore"
+          }
+        }
+      ]
     }
   ]
 }

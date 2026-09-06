@@ -105,6 +105,14 @@ public sealed class AffordanceDefinition
     /// PLAYER's game.
     /// </summary>
     public bool PlayerOnly { get; init; }
+
+    /// <summary>
+    /// Offered only in darkness: stripped from the action list while the
+    /// actor can see, and exempt from the darkness whitelist that strips
+    /// everything else (walking, pockets, and asking "What is a grue?"
+    /// is about all the dark affords). Questions about what lurks in it.
+    /// </summary>
+    public bool DarkOnly { get; init; }
     /// <summary>Offered only to autonomous agents (policy != "player") — e.g. an NPC's own, quieter way home.</summary>
     public bool NpcOnly { get; init; }
     /// <summary>

@@ -164,9 +164,13 @@ public sealed class ActionResolver
         // darkness: in an unlit dark room you can still walk, look (into
         // blackness), check your pockets, wait, and speak — and you can
         // feel for anything ON your person (turning on a carried lamp) —
-        // but the room and everything in it is beyond reach
+        // but the room and everything in it is beyond reach. Dark-only
+        // affordances (asking about the grue) invert the rule: they
+        // exist only here.
         if (!Light.IsLit(_world, _modules, agent))
             actions.RemoveAll(a => !UsableInDark(a, agent));
+        else
+            actions.RemoveAll(a => AffordanceOf(a)?.DarkOnly == true);
 
         // collapse identical (verb, label) entries: interchangeable
         // objects sharing a name (three "empty mug"s) read as one action
@@ -178,11 +182,12 @@ public sealed class ActionResolver
 
     /// <summary>
     /// Whether an action survives darkness: the self-verbs, movement
-    /// (portals), and anything whose target is the actor or in the
-    /// actor's hands.
+    /// (portals), anything whose target is the actor or in the actor's
+    /// hands, and dark-only affordances (which live nowhere else).
     /// </summary>
-    private static bool UsableInDark(AvailableAction action, WorldObject agent) =>
+    private bool UsableInDark(AvailableAction action, WorldObject agent) =>
         action.Verb is "go" or "look" or "inventory" or "wait" or "say" ||
+        AffordanceOf(action)?.DarkOnly == true ||
         (action.TargetId is not null && action.TargetId is var t &&
             (t == agent.Id || (agent.Children.Contains(t))));
 

@@ -272,6 +272,29 @@ public class Zork1ScenarioTests
             "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a large oriental rug in the center of the room.",
             Look("living_room"));
     }
+
+    [Fact]
+    public void GrueQuestion_ExistsOnlyInDarkness_AndAnswersWithTheLore()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+        world.MoveObject("player", "attic"); // a dark room
+
+        // lit: the question is nowhere — light never shows a grue
+        world.MoveObject("lamp", "player");
+        world.SetFieldOverride("lamp", "lightsource", "on", AEngine.Core.World.World.ToJson(true));
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(player), a => a.Verb == "ask");
+
+        // pitch black: it is offered, and it answers with the verbatim lore
+        world.SetFieldOverride("lamp", "lightsource", "on", AEngine.Core.World.World.ToJson(false));
+        var ask = engine.ActionResolver.Resolve(player)
+            .Single(a => a.Verb == "ask" && a.Label == "What is a grue?");
+        var result = engine.TurnManager.PerformAction(player, ask);
+        Assert.StartsWith("The grue is a sinister, lurking presence", result.Message);
+        Assert.EndsWith("few have survived its fearsome jaws to tell the tale.", result.Message);
+        Assert.Equal(1, engine.TurnManager.Turn); // asking passes the time
+    }
 }
 
 /// <summary>Thin alias so scenario tests read as scripts, not machinery.</summary>

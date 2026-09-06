@@ -841,7 +841,10 @@ generic throughout.
   sees regardless. While unlit the resolver strips the room away — only
   go/look/inventory/wait/say and self- or hand-targeted actions remain
   (you can still turn on the lamp in your pocket) — and `look` prints
-  the rules module's `darkText` (default "It is pitch black."). Moving
+  the rules module's `darkText` (default "It is pitch black."). An
+  affordance flagged `darkOnly` inverts the rule: it exists only while
+  the actor cannot see (Zork's "What is a grue?" — asking about what
+  lurks in the dark). Moving
   while blind risks a data-defined hazard (`rules.darkHazardChance`, a
   percentage per move; on a hit the `darkHazardCondition` template
   attaches and `darkHazardText` reports — the engine knows nothing
