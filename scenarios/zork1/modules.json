@@ -61,7 +61,17 @@
         { "name": "direction", "type": "string", "default": "" },
         { "name": "to", "type": "ref", "default": null },
         { "name": "transmitVisual", "type": "string", "default": "whenOpen" },
-        { "name": "transmitAudio", "type": "string", "default": "always" }
+        { "name": "transmitAudio", "type": "string", "default": "always" },
+        { "name": "requires", "type": "ref", "default": null },
+        { "name": "requiresCarrying", "type": "list", "default": [] },
+        { "name": "notCarrying", "type": "list", "default": [] },
+        { "name": "allowOnly", "type": "list", "default": [] },
+        { "name": "allowPlus", "type": "int", "default": 0 },
+        { "name": "loadUnder", "type": "int", "default": 0 },
+        { "name": "blockedText", "type": "string", "default": "" },
+        { "name": "barred", "type": "bool", "default": false },
+        { "name": "barredText", "type": "string", "default": "" },
+        { "name": "onExit", "type": "list", "default": [] }
       ],
       "affordances": [
         {
@@ -70,6 +80,9 @@
           "postures": ["standing"],
           "when": [
             { "module": "immobile", "absent": true, "on": "actor", "field": "value" }
+          ],
+          "gates": [
+            { "kind": "exit" }
           ],
           "signals": [
             { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
@@ -89,6 +102,7 @@
           "verb": "open",
           "handler": "open",
           "duration": 2,
+          "gates": [{ "kind": "barred" }],
           "signals": [
             { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
             { "sense": "audible", "priority": 5, "text": "the sound of a door opening." }
@@ -273,6 +287,7 @@
         { "name": "winScore", "type": "int", "default": 0 },
         { "name": "won", "type": "bool", "default": false },
         { "name": "winText", "type": "string", "default": "" },
+        { "name": "strengthFromScore", "type": "int", "default": 0 },
         { "name": "ranks", "type": "list", "default": [] },
         { "name": "darkHazardChance", "type": "int", "default": 0 },
         { "name": "darkHazardText", "type": "string", "default": "" },
@@ -286,6 +301,95 @@
       "id": "immobile",
       "name": "Immobile",
       "fields": [],
+      "affordances": []
+    },
+    {
+      "id": "weapon",
+      "name": "Weapon",
+      "fields": [
+        { "name": "edge", "type": "int", "default": 0 }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "duelist",
+      "name": "Duelist (wound-level combat)",
+      "fields": [
+        { "name": "strength", "type": "int", "default": 2 },
+        { "name": "weakTo", "type": "list", "default": [] },
+        { "name": "wakeIn", "type": "int", "default": -1 },
+        { "name": "out", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "attackable",
+      "name": "Attackable (blow)",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "attack",
+          "handler": "blow",
+          "duration": 2,
+          "postures": ["standing"],
+          "when": [
+            { "module": "duelist", "field": "out", "equals": false }
+          ],
+          "data": {
+            "unconsciousCondition": "cond_unconscious",
+            "deadCondition": "cond_dead"
+          }
+        }
+      ]
+    },
+    {
+      "id": "drinkable",
+      "name": "Drinkable",
+      "fields": [
+        { "name": "destroyOnConsume", "type": "bool", "default": true }
+      ],
+      "affordances": [
+        { "verb": "drink", "handler": "consume", "data": { "self": "You drink {target}. I was rather thirsty." } }
+      ]
+    },
+    {
+      "id": "flag",
+      "name": "Flag (named world state)",
+      "fields": [
+        { "name": "value", "type": "bool", "default": false }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "shiftable",
+      "name": "Shiftable scenery (move-verb effects)",
+      "fields": [
+        { "name": "onMove", "type": "list", "default": [] },
+        { "name": "once", "type": "bool", "default": false },
+        { "name": "moved", "type": "bool", "default": false }
+      ],
+      "affordances": [
+        {
+          "verb": "move",
+          "handler": "effect",
+          "when": [
+            { "module": "shiftable", "field": "moved", "equals": false }
+          ],
+          "data": { "effectsField": "onMove", "self": "You move {target}." }
+        }
+      ]
+    },
+    {
+      "id": "sense",
+      "name": "Sense (proximity glow)",
+      "fields": [
+        { "name": "senses", "type": "list", "default": [] },
+        { "name": "ignoresConditions", "type": "list", "default": [] },
+        { "name": "glow", "type": "int", "default": 0 },
+        { "name": "onFaint", "type": "string", "default": "" },
+        { "name": "onBright", "type": "string", "default": "" },
+        { "name": "onDim", "type": "string", "default": "" }
+      ],
       "affordances": []
     },
     {

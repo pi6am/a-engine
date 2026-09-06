@@ -76,7 +76,7 @@ public sealed class GameEngine
             engine.HandlerRegistry.Register(handler);
         foreach (var handler in new IActionHandler[]
                  {
-                     new SetHandler(), new ScoreHandler(),
+                     new SetHandler(), new ScoreHandler(), new BlowHandler(),
                      new EffectHandler(), new AnswerHandler(), new ReadHandler(),
                  })
             engine.HandlerRegistry.Register(handler);

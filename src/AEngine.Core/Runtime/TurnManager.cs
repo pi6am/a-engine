@@ -202,10 +202,12 @@ public sealed class TurnManager
                     Chatter.Advance(_engine, duration);
                     // the player's clock also drives the global systems:
                     // light sources burn down, automation rules and timers
-                    // tick once per player move (the classic clocker), and
-                    // a score reaching the win threshold flips the won flag
+                    // tick once per player move (the classic clocker),
+                    // proximity senses re-read the neighborhood, and a
+                    // score reaching the win threshold flips the won flag
                     Light.Advance(_engine, 1);
                     Automations.Advance(_engine, 1);
+                    Senses.Advance(_engine);
                     Score.CheckWin(_engine);
                 }
                 AdvanceTurn();
@@ -541,8 +543,11 @@ public sealed class TurnManager
             var targetName = ctx.Target is not null
                 ? $" {Perception.WithDefiniteArticle(ctx.Target.Name)}"
                 : "";
+            // a gate's message may live in the world (per-object data)
+            // rather than the spec — blocked passages speak for themselves
             return ActionResult.Fail(
-                spec.FailText ?? $"You can't {action.Verb}{targetName} right now.");
+                spec.FailText ?? gate.Message(ctx, spec) ??
+                $"You can't {action.Verb}{targetName} right now.");
         }
         return null;
     }
@@ -1186,6 +1191,7 @@ public sealed class TurnManager
             Chatter.Advance(_engine, 1);
             Light.Advance(_engine, 1);
             Automations.Advance(_engine, 1);
+            Senses.Advance(_engine);
             Score.CheckWin(_engine);
         }
         foreach (var scheduled in _engine.Scheduler.CollectDue(Turn))

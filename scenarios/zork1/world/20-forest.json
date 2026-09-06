@@ -1,0 +1,505 @@
+{
+  "world": [
+    {
+      "id": "forest_1",
+      "name": "Forest",
+      "description": "This is a forest, with trees in all directions. To the east, there appears to be sunlight.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "f1_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "grating_clearing"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f1_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "path"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f1_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "forest_3"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f1_northwest",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "south_of_house"
+              }
+            }
+          ],
+          "name": "trail"
+        }
+      ]
+    },
+    {
+      "id": "forest_2",
+      "name": "Forest",
+      "description": "This is a dimly lit forest, with large trees all around.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "f2_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "mountains"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f2_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "clearing"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f2_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "path"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f2_southwest",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "east_of_house"
+              }
+            }
+          ],
+          "name": "trail"
+        }
+      ]
+    },
+    {
+      "id": "mountains",
+      "name": "Forest",
+      "description": "The forest thins out, revealing impassable mountains.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "mtn_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "forest_2"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "mtn_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "forest_2"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "mtn_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "forest_2"
+              }
+            }
+          ],
+          "name": "trail"
+        }
+      ]
+    },
+    {
+      "id": "forest_3",
+      "name": "Forest",
+      "description": "This is a dimly lit forest, with large trees all around.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "f3_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "clearing"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f3_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "forest_1"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "f3_northwest",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "south_of_house"
+              }
+            }
+          ],
+          "name": "trail"
+        }
+      ]
+    },
+    {
+      "id": "path",
+      "name": "Forest Path",
+      "description": "This is a path winding through a dimly lit forest. The path heads north-south here. One particularly large tree with some low branches stands at the edge of the path.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "path_up",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "up_a_tree"
+              }
+            }
+          ],
+          "name": "large tree with low branches"
+        },
+        {
+          "id": "path_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "grating_clearing"
+              }
+            }
+          ],
+          "name": "path"
+        },
+        {
+          "id": "path_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "forest_2"
+              }
+            }
+          ],
+          "name": "path"
+        },
+        {
+          "id": "path_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "north_of_house"
+              }
+            }
+          ],
+          "name": "path"
+        },
+        {
+          "id": "path_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "forest_1"
+              }
+            }
+          ],
+          "name": "path"
+        }
+      ]
+    },
+    {
+      "id": "up_a_tree",
+      "name": "Up a Tree",
+      "description": "You are about 10 feet above the ground nestled among some large branches. The nearest branch above you is above your reach.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "tree_down",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "path"
+              }
+            }
+          ],
+          "name": "branches"
+        },
+        {
+          "id": "nest",
+          "name": "bird's nest",
+          "description": "A nest of twigs and grass, hastily built.",
+          "modules": [
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 20
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": true
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "egg",
+              "name": "jewel-encrusted egg",
+              "description": "The egg is covered with fine gold inlay, and ornamented in lapis lazuli and mother-of-pearl. Unlike most eggs, this one has hinged doors and a golden catch, keeping its contents safe from harm.",
+              "modules": [
+                "portable",
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 5
+                  }
+                },
+                "treasure",
+                {
+                  "module": "treasure",
+                  "overrides": {
+                    "value": 5,
+                    "tvalue": 5
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grating_clearing",
+      "name": "Clearing",
+      "description": "You are in a clearing, with a forest surrounding you on all sides. A path leads south.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "gc_east",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "forest_2"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "gc_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "forest_1"
+              }
+            }
+          ],
+          "name": "trail"
+        },
+        {
+          "id": "gc_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "path"
+              }
+            }
+          ],
+          "name": "path"
+        },
+        {
+          "id": "leaves",
+          "name": "mass of leaves",
+          "description": "A heap of dry leaves, deep enough to hide something beneath.",
+          "modules": [
+            "hideable",
+            {
+              "module": "hideable",
+              "overrides": {
+                "concealed": false
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "clearing",
+      "name": "Clearing",
+      "description": "You are in a small clearing in a well marked forest path that extends to the east and west.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "cl_north",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "forest_2"
+              }
+            }
+          ],
+          "name": "path"
+        },
+        {
+          "id": "cl_south",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "forest_3"
+              }
+            }
+          ],
+          "name": "path"
+        },
+        {
+          "id": "cl_west",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "east_of_house"
+              }
+            }
+          ],
+          "name": "path"
+        }
+      ]
+    }
+  ]
+}

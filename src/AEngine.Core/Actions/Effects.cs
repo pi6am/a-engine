@@ -61,6 +61,11 @@ public static class Effects
     {
         if (effect.ValueKind != JsonValueKind.Object)
             return;
+        // a per-effect `when` guard (same condition kinds as automations):
+        // the effect simply doesn't happen while it doesn't hold
+        if (!RuleConditions.Evaluate(engine.World, engine.ModuleRegistry,
+                effect.TryGetProperty("when", out var when) ? when : null, ctx))
+            return;
         var world = engine.World;
         var modules = engine.ModuleRegistry;
 

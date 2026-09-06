@@ -1,0 +1,64 @@
+# Zork I, stage 1: the White House slice.
+# Deterministic under --seed (tests use 42).
+#
+# The egg from the tree, into the house, gear up, down the trap door,
+# deal with the troll, the gallery's painting, and home by the chimney.
+
+# the egg
+Go north
+Go north
+Go up
+Take the jewel-encrusted egg
+Go down
+Go south
+Go southeast
+
+# into the house
+Open the kitchen window
+Go west
+
+# gear up in the living room
+Go west
+Take the brass lantern
+Take the elvish sword
+Move the large oriental rug
+Open the trap door
+Go down
+
+# the cellar: the door slams shut behind you; light the lamp
+Turn on the brass lantern
+
+# the troll (repeat: swing until he stops being a problem)
+Go north
+Attack the troll x40
+
+# through his room to the east-west passage
+Go east
+Go west
+Go south
+
+# the gallery and its painting
+Go south
+Go east
+Take the painting
+Go north
+
+# the chimney only fits the lamp and one more thing
+Drop the elvish sword
+Drop the jewel-encrusted egg
+Go up
+
+# home: case the painting, then fetch the egg with one more trip down
+Go west
+Open the trophy case
+Put the painting into the trophy case
+Open the trap door
+Go down
+Go south
+Go east
+Go north
+Take the jewel-encrusted egg
+Go up
+Go west
+Put the jewel-encrusted egg into the trophy case
+Score

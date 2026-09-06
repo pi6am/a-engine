@@ -52,29 +52,49 @@ public static class Walkthrough
                 text = line[(sep + 2)..].Trim();
                 line = line[..sep].Trim();
             }
+            // "<label> xN" performs the command up to N times, stopping
+            // early without error once it stops resolving — combat under
+            // a frozen seed takes as many swings as it takes
+            var repeat = 1;
+            var xMatch = System.Text.RegularExpressions.Regex.Match(line, @"\s+[x×](\d+)$");
+            if (xMatch.Success)
+            {
+                repeat = int.Parse(xMatch.Groups[1].Value);
+                line = line[..xMatch.Index].Trim();
+            }
             if (line.Length == 0)
                 continue;
-            var action = PlanExecutor.MatchAvailableOrPotential(engine, player, line);
-            if (action is null)
-                return WalkthroughResult.Fail(
-                    $"Line {lineNo}: unrecognized command '{line}'.", lineNo, transcript);
-            if (text is not null)
-                action = action with { Text = text };
-            var result = engine.TurnManager.PerformAction(player, action, action.Text);
-            log?.Invoke($"> {line}");
-            log?.Invoke(result.Message);
-            transcript.Add(result.Message);
-            if (result.Outcome == ActionOutcome.Failure)
-                return WalkthroughResult.Fail(
-                    $"Line {lineNo}: command failed: {line} — {result.Message}", lineNo, transcript);
-            // the interactive flow: one NPC round per player action,
-            // reactions resolving to their effective defaults (the
-            // deterministic defender)
-            engine.TurnManager.NewNpcRound();
-            engine.TurnManager.RunNpcTurns();
-            ResolveReactionsToDefaults(engine);
-            if (engine.GameOver is not null)
-                return WalkthroughResult.Ok(transcript);
+            for (var swing = 0; swing < repeat; swing++)
+            {
+                var action = PlanExecutor.MatchAvailableOrPotential(engine, player, line);
+                if (action is null)
+                {
+                    if (swing > 0)
+                        break; // the repeat exhausted the action (it died)
+                    return WalkthroughResult.Fail(
+                        $"Line {lineNo}: unrecognized command '{line}'.", lineNo, transcript);
+                }
+                if (text is not null)
+                    action = action with { Text = text };
+                var result = engine.TurnManager.PerformAction(player, action, action.Text);
+                if (swing == 0)
+                {
+                    log?.Invoke($"> {raw.Trim()}" + (repeat > 1 ? $" ({repeat}x)" : ""));
+                }
+                log?.Invoke(result.Message);
+                transcript.Add(result.Message);
+                if (result.Outcome == ActionOutcome.Failure)
+                    return WalkthroughResult.Fail(
+                        $"Line {lineNo}: command failed: {line} — {result.Message}", lineNo, transcript);
+                // the interactive flow: one NPC round per player action,
+                // reactions resolving to their effective defaults (the
+                // deterministic defender)
+                engine.TurnManager.NewNpcRound();
+                engine.TurnManager.RunNpcTurns();
+                ResolveReactionsToDefaults(engine);
+                if (engine.GameOver is not null)
+                    return WalkthroughResult.Ok(transcript);
+            }
         }
         return WalkthroughResult.Ok(transcript);
     }

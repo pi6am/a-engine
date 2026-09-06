@@ -185,6 +185,12 @@ public static class BuiltinHandlers
             }
             ctx.World.MoveObject(ctx.Agent.Id, to);
             var room = ctx.World.GetObject(to);
+            // traversal effects authored on the exit side fire with the
+            // arrival complete (a chimney climb re-arming what it should)
+            if (ctx.Modules.ResolveField(portal, "portal", "onExit") is
+                    { ValueKind: JsonValueKind.Array } onExit)
+                Effects.Apply(ctx.Engine, onExit,
+                    new EffectContext(ctx.Agent, portal, null, portal, ctx.Random));
             // the direction rides along ("You go east through the canvas
             // awning into Market Square.") — this message is what memory
             // stores, and direction+destination pairs are how a planner

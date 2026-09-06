@@ -108,60 +108,7 @@ public static class Automations
         if (modules.ResolveField(rule, "automation", "when") is not
                 { ValueKind: JsonValueKind.Array } list)
             return true; // unconditional: a pure timer
-        var ctx = new EffectContext(Self: rule, Random: null);
-        foreach (var spec in list.EnumerateArray())
-        {
-            if (spec.ValueKind != JsonValueKind.Object)
-                continue;
-            // { of, hasCondition } — an agent carries a condition kind
-            if (Str(spec, "hasCondition") is { } kind)
-            {
-                var agent = Effects.Resolve(world, Str(spec, "of") ?? "self", ctx);
-                if (agent is null || !agent.HasModule("agent") ||
-                    !Conditions.Has(world, modules, agent, kind))
-                    return false;
-                continue;
-            }
-            // { holder, holds } — an object currently inside another
-            if (Str(spec, "holds") is { } itemId)
-            {
-                var holder = Effects.Resolve(world, Str(spec, "holder") ?? "self", ctx);
-                if (holder is null || !world.HasObject(itemId) ||
-                    world.GetObject(itemId).Parent != holder.Id)
-                    return false;
-                continue;
-            }
-            // { of, inRoom } — an object's room-granular location
-            if (Str(spec, "inRoom") is { } roomId)
-            {
-                var obj = Effects.Resolve(world, Str(spec, "of") ?? "self", ctx);
-                if (obj is null || !world.HasObject(roomId) ||
-                    world.RoomOf(obj.Id).Id != roomId)
-                    return false;
-                continue;
-            }
-            // { of, module, field, equals/min/max } — a field comparison
-            var module = Str(spec, "module");
-            var field = Str(spec, "field");
-            var obj2 = Effects.Resolve(world, Str(spec, "of") ?? "self", ctx);
-            if (module is null || field is null || obj2 is null || !obj2.HasModule(module))
-                return false;
-            JsonElement? equals = spec.TryGetProperty("equals", out var eq) ? eq : null;
-            if (!FieldMatch.Matches(
-                    modules.ResolveField(obj2, module, field), equals,
-                    Dbl(spec, "min"), Dbl(spec, "max")))
-                return false;
-        }
-        return true;
+        return RuleConditions.Evaluate(world, modules, list,
+            new EffectContext(Self: rule, Random: null));
     }
-
-    private static string? Str(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
-            ? v.GetString()
-            : null;
-
-    private static double? Dbl(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
-            ? v.GetDouble()
-            : null;
 }

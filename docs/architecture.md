@@ -826,6 +826,40 @@ generic throughout.
   percentage per move; on a hit the `darkHazardCondition` template
   attaches and `darkHazardText` reports — the engine knows nothing
   about what hunts in the dark).
+- **Wound-level melee** (`blow`, Core/Actions/BlowHandler.cs) — the
+  classic-adventure fight for `duelist`s: strength from the module
+  field plus live wound condition statMods plus (rules
+  `strengthFromScore`) a point per N score for scorecard-carrying
+  heroes; a held `weapon` item is required (bare hands fail); the
+  defender's `weakTo` list names blades that fight them at an advantage
+  (−1). One d9 + strength-difference roll picks the outcome: miss (a
+  success-outcome swing — plans and walkthroughs keep stepping through
+  it), light/serious wounds (strength drains, wound conditions weaken
+  further attacks, timed automations heal), stagger, unconscious (the
+  data-named condition attaches, the duelist is `out` — the resolver
+  withdraws the attack — and a randomized `wakeIn` countdown hands off
+  to the scenario's wake automation), or dead (condition attached,
+  belongings dropped where they fell).
+- **Proximity senses** (`sense` module, same file) — a held object
+  watching named agents: glow 2 while one shares the holder's room, 1
+  while one is a portal away; level changes message the holder with
+  `onFaint`/`onBright`/`onDim`. The elvish sword's blue glow is the
+  reference wearer.
+- **Conditional passages** (the `exit` gate) — parameters live as
+  fields on the portal side, so one go-affordance serves every portal:
+  `requires` (a flag object that must be true — the troll's
+  passages), `requiresCarrying`, `notCarrying` (the coffin),
+  `allowOnly` + `allowPlus` (the chimney: the lamp and one more
+  thing), `loadUnder` (an empty-handed crawl), and `blockedText`
+  (each blocked way speaks its own failure through the gate's
+  Message hook). Traversal itself can carry effects: a portal side's
+  `onExit` list (same effect vocabulary, each effect optionally
+  guarded by a `when` condition array) applies with the move complete
+  — the chimney climb re-arming the cellar's slam.
+- **One-sided doors** (the `barred` gate, on the door module's open
+  affordance) — a portal side with `barred: true` never opens from
+  its own side ("The door is locked from above."); its mirror side
+  opens freely. Close stays ungated.
 - **The effect vocabulary** (`Core/Actions/Effects.cs`) — one JSON shape
   shared by the `effect` handler (verbs as data: move/ring/wave/dig/
   wind/pray/press/turn/tie/raise are affordances naming an effect list
@@ -839,13 +873,17 @@ generic throughout.
   drops, robberies, curses), `destroy`, `spawn`, `transform` (replace
   with a template at the same parent under the same id, so references
   survive), `open`/`close`/`lock`/`unlock` (through shared doorstates),
-  `conceal`/`reveal`, `rename`, `addModule`/`removeModule`, `say`
-  (private sensation), `signal` (room observation), `endsGame`.
-  Selectors: object ids or `actor`/`target`/`aux`/`self`.
+   `conceal`/`reveal`, `rename`, `addModule`/`removeModule`, `say`
+   (private sensation), `signal` (room observation), `endsGame`.
+   Selectors: object ids or `actor`/`target`/`aux`/`self`; any single
+   effect may carry a `when` condition array (the automation condition
+   kinds, shared through `RuleConditions`) and simply doesn't happen
+   while it doesn't hold.
 - **Automations** (`Core/Runtime/Automations.cs`) — conditional rules
   and timers as top-level objects with the `automation` module,
   evaluated once per player turn on the world-clock pass (deterministic
-  id order). `when` conditions (all must match): a field on any object
+  id order). `when` conditions (all must match, any one flippable with
+  `negate`): a field on any object
   (`{of, module, field, equals/min/max}`), a carried condition kind
   (`{of, hasCondition}`), containment (`{holder, holds}`), presence
   (`{of, inRoom}`). Timing: plain rules fire every pass while true;
@@ -863,10 +901,12 @@ generic throughout.
   the `ranks` list's title.
 - **Walkthrough verification** (`AEngine.Cli/Walkthrough.cs`, CLI
   `--walkthrough FILE [--seed N]`) — replays exact action labels (plus
-  "Say: …" speech lines and "Label :: text" for other prompted verbs)
-  through the same deterministic matcher LLM plan execution uses, with
-  NPC rounds and default-resolved reactions between steps; it stops
-  with the line number on the first unrecognized or failed command.
+  "Say: …" speech lines and "Label :: text" for other prompted verbs,
+  and "Label xN" to repeat a command up to N times — combat under a
+  frozen seed takes as many swings as it takes) through the same
+  deterministic matcher LLM plan execution uses, with NPC rounds and
+  default-resolved reactions between steps; it stops with the line
+  number on the first unrecognized or failed command.
   No LLM attached, byte-identical replays under a frozen seed.
 
 ## Scenarios

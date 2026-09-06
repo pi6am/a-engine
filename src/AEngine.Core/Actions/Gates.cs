@@ -22,6 +22,14 @@ public interface IActionGate
 
     /// <summary>True when this gate blocks the action.</summary>
     bool Blocks(ActionContext ctx, GateSpec spec);
+
+    /// <summary>
+    /// Optional failure message sourced from the world (data on the
+    /// target object), used when the spec carries no failText — the seam
+    /// for gates whose parameters live per-object (the exit gate's
+    /// blockedText on a portal side).
+    /// </summary>
+    string? Message(ActionContext ctx, GateSpec spec) => null;
 }
 
 /// <summary>
@@ -63,8 +71,109 @@ public sealed class GateRegistry
     /// <summary>The built-in gate kinds.</summary>
     public static IEnumerable<IActionGate> Builtins() =>
         [new ConditionGate(), new FieldGate(), new ExposedGate(), new CoveredGate(),
-         new EmbracedGate(), new PartsFreeGate(),
+         new EmbracedGate(), new PartsFreeGate(), new ExitGate(), new BarredGate(),
          new CarryingGate(), new NotCarryingGate(), new LoadUnderGate(), new AllowOnlyGate()];
+}
+
+/// <summary>
+/// The barred gate for one-sided doors: blocks open on a portal side
+/// carrying <c>barred: true</c> — a door that only opens from its other
+/// side (the slammed trap door: "The door is locked from above."). The
+/// message comes from the side's own <c>barredText</c> field through
+/// <see cref="Message"/>. Close stays ungated: a door ajar can still be
+/// shut from anywhere.
+/// </summary>
+public sealed class BarredGate : IActionGate
+{
+    public string Id => "barred";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec) =>
+        ctx.Target is { } portal &&
+        portal.HasModule("portal") &&
+        ctx.Modules.ResolveBool(portal, "portal", "barred");
+
+    public string? Message(ActionContext ctx, GateSpec spec) =>
+        ctx.Target is { } portal &&
+        ctx.Modules.ResolveString(portal, "portal", "barredText") is { Length: > 0 } text
+            ? text
+            : "It is barred from the other side.";
+}
+
+/// <summary>
+/// The conditional-exit gate: all of its parameters live as fields on
+/// the TARGET portal side (so one affordance definition serves every
+/// portal), checked against the actor who would pass through. Fields,
+/// all optional: <c>requires</c> — a flag object (flag.value) that must
+/// be true ("The troll fends you off"); <c>requiresCarrying</c> — item
+/// ids the actor must hold; <c>notCarrying</c> — ids that bar the way
+/// (the coffin that won't fit); <c>allowOnly</c> — the actor may carry
+/// nothing outside this list (the lamp-only chimney), softened by
+/// <c>allowPlus</c> extra items (the lamp and one more thing);
+/// <c>loadUnder</c>
+/// — a maximum carried weight (the empty-handed crawl); and
+/// <c>blockedText</c> — the failure message, read through
+/// <see cref="Message"/> so each blocked passage speaks for itself
+/// (default: "You can't go that way.").
+/// </summary>
+public sealed class ExitGate : IActionGate
+{
+    public string Id => "exit";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var portal = ctx.Target;
+        if (portal is null || !portal.HasModule("portal"))
+            return false;
+        var modules = ctx.Modules;
+
+        var requires = modules.ResolveString(portal, "portal", "requires");
+        if (requires is { Length: > 0 } && ctx.World.HasObject(requires))
+        {
+            var flag = ctx.World.GetObject(requires);
+            if (flag.HasModule("flag") &&
+                !modules.ResolveBool(flag, "flag", "value"))
+                return true;
+        }
+
+        var held = new HashSet<string>(StringComparer.Ordinal);
+        CarryingGate.CollectHeld(ctx, ctx.Agent.Id, held);
+        foreach (var item in modules.ResolveStringList(portal, "portal", "requiresCarrying") ?? [])
+            if (!held.Contains(item))
+                return true;
+        foreach (var item in modules.ResolveStringList(portal, "portal", "notCarrying") ?? [])
+            if (held.Contains(item))
+                return true;
+        var allowOnly = modules.ResolveStringList(portal, "portal", "allowOnly");
+        if (allowOnly is { Count: > 0 })
+        {
+            var extras = modules.ResolveInt(portal, "portal", "allowPlus");
+            if (held.Except(allowOnly).Count() > Math.Max(0, extras))
+                return true;
+        }
+        if (modules.ResolveInt(portal, "portal", "loadUnder") is > 0 and var cap)
+        {
+            var load = 0.0;
+            void Weigh(string objId)
+            {
+                var obj = ctx.World.GetObject(objId);
+                if (obj.HasModule("portable"))
+                    load += ctx.Modules.ResolveDouble(obj, "portable", "weight");
+                foreach (var childId in obj.Children)
+                    Weigh(childId);
+            }
+            foreach (var childId in ctx.Agent.Children)
+                Weigh(childId);
+            if (load > cap)
+                return true;
+        }
+        return false;
+    }
+
+    public string? Message(ActionContext ctx, GateSpec spec) =>
+        ctx.Target is { } portal &&
+        ctx.Modules.ResolveString(portal, "portal", "blockedText") is { Length: > 0 } text
+            ? text
+            : null;
 }
 
 /// <summary>

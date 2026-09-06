@@ -26,6 +26,12 @@
               "overrides": {
                 "caseRef": "trophy_case"
               }
+            },
+            {
+              "module": "duelist",
+              "overrides": {
+                "strength": 2
+              }
             }
           ]
         },
@@ -132,6 +138,20 @@
             }
           ],
           "name": "path around the house"
+        },
+        {
+          "id": "woh_west",
+          "name": "open field",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "forest_1"
+              }
+            }
+          ]
         }
       ]
     },
@@ -200,6 +220,20 @@
             }
           ],
           "name": "path around the house"
+        },
+        {
+          "id": "noh_north",
+          "name": "narrow path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "path"
+              }
+            }
+          ]
         }
       ]
     },
@@ -268,6 +302,20 @@
             }
           ],
           "name": "path around the house"
+        },
+        {
+          "id": "soh_south",
+          "name": "open field",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "forest_3"
+              }
+            }
+          ]
         }
       ]
     },
@@ -324,6 +372,20 @@
             },
             {
               "module": "door"
+            }
+          ]
+        },
+        {
+          "id": "eoh_east",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "clearing"
+              }
             }
           ]
         }
@@ -432,6 +494,22 @@
                 },
                 {
                   "module": "portable"
+                }
+              ],
+              "children": [
+                {
+                  "id": "water",
+                  "name": "quantity of water",
+                  "description": "Clear, cold water.",
+                  "modules": [
+                    "drinkable",
+                    {
+                      "module": "drinkable",
+                      "overrides": {
+                        "destroyOnConsume": true
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -614,6 +692,22 @@
               "overrides": {
                 "weight": 30
               }
+            },
+            "weapon",
+            {
+              "module": "sense",
+              "overrides": {
+                "senses": [
+                  "troll"
+                ],
+                "onFaint": "Your sword has begun to glow with a faint blue glow.",
+                "onBright": "Your sword is glowing very brightly!",
+                "onDim": "Your sword is no longer glowing.",
+                "ignoresConditions": [
+                  "dead",
+                  "unconscious"
+                ]
+              }
             }
           ]
         },
@@ -621,7 +715,67 @@
           "id": "rug",
           "name": "large oriental rug",
           "description": "A large oriental rug, edges slightly rumpled.",
-          "modules": []
+          "modules": [
+            "shiftable",
+            {
+              "module": "shiftable",
+              "overrides": {
+                "once": true,
+                "onMove": [
+                  {
+                    "reveal": {
+                      "object": "trapdoor_lr"
+                    }
+                  },
+                  {
+                    "set": {
+                      "of": "rug_state",
+                      "module": "flag",
+                      "field": "value",
+                      "value": true
+                    }
+                  },
+                  {
+                    "set": {
+                      "of": "rug",
+                      "module": "shiftable",
+                      "field": "moved",
+                      "value": true
+                    }
+                  },
+                  {
+                    "rename": {
+                      "object": "rug",
+                      "description": "It has been pulled aside, heaped against the trophy case."
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "trapdoor_lr",
+          "name": "trap door",
+          "description": "A heavy wooden trap door, set into the floor.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "trapdoor_state",
+                "direction": "down",
+                "to": "cellar"
+              }
+            },
+            "door",
+            "hideable",
+            {
+              "module": "hideable",
+              "overrides": {
+                "concealed": true
+              }
+            }
+          ]
         }
       ]
     }

@@ -28,6 +28,7 @@
             "darkHazardChance": 80,
             "darkHazardText": "You have walked into the slavering fangs of a lurking grue!",
             "darkHazardCondition": "cond_dead",
+            "strengthFromScore": 70,
             "npcLodFactor": 1
           }
         }
