@@ -56,3 +56,6 @@ client/dist/
 
 ## Game saves (CLI /save)
 .saves/
+
+# Generated audit caches (rebuild with the scripts)
+*_objects.json
