@@ -320,8 +320,7 @@ slash.Register("control", [], "Play as another agent (/control ferret; /control 
     // whole world, module definitions, turn clocks, memories, and the
     // exact PRNG state. ./saves/ in the working directory.
     var savesDir = Path.Combine(Directory.GetCurrentDirectory(), "saves");
-    var undoRing = new List<AEngine.Core.Runtime.GameSerializer.SaveData>();
-    const int undoCapacity = 10;
+    var undoRing = new UndoHistory();
     slash.Register("save", [], "Save the game (/save [name] — files land in ./saves/)", args =>
     {
         var name = args.Length > 0 && args[0].Trim().Length > 0
@@ -404,14 +403,14 @@ slash.Register("control", [], "Play as another agent (/control ferret; /control 
     });
     slash.Register("undo", [], "Step back to before your last command (up to 10 steps)", _ =>
     {
-        if (undoRing.Count == 0)
+        var snapshot = undoRing.Pop();
+        if (snapshot is null)
         {
             Console.WriteLine("Nothing to undo.");
             return false;
         }
-        var snapshot = undoRing[^1];
-        undoRing.RemoveAt(undoRing.Count - 1);
-        RestoreInPlace(snapshot);
+        // keep the remaining history: undo steps backward repeatedly
+        RestoreInPlace(snapshot, keepUndo: true);
         Console.WriteLine($"Undone — back to turn {snapshot.Turn}.");
         return false;
     });
@@ -438,25 +437,28 @@ slash.Register("control", [], "Play as another agent (/control ferret; /control 
     // snapshot before each player-driven input line (not before meta
     // commands): /undo steps back across the whole input, NPC round
     // included
-    void PushUndo()
+    void PushUndo() =>
+        undoRing.Push(CaptureUnderLock());
+
+    AEngine.Core.Runtime.GameSerializer.SaveData CaptureUnderLock()
     {
         lock (engine.SyncRoot)
-        {
-            undoRing.Add(AEngine.Core.Runtime.GameSerializer.Capture(
-                engine, scenarioName, scenarioPath, control.CurrentId));
-        }
-        while (undoRing.Count > undoCapacity)
-            undoRing.RemoveAt(0);
+            return AEngine.Core.Runtime.GameSerializer.Capture(
+                engine, scenarioName, scenarioPath, control.CurrentId);
     }
+
     // restore a save (or undo snapshot) into the live engine and re-anchor
     // the POV: restored objects are NEW instances, so every cached
     // reference (the `player` variable, the narrator's subject) must be
-    // re-resolved
-    void RestoreInPlace(AEngine.Core.Runtime.GameSerializer.SaveData save)
+    // re-resolved. Restoring a saved GAME crosses a boundary — the undo
+    // history dies with the world it belonged to; an undo snapshot
+    // (keepUndo) keeps it.
+    void RestoreInPlace(AEngine.Core.Runtime.GameSerializer.SaveData save, bool keepUndo = false)
     {
         lock (engine.SyncRoot)
             AEngine.Core.Runtime.GameSerializer.Restore(engine, save);
-        undoRing.Clear(); // no undoing across game boundaries
+        if (!keepUndo)
+            undoRing.Clear();
         ReanchorPov();
     }
     void ReanchorPov()
