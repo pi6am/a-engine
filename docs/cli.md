@@ -46,9 +46,11 @@ Slash commands are meta actions: they never consume game time or turns.
 Registered in `SlashCommandRegistry` (extensible, with aliases and help
 text): `/actions` (numbered action list), `/showplan on|off` (log the
 extracted LLM plan, default off), `/showexits on|off` (`/exits` — list
-exits in room descriptions, default off: a navigational aid, not
-fiction; planner contexts always see their own exit lists),
-`/narrate all|room|actions|off` (LLM
+exits in room descriptions, default off) and `/listitems on|off`
+(`/items` — the compact "You see:" listing, default off; first-sight
+and always-listed item lines are fiction and always print), both
+navigational aids rather than fiction — planner contexts always see
+their own exit and item lists, `/narrate all|room|actions|off` (LLM
 narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
 (`/tb`), `/timescale N` (`/ts`), `/control ID` (play as another agent,
 see below), `/scenario` (the loaded scenario's about

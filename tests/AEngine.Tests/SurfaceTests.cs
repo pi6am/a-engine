@@ -80,6 +80,7 @@ public class SurfaceTests
     public void LookListsSurfaceContents_WithOn()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         var alice = engine.World.GetObject("alice");
         engine.TurnManager.Execute(alice, "take", "apple");
         engine.TurnManager.Execute(alice, "put", "counter", auxTargetId: "apple");

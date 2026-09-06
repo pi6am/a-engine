@@ -427,6 +427,7 @@ public class BodyPartsTests
     public void Crunch_Descriptive_ReportsBandsAndConditions()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         AddPart(engine, "bob", "head", "head", "head", 5);
         AddPart(engine, "bob", "torso", "torso", "top", 10);
         SetStat(engine, "alice", "strength", 10);

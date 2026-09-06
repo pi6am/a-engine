@@ -175,6 +175,7 @@ public class Zork1ScenarioTests
     public void KitchenTable_IsASurfaceWithReachableSackContents()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         var world = engine.World;
         var player = world.GetObject("player");
         world.MoveObject("player", "kitchen");
@@ -208,6 +209,7 @@ public class Zork1ScenarioTests
     public void Nest_IsALidlessAlwaysOpenContainer()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         var world = engine.World;
         var result = WalkthroughRunner.Run(engine,
         [
@@ -346,45 +348,77 @@ public class Zork1ScenarioTests
     }
 
     [Fact]
-    public void FirstDescription_ShowsOnce_ThenTheSettledText()
+    public void RoomListing_FdescWhileAtOrigin_LdescAfterMoving()
     {
         var engine = NewEngine();
         var world = engine.World;
         var player = world.GetObject("player");
 
-        // the sceptre: FDESC names the coffin and the sharp point, LDESC settles
-        world.MoveObject("player", "egypt_room");
-        world.MoveObject("sceptre", "egypt_room"); // out of the coffin, in view
-        world.MoveObject("lamp", "player");
-        world.SetFieldOverride("lamp", "lightsource", "on", AEngine.Core.World.World.ToJson(true));
-        var ex = engine.ActionResolver.Resolve(player)
-            .Single(a => a.Verb == "examine" && a.TargetId == "sceptre");
-        var first = engine.TurnManager.PerformAction(player, ex);
-        Assert.Contains("possibly that of ancient Egypt", first.Message);
-        Assert.Contains("tapers to a sharp point", first.Message);
-        var second = engine.TurnManager.PerformAction(player, ex);
-        Assert.Contains("An ornamented sceptre, tapering to a sharp point, is here.",
-            second.Message);
-        Assert.DoesNotContain("Egypt", second.Message);
+        // the sword and lamp at their loaded spot: every look shows the
+        // FDESC lines — they repeat while the scene holds
+        world.MoveObject("player", "living_room");
+        var look = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("Above the trophy case hangs an elvish sword", look.Message);
+        Assert.Contains("A battery-powered brass lantern is on the trophy case.", look.Message);
+        var lookAgain = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("Above the trophy case hangs an elvish sword", lookAgain.Message);
+
+        // moving one trades its scene-setting line for the generic one
+        // (dropped elsewhere, as in the original's kitchen test)
+        world.MoveObject("sword", "kitchen");
+        world.MoveObject("player", "kitchen");
+        var lookKitchen = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("There is a sword here.", lookKitchen.Message);
+        Assert.Contains("A bottle is sitting on the table.", lookKitchen.Message); // at origin
+
+        // and the unmoved lamp keeps its scene back home
+        world.MoveObject("player", "living_room");
+        var lookHome = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("A battery-powered brass lantern is on the trophy case.",
+            lookHome.Message);
+        Assert.DoesNotContain("elvish sword", lookHome.Message);
     }
 
     [Fact]
-    public void FirstDescription_OnlyItems_FallBare_Afterwards()
+    public void RoomListing_GenericFallback_AndScenerySilence()
     {
         var engine = NewEngine();
         var world = engine.World;
         var player = world.GetObject("player");
 
-        // the sword: FDESC above the trophy case, no LDESC — later
-        // examines are just the name (the original shows nothing special)
-        world.MoveObject("player", "living_room");
-        world.MoveObject("sword", "living_room");
-        var ex = engine.ActionResolver.Resolve(player)
-            .Single(a => a.Verb == "examine" && a.TargetId == "sword");
-        Assert.Contains("Above the trophy case hangs an elvish sword",
-            engine.TurnManager.PerformAction(player, ex).Message);
-        var later = engine.TurnManager.PerformAction(player, ex).Message;
-        Assert.Equal("There's nothing special about the sword.", later);
+        // the start room: the mailbox has no ldesc and lists generically,
+        // the front door is scenery and never lists; the leaflet appears
+        // when dropped, by its ldesc
+        var look = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("There is a small mailbox here.", look.Message);
+        Assert.DoesNotContain("front door here", look.Message);
+        Assert.DoesNotContain("trophy", look.Message);
+
+        world.MoveObject("leaflet", "west_of_house"); // dropped on the ground
+        var lookDropped = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("A small leaflet is on the ground.", lookDropped.Message);
+
+        // an item with neither fdesc nor ldesc falls to the generic line
+        // once the world has moved it (the sword, relocated)
+        world.MoveObject("sword", "west_of_house");
+        var lookSword = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("There is a sword here.", lookSword.Message);
+    }
+
+    [Fact]
+    public void OpenContainers_GroupTheirContents()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+
+        // the open mailbox presents the leaflet as a contents group
+        world.SetFieldOverride("mailbox", "openable", "open",
+            AEngine.Core.World.World.ToJson(true));
+        var look = engine.TurnManager.Execute(player, "look", player.Id);
+        Assert.Contains("There is a small mailbox here.", look.Message);
+        Assert.Contains("The small mailbox contains:", look.Message);
+        Assert.Contains("  A leaflet", look.Message);
     }
 }
 

@@ -1060,7 +1060,10 @@
                 "open": false
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "machine_switch",
@@ -1146,7 +1149,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },

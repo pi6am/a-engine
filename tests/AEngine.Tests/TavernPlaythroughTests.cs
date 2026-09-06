@@ -90,6 +90,7 @@ public class TavernPlaythroughTests
     public void Look_ShowsSeatedCastWithVisibleConditions()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         Do(engine, "open", "front_door_street_side");
         Do(engine, "go", "front_door_street_side");
 
@@ -106,6 +107,7 @@ public class TavernPlaythroughTests
     public void NamesAreLearned_FromOverheardSpeech()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         Do(engine, "open", "front_door_street_side");
         Do(engine, "go", "front_door_street_side");
         var player = engine.World.GetObject("player");

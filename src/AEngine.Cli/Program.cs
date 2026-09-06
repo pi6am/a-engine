@@ -222,6 +222,20 @@ slash.Register("narrate", [], "Expand narration via LLM (/narrate all|room|actio
     Console.WriteLine($"Narration is {output.Narrate.ToString().ToLowerInvariant()}. Usage: /narrate all|room|actions|off");
     return false;
 });
+slash.Register("listitems", ["items"], "List room items in descriptions (/listitems on|off)", args =>
+{
+    if (args.Length == 1 && args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
+        engine.ShowItemsInLook = true;
+    else if (args.Length == 1 && args[0].Equals("off", StringComparison.OrdinalIgnoreCase))
+        engine.ShowItemsInLook = false;
+    else
+    {
+        Console.WriteLine($"Item listings are {(engine.ShowItemsInLook ? "on" : "off")}. Usage: /listitems on|off");
+        return false;
+    }
+    Console.WriteLine($"Items {(engine.ShowItemsInLook ? "will" : "will not")} be listed in room descriptions.");
+    return false;
+});
 slash.Register("showexits", ["exits"], "Show exits in room descriptions (/showexits on|off)", args =>
 {
     if (args.Length == 1 && args[0].Equals("on", StringComparison.OrdinalIgnoreCase))
@@ -624,7 +638,7 @@ while (true)
             lastRoomId = room.Id;
             arrivalRoomId = room.Id;
             arrivalRoomName = room.Name;
-            arrivalLook = engine.TurnManager.Execute(player, "look", player.Id).Message;
+            arrivalLook = engine.TurnManager.Execute(player, "look", player.Id, "brief").Message;
         }
     }
     if (arrivalLook is not null)
@@ -1353,7 +1367,7 @@ async Task RealTimeLoop(CancellationToken ct)
                         lastRoomId = room.Id;
                         arrivalRoomId = room.Id;
                         arrivalRoomName = room.Name;
-                        arrival = engine.TurnManager.Execute(player, "look", player.Id).Message;
+                        arrival = engine.TurnManager.Execute(player, "look", player.Id, "brief").Message;
                     }
                     // announce a pending quick-time reaction on the status line
                     // (skipped in auto mode: the policy reacts, and the auto

@@ -78,6 +78,7 @@ public class HealthTests
     public void Incapacitated_Npc_GetsNoTurns()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         var bob = engine.World.GetObject("bob");
         Damage.Apply(engine.World, engine.ModuleRegistry, bob, 99);
 

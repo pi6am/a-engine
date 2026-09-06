@@ -340,7 +340,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "bag_of_coins",

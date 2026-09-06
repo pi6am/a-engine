@@ -100,6 +100,7 @@ public class PostureTests
     public void Sit_IsObservable_LookListingSignalsAndLlmContext()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         AddChair(engine);
         engine.World.MoveObject("bob", "room_a"); // Bob watches Alice sit
         var alice = engine.World.GetObject("alice");

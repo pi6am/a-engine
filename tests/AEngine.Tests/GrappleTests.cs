@@ -143,6 +143,7 @@ public class GrappleTests
     public void Grapple_Success_ForcesCarrying_AndRestrictsTheVictim()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         GrappleBob(engine);
         var bob = engine.World.GetObject("bob");
         Assert.Equal("alice", bob.Parent);

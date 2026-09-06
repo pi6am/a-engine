@@ -40,7 +40,10 @@
           "id": "front_door",
           "name": "front door",
           "description": "",
-          "modules": []
+          "modules": [],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "mailbox",
@@ -546,7 +549,10 @@
               ],
               "firstDescription": "A bottle is sitting on the table."
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "window_west",
@@ -725,7 +731,10 @@
               ],
               "firstDescription": "In the trophy case is an ancient parchment which appears to be a map."
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "lamp",
@@ -823,7 +832,10 @@
                 "moveText": "With a great effort, the rug is moved to one side of the room, revealing the dusty cover of a closed trap door."
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "trapdoor_lr",

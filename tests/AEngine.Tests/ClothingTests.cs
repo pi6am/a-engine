@@ -203,6 +203,7 @@ public class ClothingTests
     public void DressedAgents_ShowInLookAndContext_ButNotTheListing()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         AddGarment(engine, "apron", "apron", "room_a", "top");
         AddGarment(engine, "hat", "chef's hat", "room_a", "head");
         engine.World.MoveObject("bob", "room_a");

@@ -37,6 +37,7 @@ public class PerceptionTests
     public void Look_ReportsClosedState_AndHidesContents()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         var look = engine.TurnManager.Execute(engine.World.GetObject("player"), "look", "player");
 
         Assert.Contains("desk drawer (closed)", look.Message);
@@ -56,6 +57,7 @@ public class PerceptionTests
     public void Look_AfterOpen_ReportsOpenStateAndContents()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         engine.TurnManager.Execute(engine.World.GetObject("player"), "open", "desk");
 
         var look = engine.TurnManager.Execute(engine.World.GetObject("player"), "look", "player");

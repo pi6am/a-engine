@@ -537,13 +537,19 @@
           "id": "control_panel",
           "name": "control panel",
           "description": "",
-          "modules": []
+          "modules": [],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "bubble",
           "name": "green bubble",
           "description": "",
-          "modules": []
+          "modules": [],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "bolt",
@@ -565,13 +571,19 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "dam",
           "name": "dam",
           "description": "",
-          "modules": []
+          "modules": [],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },
@@ -852,7 +864,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "red_button",
@@ -875,7 +890,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "brown_button",
@@ -899,7 +917,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "yellow_button",
@@ -923,7 +944,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "tube",
@@ -996,7 +1020,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },

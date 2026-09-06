@@ -76,7 +76,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },
@@ -156,7 +159,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },
@@ -663,7 +669,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },
@@ -713,7 +722,10 @@
           "id": "pedestal",
           "name": "pedestal",
           "description": "",
-          "modules": []
+          "modules": [],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "torch",

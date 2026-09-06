@@ -102,34 +102,44 @@ public static class BuiltinHandlers
                 sb.AppendLine(dark);
                 return ActionResult.Ok(sb.ToString().TrimEnd());
             }
-            if (room.Description.Length > 0)
-                sb.AppendLine(room.Description);
-            if (Perception.PostureLine(ctx.World, ctx.Modules, ctx.Agent) is { } posture)
-                sb.AppendLine(posture);
-            // felt status conditions ("You feel tipsy.") right after the
-            // posture line — the agent's own state, before the room
-            foreach (var line in Conditions.SelfLines(ctx.World, ctx.Modules, ctx.Agent))
-                sb.AppendLine(line);
+            // "brief" is the arrival look: a room already seen summarizes
+            // (name, first-sight and always-listed items, who's here); a
+            // first arrival — and any explicit "Look around" — renders in
+            // full. Marking the room visited happens on the full render,
+            // after any entry scoring (see the go handler).
+            var brief = ctx.Args.TryGetValue("text", out var mode) && mode == "brief";
+            var full = !brief || !ctx.Modules.ResolveBool(room, "room", "visited");
+            if (full)
+            {
+                if (room.Description.Length > 0)
+                    sb.AppendLine(room.Description);
+                if (Perception.PostureLine(ctx.World, ctx.Modules, ctx.Agent) is { } posture)
+                    sb.AppendLine(posture);
+                // felt status conditions ("You feel tipsy.") right after the
+                // posture line — the agent's own state, before the room
+                foreach (var line in Conditions.SelfLines(ctx.World, ctx.Modules, ctx.Agent))
+                    sb.AppendLine(line);
+                if (brief) // first arrival: now it has been seen
+                    ctx.World.SetFieldOverride(room.Id, "room", "visited",
+                        World.World.ToJson(true));
+            }
 
             // openables report their state; open containers' contents list
-            // as separate entries ("brass key (in desk drawer)")
-            var items = Perception.DescribeRoomContents(ctx.World, ctx.Modules, room, ctx.Agent.Id);
-            if (items.Count > 0)
-                sb.AppendLine("You see: " + string.Join(", ", items));
+            // as separate entries ("brass key (in desk drawer)") — a
+            // navigational aid like exits, off unless asked for
+            if (ctx.Engine.ShowItemsInLook)
+            {
+                var items = Perception.DescribeRoomContents(ctx.World, ctx.Modules, room, ctx.Agent.Id);
+                if (items.Count > 0)
+                    sb.AppendLine("You see: " + string.Join(", ", items));
+            }
 
-            // a first encounter spends the item's FDESC: the full
-            // scene-setting line ("On the table is an elongated brown
-            // sack, smelling of hot peppers.") prints once, on the first
-            // look that sees it — the original's initial-sight listing
-            foreach (var seen in Perception.VisibleObjects(ctx.World, ctx.Modules, room, ctx.Agent.Id))
-                if (seen.FirstDescription is { Length: > 0 } first &&
-                    !(seen.Attributes.TryGetValue("firstDescriptionShown", out var spent) &&
-                      spent.ValueKind == JsonValueKind.True))
-                {
-                    sb.AppendLine(first);
-                    ctx.World.SetAttribute(seen.Id, "firstDescriptionShown",
-                        World.World.ToJson(true));
-                }
+            // the room's item listing: everything visible that isn't
+            // scenery announces itself — FDESC while at its loaded spot,
+            // LDESC once moved, else the generic "There is a … here."
+            // (the original's model; see Perception.RoomItemLines)
+            foreach (var line in Perception.RoomItemLines(ctx.World, ctx.Modules, room, ctx.Agent.Id))
+                sb.AppendLine(line);
 
             // dressed agents get a line each — the listing stays compact
             foreach (var line in Perception.DressedLines(ctx.World, ctx.Modules, room, ctx.Agent.Id))
@@ -213,14 +223,14 @@ public static class BuiltinHandlers
                 Effects.Apply(ctx.Engine, onExit,
                     new EffectContext(ctx.Agent, portal, null, portal, ctx.Random));
             // the direction rides along ("You go east through the canvas
-            // awning into Market Square.") — this message is what memory
-            // stores, and direction+destination pairs are how a planner
-            // learns the map from its own footsteps
+            // awning.") — this message is what memory stores, and the
+            // direction is how a planner follows its own footsteps; the
+            // destination's name leads the room description that prints next
             var direction = ctx.Modules.ResolveString(portal, "portal", "direction") ?? "";
             var via = direction.Length > 0
                 ? $"{direction} through the {portal.Name}"
                 : $"through the {portal.Name}";
-            var message = $"You go {via} into {room.Name}.";
+            var message = $"You go {via}.";
             // first visit to a scored room (the kitchen, the cellar)
             var points = Score.AwardRoom(ctx.World, ctx.Modules, room);
             if (points != 0)
@@ -770,10 +780,12 @@ public static class BuiltinHandlers
             // names are observer-relative: strangers render by their
             // incognito description until the examiner has learned them
             var name = Knowledge.NameFor(ctx.Modules, ctx.Agent, target);
-            // items examine like the original: the description text (or
-            // its first-encounter FDESC, if somehow still unspent), else
-            // the classic dismissal — no name echo, nothing more
-            var description = DescriptionForExam(ctx, target);
+            // items examine like the original: the settled description
+            // text or the classic dismissal — never the FDESC (a listing
+            // line about where the thing first sat reads wrong in hand)
+            var description = target.HasModule("agent")
+                ? Knowledge.DescriptionFor(ctx.Modules, ctx.Agent, target)
+                : target.Description;
             if (target.HasModule("agent"))
                 sb.AppendLine(name);
             if (description.Length > 0)
@@ -831,27 +843,6 @@ public static class BuiltinHandlers
                     sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "in it"));
             }
             return ActionResult.Ok(sb.ToString().TrimEnd());
-        }
-
-        /// <summary>
-        /// The description to show on this examination: agents keep their
-        /// observer-relative (incognito) rendering; an object with an
-        /// unspent first description shows it once and marks it spent —
-        /// every later look is the settled LDESC.
-        /// </summary>
-        private static string DescriptionForExam(ActionContext ctx, WorldObject target)
-        {
-            if (target.HasModule("agent"))
-                return Knowledge.DescriptionFor(ctx.Modules, ctx.Agent, target);
-            var spent = target.Attributes.TryGetValue("firstDescriptionShown", out var shown) &&
-                        shown.ValueKind == JsonValueKind.True;
-            if (!spent && target.FirstDescription is { Length: > 0 } first)
-            {
-                ctx.World.SetAttribute(target.Id, "firstDescriptionShown",
-                    World.World.ToJson(true));
-                return first;
-            }
-            return target.Description;
         }
     }
 

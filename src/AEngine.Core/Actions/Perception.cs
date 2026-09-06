@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AEngine.Core.Modules;
 using AEngine.Core.World;
 
@@ -115,12 +116,83 @@ public static class Perception
     /// containers as separate entries ("brass key (in desk drawer)").
     /// </summary>
     /// <summary>
+    /// The room's item listing lines, the original's model: every visible
+    /// object that isn't scenery announces itself on every look — its
+    /// FDESC while it still sits at its loaded spot (the scene-setting
+    /// line reads true exactly as long as the scene holds), then its
+    /// LDESC once the world has moved it, then the generic
+    /// "There is a … here." Objects flagged <c>scenery</c> (the ZIL
+    /// NDESCBIT — the trophy case, the rug: described by the room's own
+    /// prose) never list. An open container groups its visible contents
+    /// under "The … contains:" as bare article-names; a surface's
+    /// contents list directly. Agents, portals, concealed objects, and
+    /// the observer are never listed.
+    /// </summary>
+    public static List<string> RoomItemLines(
+        World.World world, ModuleRegistry modules, WorldObject room, string agentId)
+    {
+        var lines = new List<string>();
+        void Emit(WorldObject item)
+        {
+            var atOrigin = item.Attributes.TryGetValue("originParent", out var origin) &&
+                           origin.ValueKind == JsonValueKind.String &&
+                           origin.GetString() == item.Parent;
+            lines.Add(atOrigin && item.FirstDescription is { Length: > 0 } first
+                ? first
+                : item.Description.Length > 0
+                    ? item.Description
+                    : $"There is a {item.Name} here.");
+            if (item.HasModule("container") && IsOpen(world, modules, item))
+            {
+                var contents = world.ChildrenOf(item.Id)
+                    .Where(c => !IsConcealed(modules, c)).ToList();
+                if (contents.Count > 0)
+                {
+                    lines.Add($"The {item.Name} contains:");
+                    foreach (var inner in contents)
+                        lines.Add("  " + CapitalizedArticle(inner.Name));
+                }
+            }
+        }
+        void Walk(WorldObject holder)
+        {
+            foreach (var child in world.ChildrenOf(holder.Id))
+            {
+                if (child.Id == agentId || child.HasModule("portal") ||
+                    child.HasModule("agent") || IsConcealed(modules, child))
+                    continue;
+                // scenery itself never lists, but its surface still holds
+                // what's on it — the kitchen table is silent, the sack on
+                // it is not
+                var scenery = child.Attributes.TryGetValue("scenery", out var flag) &&
+                              flag.ValueKind == JsonValueKind.True;
+                if (!scenery)
+                    Emit(child);
+                if (child.HasModule("surface"))
+                    Walk(child);
+            }
+        }
+        Walk(room);
+        return lines;
+    }
+
+    /// <summary>"a leaflet" / "quantity of water" → "A leaflet" / "A quantity of water".</summary>
+    private static string CapitalizedArticle(string name)
+    {
+        var article = name.StartsWith("a ", StringComparison.Ordinal) ||
+                      name.StartsWith("an ", StringComparison.Ordinal) ||
+                      name.StartsWith("some ", StringComparison.Ordinal)
+            ? ""
+            : "a ";
+        return char.ToUpperInvariant((article + name)[0]) + (article + name)[1..];
+    }
+
+    /// <summary>
     /// The objects visible in a room listing, in listing order: room
     /// children plus the contents of open containers and surfaces,
     /// recursively — the same set <see cref="DescribeRoomContents"/>
     /// renders as name entries. Excludes agents, portals, concealed
-    /// objects, and the observer. The set a first-encounter pass spends
-    /// FDESCs on (see the look handler).
+    /// objects, and the observer.
     /// </summary>
     public static List<WorldObject> VisibleObjects(
         World.World world, ModuleRegistry modules, WorldObject room, string agentId)

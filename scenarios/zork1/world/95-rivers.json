@@ -929,7 +929,10 @@
                 ]
               }
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "scarab",

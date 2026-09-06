@@ -14,17 +14,29 @@ referenced **by id** from other objects (e.g. two `portal` door-sides
 share one `doorstate` object via their `stateRef` field). Attribute
 values are `JsonElement`; a string holding another object's id is a
 reference by convention (`ref`-typed module fields). Objects carry a
-`name` (labels, listings — the Z-machine DESC) and a `description`
-(shown on examine — LDESC), plus an optional `firstDescription` (FDESC):
-printed and spent on the object's **first encounter** — the first room
-look that sees it (the look handler's initial-sight pass over the
-visible listing; an examine of a never-seen item spends it too). After
-that, examines show the settled description, or the classic "There's
-nothing special about the …" for items the original never described
-further. Examine does not echo the item's name, and closed containers
-reveal nothing. Room looks do not list exits by default
-(`engine.ShowExitsInLook`, the CLI's `/showexits`; planner contexts
-build their own).
+`name` (labels, listings — the Z-machine DESC), a `description` (the
+settled description — LDESC), and an optional `firstDescription` (FDESC).
+Room looks list every visible object that isn't flagged `scenery`
+(the ZIL NDESCBIT — things the room's own prose describes): its FDESC
+on every look while it still sits at its loaded spot (the loader
+records `originParent`; the scene-setting line reads true exactly as
+long as the scene holds), then its LDESC once the world has moved it,
+then the generic "There is a … here." Open containers append a contents
+group ("The small mailbox contains: / A leaflet"); a surface's contents
+list directly. Examine shows the settled description or the classic
+"There's nothing special about the …", never the FDESC and never the
+item's name, and closed containers reveal nothing.
+
+Room looks come in two modes. An **explicit look** always renders in
+full. The **arrival look** (the CLI passes "brief") renders in full only
+on the room's first sight — marking `room.visited`, after any entry
+scoring — and afterwards summarizes: the name, the item listing, who's
+here. The compact "You see:" item listing and "Exits:" line are
+navigational aids, off by default (`engine.ShowItemsInLook` /
+`ShowExitsInLook`, the CLI's `/listitems` and `/showexits`; planner
+contexts build their own). Movement messages carry the direction ("You
+go west through the path around the house.") and leave the destination
+to the room render that follows.
 
 **Runtime mutation** — `World` exposes `CreateObject`, `DestroyObject`
 (recursive), `MoveObject` (cycle-checked), `AddModule`, `RemoveModule`,

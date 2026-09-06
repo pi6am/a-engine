@@ -381,6 +381,7 @@ public class Zork0EngineTests
     public void ConcealedObjects_AreInvisibleUntilRevealed()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         var world = engine.World;
         world.CreateObject("trapdoor", "room_a", "trap door");
         world.AddModule("trapdoor", "portable");

@@ -22,9 +22,10 @@ public class AgentMemoryTests
 
         // the actor's message — and thus the memory entry — carries the
         // direction, so a planner reading its own footsteps can correlate
-        // "east" with where east goes
-        Assert.Equal("You go north through the wooden door into Room B.", result.Message);
-        Assert.Contains("You go north through the wooden door into Room B.",
+        // "east" with where east goes; the destination's name leads the
+        // room description that renders next
+        Assert.Equal("You go north through the wooden door.", result.Message);
+        Assert.Contains("You go north through the wooden door.",
             engine.Memory.Recall("alice"));
     }
 

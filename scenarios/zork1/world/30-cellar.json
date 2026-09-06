@@ -228,7 +228,10 @@
                   }
                 },
                 "weapon"
-              ]
+              ],
+              "attributes": {
+                "scenery": true
+              }
             }
           ]
         },

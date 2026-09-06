@@ -150,6 +150,10 @@ public static class ScenarioLoader
             else
             {
                 obj = world.CreateObject(id, parentId);
+                // the loaded spot is the object's origin: a first
+                // description (FDESC) renders in room listings while the
+                // object sits here, and stops once the world has moved it
+                obj.Attributes["originParent"] = World.World.ToJson(parentId);
             }
 
             if (node.Name is not null) obj.Name = node.Name;

@@ -130,6 +130,7 @@ public class OpposedCheckTests
     public void Shove_KnocksProne_AndGettingUpCostsAnAction()
     {
         var engine = NewEngine();
+        engine.ShowItemsInLook = true;
         SetStat(engine, "alice", "strength", 14);
         SetStat(engine, "bob", "agility", 12); // 14 vs 12: succeeds
         var alice = engine.World.GetObject("alice");

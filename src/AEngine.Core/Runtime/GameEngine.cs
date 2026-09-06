@@ -36,6 +36,14 @@ public sealed class GameEngine
     public bool ShowExitsInLook { get; set; }
 
     /// <summary>
+    /// Whether room looks append the compact "You see:" item listing —
+    /// a navigational aid like exits (default off; the CLI's
+    /// <c>/listitems</c> toggles it). First-sight FDESC lines and
+    /// alwaysListed item lines are fiction and always print.
+    /// </summary>
+    public bool ShowItemsInLook { get; set; }
+
+    /// <summary>
     /// The ending text once the game has ended (a handler's epilogue, or
     /// <see cref="DefeatText"/> when the player is incapacitated); null
     /// while the game is still running. NPC turns stop once set.
