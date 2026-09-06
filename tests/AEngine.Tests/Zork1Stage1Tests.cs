@@ -97,8 +97,7 @@ public class Zork1Stage1Tests
         var down = RunScript(engine, ["Open the trap door", "Go down", "Turn on the brass lantern"]);
         Assert.True(down.Success, down.Error);
         // the slam is a private sensation, delivered with the arrival
-        Assert.Contains(engine.SignalBus.Drain("player").Select(s => s.Text),
-            t => t.Contains("crashes shut"));
+        Assert.Contains(down.Transcript, t => t.Contains("crashes shut"));
         // shut and barred: the cellar's up side refuses
         Assert.False(engine.ModuleRegistry.ResolveBool(
             world.GetObject("trapdoor_state"), "doorstate", "open"));
@@ -134,15 +133,13 @@ public class Zork1Stage1Tests
             "Turn on the brass lantern",
         ]);
         Assert.True(down.Success, down.Error);
-        Assert.Contains(engine.SignalBus.Drain("player").Select(s => s.Text),
-            t => t.Contains("crashes shut"));
+        Assert.Contains(down.Transcript, t => t.Contains("crashes shut"));
 
         // leaving and re-entering the cellar through an already-barred
         // door stays quiet — the slam only happens while it is open
         var revisit = RunScript(engine, ["Go north", "Go south"]);
         Assert.True(revisit.Success, revisit.Error);
-        Assert.DoesNotContain(engine.SignalBus.Drain("player").Select(s => s.Text),
-            t => t.Contains("crashes shut"));
+        Assert.DoesNotContain(revisit.Transcript, t => t.Contains("crashes shut"));
 
         // the slam is spent now: reopen from above and descend again
         // WITHOUT re-arming, and the door stays open behind you
@@ -164,8 +161,7 @@ public class Zork1Stage1Tests
             "Go west", "Open the trap door", "Go down",
         ]);
         Assert.True(quiet.Success, quiet.Error);
-        Assert.DoesNotContain(engine.SignalBus.Drain("player").Select(s => s.Text),
-            t => t.Contains("crashes shut"));
+        Assert.DoesNotContain(quiet.Transcript, t => t.Contains("crashes shut"));
         Assert.True(engine.ModuleRegistry.ResolveBool(
             world.GetObject("trapdoor_state"), "doorstate", "open"));
 
@@ -183,8 +179,7 @@ public class Zork1Stage1Tests
         ]);
         Assert.True(reopen.Success, reopen.Error);
         // first descent slams, the climb re-arms, the second descent slams
-        Assert.Equal(2, engine2.SignalBus.Drain("player").Count(t =>
-            t.Text.Contains("crashes shut")));
+        Assert.Equal(2, reopen.Transcript.Count(t => t.Contains("crashes shut")));
 
         // the re-arm belongs to the CLIMB, not the kitchen: teleporting
         // there (debug console, future spells) leaves the slam spent
@@ -198,15 +193,13 @@ public class Zork1Stage1Tests
             "Turn on the brass lantern",
         ]);
         Assert.True(teleported.Success, teleported.Error);
-        engine3.SignalBus.Drain("player"); // discard the first slam's message
         world3.MoveObject("player", "kitchen"); // the debug-teleport shortcut
         var afterTeleport = RunScript(engine3,
         [
             "Go west", "Open the trap door", "Go down",
         ]);
         Assert.True(afterTeleport.Success, afterTeleport.Error);
-        Assert.DoesNotContain(engine3.SignalBus.Drain("player").Select(s => s.Text),
-            t => t.Contains("crashes shut"));
+        Assert.DoesNotContain(afterTeleport.Transcript, t => t.Contains("crashes shut"));
         // the door stays open behind the unslammed descent
         Assert.True(engine3.ModuleRegistry.ResolveBool(
             world3.GetObject("trapdoor_state"), "doorstate", "open"));

@@ -46,7 +46,7 @@ Go south
 Go southeast
 
 # the name of his father's murderer
-Speak to the cyclops :: ulysses
+Say: ulysses
 Go up
 
 # the thief: hand over the egg, then settle it

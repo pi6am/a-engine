@@ -105,8 +105,7 @@ public class Zork1Stage2Tests
 
         var result = RunScript(engine, ["Move the skeleton"]);
         Assert.True(result.Success, result.Error);
-        Assert.Contains(engine.SignalBus.Drain("player").Select(s => s.Text),
-            t => t.Contains("casts a curse"));
+        Assert.Contains(result.Transcript, t => t.Contains("casts a curse"));
 
         // the treasure is gone from your hands — it lies with the dead
         Assert.Equal("land_of_living_dead", world.RoomOf("bag_of_coins").Id);
@@ -130,7 +129,7 @@ public class Zork1Stage2Tests
         var moved = RunScript(engine, ["Move the pile of leaves"]);
         Assert.True(moved.Success, moved.Error);
         Assert.Equal("Done.", moved.Transcript[0]);
-        Assert.Contains(engine.SignalBus.Drain("player").Select(s => s.Text),
+        Assert.Contains(moved.Transcript,
             t => t == "In disturbing the pile of leaves, a grating is revealed.");
         Assert.Contains(engine.ActionResolver.Resolve(player), a => a.TargetId == "gc_down");
         var lookAfter = engine.TurnManager.Execute(player, "look", "player");
@@ -181,14 +180,15 @@ public class Zork1Stage2Tests
             Assert.Contains("miss", swing.Message);
         }
 
-        // the wrong name does nothing
-        var wrong = RunScript(engine, ["Speak to the cyclops :: nobody"]);
-        Assert.False(wrong.Success);
+        // the wrong name is just talk — he stays
+        var wrong = RunScript(engine, ["Say: nobody"]);
+        Assert.True(wrong.Success, wrong.Error);
         Assert.True(world.HasObject("cyclops"));
 
-        // the right name: he flees through the wall, everything opens
-        var right = RunScript(engine, ["Speak to the cyclops :: odysseus"]);
+        // the right name, overheard: he flees through the wall, everything opens
+        var right = RunScript(engine, ["Say: odysseus"]);
         Assert.True(right.Success, right.Error);
+        Assert.Contains(right.Transcript, t => t.Contains("father's murderer"));
         Assert.False(world.HasObject("cyclops"));
         Assert.True(engine.ModuleRegistry.ResolveBool(
             world.GetObject("magic_state"), "flag", "value"));

@@ -238,7 +238,17 @@ Ephemeral sensory observations (`SignalSense.Visual | Audible`) delivered
 by `SignalBus` on `GameEngine` into per-agent in-memory queues
 (`Emit`/`Drain`/`Peek`), plus private sensations via `SendTo`: an object
 with the `ambient` module periodically sends one of its `texts` variants
-to the agent holding it — a cursed mark burning. The delay comes from
+to the agent holding it — a cursed mark burning. An object with the
+`eavesdrop` module LISTENS to what is delivered to it: triggers
+(`keywords`, optional `sense` — audible by default — `when` conditions,
+`effects`) fire when a delivered signal's text contains a keyword, so
+reactions ride on *perceived* speech rather than special commands —
+Zork's cyclops flees at "Odysseus" buried in any sentence said aloud in
+his room. Reactions are collected at delivery and applied when the
+outermost delivery unwinds (a fleeing listener's farewell signal can't
+re-enter the observer walk); attenuated renderings (a murmur through a
+door) carry no words, so no keywords — overheard means heard clearly.
+The delay comes from
 the `interval` spec, either a fixed number of seconds or
 `{ "min": n, "max": n }` (uniform random, re-rolled per emission), and
 tracks time actually passing: real-time ticks advance all timers, while
@@ -949,11 +959,13 @@ generic throughout.
   the `ranks` list's title.
 - **Walkthrough verification** (`AEngine.Cli/Walkthrough.cs`, CLI
   `--walkthrough FILE [--seed N]`) — replays exact action labels (plus
-  "Say: …" speech lines and "Label :: text" for other prompted verbs,
-  and "Label xN" to repeat a command up to N times — combat under a
-  frozen seed takes as many swings as it takes) through the same
+  "Say: …" speech lines and "Label xN" to repeat a command up to N
+  times — combat under a frozen seed takes as many swings as it takes)
+  through the same
   deterministic matcher LLM plan execution uses, with NPC rounds and
-  default-resolved reactions between steps; it stops with the line
+  default-resolved reactions between steps; observed signals (the
+  cyclops's farewell, the echo room's acoustics shifting) are drained
+  into the transcript as part of each step. It stops with the line
   number on the first unrecognized or failed command.
   No LLM attached, byte-identical replays under a frozen seed. The
   Zork I scenario ships a complete 369-move walkthrough

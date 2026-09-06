@@ -1737,6 +1737,18 @@
           }
         }
       ]
+    },
+    {
+      "id": "eavesdrop",
+      "name": "Eavesdropper (keyword reactions to perceived signals)",
+      "fields": [
+        {
+          "name": "triggers",
+          "type": "list",
+          "default": [],
+          "doc": "entries: { keywords: [...], sense?: audible (default) | any, when?: [...], effects: [...] } - fire when a delivered signal's text contains a keyword"
+        }
+      ]
     }
   ]
 }

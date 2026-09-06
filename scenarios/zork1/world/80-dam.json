@@ -430,29 +430,33 @@
           "name": "echo",
           "description": "The room's own voice, shouting back at you.",
           "modules": [
-            "askable",
             {
-              "module": "askable",
+              "module": "eavesdrop",
               "overrides": {
-                "answers": {
-                  "echo": [
-                    {
-                      "set": {
-                        "object": "echo_solved",
-                        "module": "flag",
-                        "field": "value",
-                        "value": true
+                "triggers": [
+                  {
+                    "keywords": [
+                      "echo"
+                    ],
+                    "effects": [
+                      {
+                        "signal": {
+                          "from": "the_echo",
+                          "sense": "audible",
+                          "text": "The acoustics of the room change subtly."
+                        }
+                      },
+                      {
+                        "set": {
+                          "object": "echo_solved",
+                          "module": "flag",
+                          "field": "value",
+                          "value": true
+                        }
                       }
-                    },
-                    {
-                      "signal": {
-                        "from": "the_echo",
-                        "sense": "audible",
-                        "text": "The acoustics of the room change subtly."
-                      }
-                    }
-                  ]
-                }
+                    ]
+                  }
+                ]
               }
             }
           ]

@@ -64,7 +64,7 @@ public sealed class GameEngine
         PolicyRegistry = new PolicyRegistry();
         GateRegistry = new GateRegistry();
         Memory = new AgentMemory(ModuleRegistry);
-        SignalBus = new SignalBus(World, ModuleRegistry, Memory);
+        SignalBus = new SignalBus(this, World, ModuleRegistry, Memory);
         Scheduler = new Scheduler();
         Reactions = new ReactionManager(this);
         ActionResolver = new ActionResolver(World, ModuleRegistry);

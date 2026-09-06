@@ -295,6 +295,54 @@ public class Zork1ScenarioTests
         Assert.EndsWith("few have survived its fearsome jaws to tell the tale.", result.Message);
         Assert.Equal(1, engine.TurnManager.Turn); // asking passes the time
     }
+
+    [Fact]
+    public void Cyclops_FleesOnOverheardName_InBroadcastSpeech()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+        world.MoveObject("player", "cyclops_room");
+        world.MoveObject("lamp", "player");
+        world.SetFieldOverride("lamp", "lightsource", "on", AEngine.Core.World.World.ToJson(true));
+
+        // the name buried in an ordinary sentence of broadcast speech —
+        // no special command, no directed address: the cyclops listens
+        var say = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
+        var result = engine.TurnManager.PerformAction(player, say,
+            "Be afraid, for I am Odysseus, here to kill you.");
+        Assert.StartsWith("You say:", result.Message);
+
+        Assert.False(world.HasObject("cyclops")); // fled
+        Assert.True(engine.ModuleRegistry.ResolveBool(
+            world.GetObject("magic_state"), "flag", "value"));
+        Assert.True(engine.ModuleRegistry.ResolveBool(
+            world.GetObject("cyclops_out"), "flag", "value"));
+        // and the farewell is seen, not inferred
+        Assert.Contains(engine.SignalBus.Drain(player.Id), s =>
+            s.Text.Contains("father's murderer", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Cyclops_FleesOnUlyssesToo_AndStaysGone()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+        world.MoveObject("player", "cyclops_room");
+        world.MoveObject("lamp", "player");
+        world.SetFieldOverride("lamp", "lightsource", "on", AEngine.Core.World.World.ToJson(true));
+
+        var say = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
+        engine.TurnManager.PerformAction(player, say, "Ulysses sends his regards.");
+        Assert.False(world.HasObject("cyclops"));
+
+        // the passage he knocked open is one-way magic: gone is gone
+        var say2 = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
+        engine.TurnManager.PerformAction(player, say2, "odysseus! ODYSSEUS!");
+        Assert.True(engine.ModuleRegistry.ResolveBool(
+            world.GetObject("magic_state"), "flag", "value"));
+    }
 }
 
 /// <summary>Thin alias so scenario tests read as scripts, not machinery.</summary>

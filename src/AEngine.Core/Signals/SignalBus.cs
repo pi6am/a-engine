@@ -40,13 +40,21 @@ namespace AEngine.Core.Signals;
 /// </summary>
 public sealed class SignalBus
 {
+    private readonly Runtime.GameEngine _engine;
     private readonly World.World _world;
     private readonly ModuleRegistry _modules;
     private readonly Runtime.AgentMemory _memory;
     private readonly Dictionary<string, Queue<Signal>> _queues = new(StringComparer.Ordinal);
 
-    public SignalBus(World.World world, ModuleRegistry modules, Runtime.AgentMemory memory)
+    // eavesdrop reactions collected during delivery, applied when the
+    // outermost Emit/SendTo unwinds (see Eavesdrop): re-entrancy guard
+    private int _deliveryDepth;
+    private readonly List<(WorldObject Listener, System.Text.Json.JsonElement Effects)> _eavesdrops = [];
+
+    public SignalBus(Runtime.GameEngine engine, World.World world, ModuleRegistry modules,
+        Runtime.AgentMemory memory)
     {
+        _engine = engine;
         _world = world;
         _modules = modules;
         _memory = memory;
@@ -69,11 +77,27 @@ public sealed class SignalBus
     {
         if (specs.Count == 0)
             return;
-        if (traversal is not null)
+        _deliveryDepth++;
+        try
         {
-            EmitTraversal(actor, specs, traversal);
-            return;
+            if (traversal is not null)
+            {
+                EmitTraversal(actor, specs, traversal);
+                return;
+            }
+            EmitInner(actor, target, specs, arg, extra, targetName);
         }
+        finally
+        {
+            if (--_deliveryDepth == 0)
+                FlushEavesdrops();
+        }
+    }
+
+    private void EmitInner(
+        WorldObject actor, WorldObject? target, IReadOnlyList<SignalSpec> specs,
+        string? arg, IReadOnlyDictionary<string, string>? extra, string? targetName)
+    {
         var originRoomId = _world.RoomOf(actor.Id).Id;
         // A portal action (e.g. closing a door) manifests on both sides of
         // the door: observers in the other side's room perceive it as if it
@@ -91,7 +115,7 @@ public sealed class SignalBus
         }
         foreach (var observer in _world.Objects.Values)
         {
-            if (observer.Id == actor.Id || !observer.HasModule("agent"))
+            if (observer.Id == actor.Id || !Observes(observer))
                 continue;
             var best = BestReceivable(
                 observer, originRoomId, actor, target, normalSpecs, arg, extra,
@@ -101,6 +125,16 @@ public sealed class SignalBus
             Enqueue(observer, best);
         }
     }
+
+    /// <summary>
+    /// Who receives signals at all: agents — and eavesdroppers, objects
+    /// that listen without being alive (an echo that answers its name,
+    /// a room's listening post). An eavesdropper's delivery skips the
+    /// queue drainers nobody runs for it; what matters is that its
+    /// triggers see the signal at Enqueue time.
+    /// </summary>
+    private static bool Observes(WorldObject observer) =>
+        observer.HasModule("agent") || observer.HasModule("eavesdrop");
 
     /// <summary>
     /// The room of the other side of the targeted portal (same shared
@@ -189,10 +223,43 @@ public sealed class SignalBus
     /// formatting: the text is authored for the perceiver, and it lands in
     /// memory at high salience (it's about them).
     /// </summary>
-    public void SendTo(WorldObject observer, string text) =>
-        Enqueue(observer, new Signal(
-            SignalSense.Visual, 0, text, _world.RoomOf(observer.Id).Id),
-            _memory.SalienceBoostOf(observer));
+    public void SendTo(WorldObject observer, string text)
+    {
+        _deliveryDepth++;
+        try
+        {
+            Enqueue(observer, new Signal(
+                SignalSense.Visual, 0, text, _world.RoomOf(observer.Id).Id),
+                _memory.SalienceBoostOf(observer));
+        }
+        finally
+        {
+            if (--_deliveryDepth == 0)
+                FlushEavesdrops();
+        }
+    }
+
+    /// <summary>
+    /// Apply the eavesdrop reactions collected during delivery. Runs on
+    /// the outermost delivery's unwind, inside the caller's engine lock:
+    /// world mutations (a listener fleeing mid-farewell) never race the
+    /// observer walk, and a reaction's own signals are a fresh delivery.
+    /// </summary>
+    private void FlushEavesdrops()
+    {
+        if (_eavesdrops.Count == 0)
+            return;
+        var reactions = _eavesdrops.ToArray();
+        _eavesdrops.Clear();
+        foreach (var (listener, effects) in reactions)
+        {
+            // an earlier reaction may have destroyed or moved the listener
+            if (!_world.HasObject(listener.Id) || !listener.HasModule("eavesdrop"))
+                continue;
+            Actions.Effects.Apply(_engine, effects,
+                new EffectContext(Self: listener, Random: _engine.Random));
+        }
+    }
 
     /// <summary>
     /// The cheapest attenuation cost from the origin to each reachable
@@ -448,10 +515,18 @@ public sealed class SignalBus
                          IsSoloAddressee(signal, observer))
                             ? _memory.SalienceBoostOf(observer)
                             : 0) + signal.Salience;
-        _memory.Record(observer, signal.Text, salience: salience);
-        // and overheard proper names are learned: hearing "Nix, pass the
-        // salt" is how you come to know who Nix is
-        Knowledge.LearnFromText(_world, _modules, observer, signal.Text);
+        // memory is for minds: a listening post hears, it doesn't remember
+        if (observer.HasModule("agent"))
+        {
+            _memory.Record(observer, signal.Text, salience: salience);
+            // and overheard proper names are learned: hearing "Nix, pass the
+            // salt" is how you come to know who Nix is
+            Knowledge.LearnFromText(_world, _modules, observer, signal.Text);
+        }
+        // eavesdroppers react to what reaches them (applied at flush time)
+        if (observer.HasModule("eavesdrop"))
+            _eavesdrops.AddRange(Eavesdrop.Match(_world, _modules, observer, signal)
+                .Select(m => (m.Listener, m.Effects)));
     }
 
     private string Format(

@@ -38,7 +38,7 @@ Go southwest
 Go east
 Go south
 Go southeast
-Speak to the cyclops :: ulysses
+Say: ulysses
 Go up
 Give the jewel-encrusted egg to the thief
 Attack the thief x60
@@ -70,7 +70,7 @@ Go north
 Go east
 Go east
 Go east
-Speak to the echo :: echo
+Say: echo
 Take the platinum bar
 Go up
 Go east

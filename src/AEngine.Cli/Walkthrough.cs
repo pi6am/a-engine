@@ -19,8 +19,7 @@ public sealed record WalkthroughResult(
 /// live engine, deterministically, with no LLM attached. Lines are exact
 /// action labels ("Go north", "Put the elvish sword into the trophy
 /// case"), speech lines in the plan syntax ("Say: echo"), blank lines
-/// and #-comments, and "<label> :: <text>" for other prompted verbs
-/// ("Speak to the cyclops :: odysseus"). Matching goes through
+/// and #-comments. Matching goes through
 /// PlanExecutor.MatchAvailableOrPotential — the same deterministic
 /// matcher LLM plan execution uses. After each step the NPCs get their
 /// round and any pending reactions resolve to their effective defaults,
@@ -44,14 +43,6 @@ public static class Walkthrough
             var line = raw.Trim();
             if (line.Length == 0 || line.StartsWith('#'))
                 continue;
-            // "<label> :: <free text>" feeds a prompted verb its argument
-            string? text = null;
-            var sep = line.IndexOf("::", StringComparison.Ordinal);
-            if (sep >= 0)
-            {
-                text = line[(sep + 2)..].Trim();
-                line = line[..sep].Trim();
-            }
             // "<label> xN" performs the command up to N times, stopping
             // early without error once it stops resolving — combat under
             // a frozen seed takes as many swings as it takes
@@ -74,8 +65,6 @@ public static class Walkthrough
                     return WalkthroughResult.Fail(
                         $"Line {lineNo}: unrecognized command '{line}'.", lineNo, transcript);
                 }
-                if (text is not null)
-                    action = action with { Text = text };
                 var result = engine.TurnManager.PerformAction(player, action, action.Text);
                 if (swing == 0)
                 {
@@ -83,6 +72,16 @@ public static class Walkthrough
                 }
                 log?.Invoke(result.Message);
                 transcript.Add(result.Message);
+                // what the player observes as a consequence — the cyclops's
+                // farewell, the acoustics changing — reads as part of the step
+                foreach (var signal in engine.SignalBus.Drain(player.Id))
+                {
+                    var line2 = signal.ThroughPortal
+                        ? $"You hear: {signal.Text}"
+                        : AEngine.Core.Text.Capitalize(signal.Text);
+                    log?.Invoke(line2);
+                    transcript.Add(line2);
+                }
                 if (result.Outcome == ActionOutcome.Failure)
                     return WalkthroughResult.Fail(
                         $"Line {lineNo}: command failed: {line} — {result.Message}", lineNo, transcript);

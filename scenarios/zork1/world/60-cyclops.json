@@ -60,72 +60,47 @@
               }
             },
             "attackable",
-            "askable",
             {
-              "module": "askable",
+              "module": "eavesdrop",
               "overrides": {
-                "answers": {
-                  "odysseus": [
-                    {
-                      "destroy": {
-                        "object": "cyclops"
+                "triggers": [
+                  {
+                    "keywords": [
+                      "ulysses",
+                      "odysseus"
+                    ],
+                    "effects": [
+                      {
+                        "signal": {
+                          "from": "cyclops",
+                          "sense": "visual",
+                          "text": "The cyclops, hearing the name of his father's murderer, flees the room by knocking a huge hole in the east wall!"
+                        }
+                      },
+                      {
+                        "destroy": {
+                          "object": "cyclops"
+                        }
+                      },
+                      {
+                        "set": {
+                          "object": "magic_state",
+                          "module": "flag",
+                          "field": "value",
+                          "value": true
+                        }
+                      },
+                      {
+                        "set": {
+                          "object": "cyclops_out",
+                          "module": "flag",
+                          "field": "value",
+                          "value": true
+                        }
                       }
-                    },
-                    {
-                      "set": {
-                        "object": "magic_state",
-                        "module": "flag",
-                        "field": "value",
-                        "value": true
-                      }
-                    },
-                    {
-                      "set": {
-                        "object": "cyclops_out",
-                        "module": "flag",
-                        "field": "value",
-                        "value": true
-                      }
-                    },
-                    {
-                      "signal": {
-                        "from": "cyclops",
-                        "sense": "visual",
-                        "text": "The cyclops, hearing the name of his father's murderer, flees the room by knocking a huge hole in the east wall!"
-                      }
-                    }
-                  ],
-                  "ulysses": [
-                    {
-                      "destroy": {
-                        "object": "cyclops"
-                      }
-                    },
-                    {
-                      "set": {
-                        "object": "magic_state",
-                        "module": "flag",
-                        "field": "value",
-                        "value": true
-                      }
-                    },
-                    {
-                      "set": {
-                        "object": "cyclops_out",
-                        "module": "flag",
-                        "field": "value",
-                        "value": true
-                      }
-                    },
-                    {
-                      "signal": {
-                        "from": "cyclops",
-                        "sense": "visual",
-                        "text": "The cyclops, hearing the name of his father's murderer, flees the room by knocking a huge hole in the east wall!"
-                      }
-                    }
-                  ]
-                }
+                    ]
+                  }
+                ]
               }
             }
           ]

@@ -116,10 +116,12 @@ public class Zork1Stage3Tests
         Assert.Contains("cannot even hear", blocked.Message);
 
         // the wrong word is lost in the noise; the right one quiets it
-        var wrong = RunScript(engine, ["Speak to the echo :: hello"]);
-        Assert.False(wrong.Success);
-        var right = RunScript(engine, ["Speak to the echo :: echo"]);
+        var wrong = RunScript(engine, ["Say: hello"]);
+        Assert.True(wrong.Success, wrong.Error);
+        Assert.False(Flag(engine, "loud_quiet"));
+        var right = RunScript(engine, ["Say: echo"]);
         Assert.True(right.Success, right.Error);
+        Assert.Contains(right.Transcript, t => t.Contains("acoustics"));
         Assert.True(Flag(engine, "loud_quiet"));
         Assert.True(engine.TurnManager.PerformAction(player, take).Success);
     }
