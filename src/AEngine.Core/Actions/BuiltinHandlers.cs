@@ -1,3 +1,4 @@
+using AEngine.Core;
 using System.Text;
 using System.Text.Json;
 using AEngine.Core.Runtime;
@@ -64,8 +65,6 @@ public static class BuiltinHandlers
             ? value
             : fallback;
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
     // flavor verbs that don't change the world ("Touch the red flower") —
     // the message interpolates the affordance's verb
@@ -438,7 +437,7 @@ public static class BuiltinHandlers
             if (item.Parent != ctx.Agent.Id)
                 return ActionResult.Noop($"You're not carrying the {item.Name}.");
             if (ctx.Reaction is { NoResist: false })
-                return ActionResult.Fail(Capitalize(
+                return ActionResult.Fail(Text.Capitalize(
                     $"{Knowledge.NameFor(ctx.Modules, ctx.Agent, recipient)} declines {Perception.WithDefiniteArticle(item.Name)}."));
             ctx.World.MoveObject(item.Id, recipient.Id);
             return ActionResult.Ok(
@@ -646,7 +645,7 @@ public static class BuiltinHandlers
                 {
                     part = BodyParts.FindByName(ctx.World, target, aimed, random);
                     if (part is null)
-                        return ActionResult.Fail($"{Capitalize(targetName)} has no such part.");
+                        return ActionResult.Fail($"{Text.Capitalize(targetName)} has no such part.");
                     margin -= BodyParts.AimedPenalty(ctx.Modules, part);
                 }
                 else
@@ -714,7 +713,7 @@ public static class BuiltinHandlers
             if (fragment is not null)
                 message += " " + fragment;
             if (alreadyDown)
-                message += $" {Capitalize(targetName)} is already incapacitated.";
+                message += $" {Text.Capitalize(targetName)} is already incapacitated.";
             return ActionResult.Ok(message);
         }
     }
@@ -1150,7 +1149,7 @@ public static class BuiltinHandlers
                 ? ""
                 : Knowledge.NameFor(ctx.Modules, ctx.Agent, holder);
             string Render(string template, string? wantsName = null) =>
-                Capitalize(template
+                Text.Capitalize(template
                     .Replace("{holder}", holderName, StringComparison.Ordinal)
                     .Replace("{target}", Perception.WithDefiniteArticle(ware.Name), StringComparison.Ordinal)
                     .Replace("{wants}",
@@ -1243,7 +1242,7 @@ public static class BuiltinHandlers
             {
                 var names = missing.Select(id =>
                     ctx.World.HasObject(id) ? ctx.World.GetObject(id).Name : id);
-                var lack = Capitalize(Data(ctx, "onNeeds",
+                var lack = Text.Capitalize(Data(ctx, "onNeeds",
                         "{host} shakes their head — the rite still needs: {items}.")
                     .Replace("{host}", host.Name, StringComparison.Ordinal)
                     .Replace("{items}", string.Join(", ", names), StringComparison.Ordinal));
@@ -1402,14 +1401,14 @@ public static class BuiltinHandlers
             var max = ctx.Modules.ResolveInt(target, "spawner", "maxChildren", 1);
             if (Spawning.CloneCount(ctx.World, parent, templateId) >= max)
                 return ActionResult.Noop(
-                    $"{Capitalize(Perception.WithDefiniteArticle(parent.Name))} is already occupied.");
+                    $"{Text.Capitalize(Perception.WithDefiniteArticle(parent.Name))} is already occupied.");
             var id = templateId;
             for (var n = 1; ctx.World.HasObject(id); n++)
                 id = $"{templateId}_{n}";
             var clone = ctx.World.CloneTree(templateId, parent.Id, id);
             var prep = parent.HasModule("surface") ? "on" : "at";
             return ActionResult.Ok(
-                $"{Capitalize(Perception.WithArticle(clone.Name))} now sits {prep} {Perception.WithDefiniteArticle(parent.Name)}.");
+                $"{Text.Capitalize(Perception.WithArticle(clone.Name))} now sits {prep} {Perception.WithDefiniteArticle(parent.Name)}.");
         }
     }
 

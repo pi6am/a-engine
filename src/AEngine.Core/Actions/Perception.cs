@@ -84,6 +84,18 @@ public static class Perception
     }
 
     /// <summary>
+    /// Lock observability's mirror: whether the shared doorstate (or
+    /// openable's own state) is currently locked. Like IsOpen, this is
+    /// the one implementation — HandlerState delegates here.
+    /// </summary>
+    public static bool IsLocked(World.World world, ModuleRegistry modules, WorldObject target)
+    {
+        var state = GetOpenState(world, modules, target);
+        return state is not null &&
+               modules.ResolveBool(state.Value.StateObject, state.Value.ModuleId, "locked");
+    }
+
+    /// <summary>
     /// State annotation for a room listing: "" for plain objects,
     /// " (closed)" / " (open)" for openables.
     /// </summary>

@@ -1,3 +1,4 @@
+using AEngine.Core;
 using AEngine.Core.Modules;
 using AEngine.Core.World;
 
@@ -628,24 +629,13 @@ public sealed class ActionResolver
         return true;
     }
 
-    private bool HasOpenState(WorldObject target) => PortalOrSelf(target) is not null;
+    private bool HasOpenState(WorldObject target) =>
+        Perception.GetOpenState(_world, _modules, target) is not null;
 
     private bool HasLockState(WorldObject target) =>
         target.HasModule("lockable");
 
     private bool IsOpenState(WorldObject target) => Perception.IsOpen(_world, _modules, target);
-
-    private (WorldObject StateObject, string ModuleId)? PortalOrSelf(WorldObject target)
-    {
-        if (target.HasModule("portal"))
-        {
-            var stateRef = _modules.ResolveString(target, "portal", "stateRef");
-            if (stateRef is not null && _world.HasObject(stateRef))
-                return (_world.GetObject(stateRef), "doorstate");
-            return null;
-        }
-        return target.HasModule("openable") ? (target, "openable") : null;
-    }
 
     /// <summary>
     /// True when the part's wear region is covered by a worn garment on
@@ -692,7 +682,7 @@ public sealed class ActionResolver
         // like Say's [to X]): "Attack the arena duelist [in the {part}]"
         "attack" when BodyParts.Of(_world, target).Count > 0 =>
             $"Attack {The(agent, target)} [in the {{part}}]",
-        _ => $"{Capitalize(affordance.Verb)} {The(agent, target)}",
+        _ => $"{Text.Capitalize(affordance.Verb)} {The(agent, target)}",
         };
     }
 
@@ -707,6 +697,4 @@ public sealed class ActionResolver
     private string The(WorldObject observer, WorldObject target) =>
         Perception.WithDefiniteArticle(NameFor(observer, target));
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }

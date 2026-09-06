@@ -1,3 +1,4 @@
+using AEngine.Core;
 using AEngine.Core.Modules;
 using AEngine.Core.World;
 
@@ -137,9 +138,7 @@ public static class Conditions
             .Select(c => modules.ResolveString(c, "condition", "selfText") is { Length: > 0 } text
                 ? text
                 : $"You feel {LabelOf(modules, c)}.")
-            .Select(Capitalize)
+            .Select(Text.Capitalize)
             .ToList();
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }

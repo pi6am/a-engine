@@ -23,24 +23,19 @@ public static class Light
     /// <summary>
     /// Whether the agent can see: always-lit agents (ghosts), lit rooms,
     /// or a live light source present in the room or the agent's own
-    /// belongings.
+    /// belongings. One implementation — the room query carries it.
     /// </summary>
     public static bool IsLit(World.World world, ModuleRegistry modules, WorldObject agent)
     {
         if (modules.ResolveBool(agent, "agent", "alwaysLit"))
             return true;
-        var room = world.RoomOf(agent.Id);
-        if (!modules.ResolveBool(room, "room", "dark"))
-            return true;
-        // a light anywhere visible in the room — or in the agent's own
-        // pockets, even from another (lit) room's perspective
-        return LightsPresent(world, modules, room, agent);
+        return RoomIsLit(world, modules, world.RoomOf(agent.Id), agent);
     }
 
     /// <summary>
-    /// Whether the room would be lit for an agent standing in it with
-    /// the given carry-along light check: used by handlers that need the
-    /// destination's darkness before/after a move.
+    /// Whether a room would be lit for an agent standing in it — the
+    /// shared room query behind IsLit and the go handler's
+    /// destination check.
     /// </summary>
     public static bool RoomIsLit(
         World.World world, ModuleRegistry modules, WorldObject room, WorldObject agent) =>

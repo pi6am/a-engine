@@ -22,12 +22,8 @@ internal static class HandlerState
     public static bool IsOpen(ActionContext ctx, WorldObject target) =>
         Perception.IsOpen(ctx.World, ctx.Modules, target);
 
-    public static bool IsLocked(ActionContext ctx, WorldObject target)
-    {
-        var state = GetOpenState(ctx, target);
-        return state is not null &&
-               ctx.Modules.ResolveBool(state.Value.StateObject, state.Value.ModuleId, "locked");
-    }
+    public static bool IsLocked(ActionContext ctx, WorldObject target) =>
+        Perception.IsLocked(ctx.World, ctx.Modules, target);
 
     public static void SetOpen(ActionContext ctx, WorldObject target, bool open)
     {

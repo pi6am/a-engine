@@ -65,12 +65,8 @@ internal static class RuleConditions
     }
 
     private static string? Str(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
-            ? v.GetString()
-            : null;
+        GateArgs.String(obj, name);
 
     private static double? Dbl(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
-            ? v.GetDouble()
-            : null;
+        GateArgs.Number(obj, name);
 }

@@ -404,12 +404,8 @@ public static class Effects
         obj is null ? "" : Perception.WithDefiniteArticle(obj.Name);
 
     private static string? Str(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.String
-            ? v.GetString()
-            : null;
+        GateArgs.String(obj, name);
 
     private static double? Num(JsonElement obj, string name) =>
-        obj.TryGetProperty(name, out var v) && v.ValueKind == JsonValueKind.Number
-            ? v.GetDouble()
-            : null;
+        GateArgs.Number(obj, name);
 }

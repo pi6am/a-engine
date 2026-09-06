@@ -1,3 +1,4 @@
+using AEngine.Core;
 using AEngine.Core.Modules;
 using AEngine.Core.Runtime;
 using AEngine.Core.World;
@@ -41,7 +42,7 @@ public sealed class BlowHandler : IActionHandler
                 $"There is no point in attacking {Perception.WithDefiniteArticle(target.Name)}.");
         if (ctx.Modules.ResolveBool(target, "duelist", "out"))
             return ActionResult.Noop(
-                $"{Capitalize(target.Name)} is in no shape to fight.");
+                $"{Text.Capitalize(target.Name)} is in no shape to fight.");
         // the wielded weapon: a held item with the weapon module,
         // preferring the defender's own weakTo blade (the elvish sword
         // against the troll, the nasty knife against the thief) — the
@@ -148,8 +149,6 @@ public sealed class BlowHandler : IActionHandler
             World.World.ToJson(strength - damage));
     }
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }
 
 /// <summary>

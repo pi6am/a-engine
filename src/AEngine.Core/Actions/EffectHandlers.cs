@@ -114,9 +114,7 @@ public sealed class AnswerHandler : IActionHandler
     }
 
     private static string Normalize(string s) =>
-        string.Join(' ', s.ToLowerInvariant()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-            .Trim('.', '!', '?', '"', '\'');
+        AEngine.Core.Text.NormalizeWords(s).Trim('.', '!', '?', '"', '\'');
 }
 
 /// <summary>

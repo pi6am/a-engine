@@ -1,3 +1,4 @@
+using AEngine.Core;
 using AEngine.Core.Modules;
 using AEngine.Core.Signals;
 using AEngine.Core.World;
@@ -106,7 +107,7 @@ public static class Damage
         if (newlyCrippled)
         {
             fragments.Add(
-                $"{Capitalize(owner.Name)}'s {part.Name} is crippled!");
+                $"{Text.Capitalize(owner.Name)}'s {part.Name} is crippled!");
             foreach (var effect in BodyParts.CrippleEffects(modules, part))
                 switch (effect)
                 {
@@ -122,7 +123,7 @@ public static class Damage
                         {
                             world.SetFieldOverride(
                                 owner.Id, "agent", "posture", World.World.ToJson(Postures.Prone));
-                            fragments.Add($"{Capitalize(owner.Name)} topples to the ground.");
+                            fragments.Add($"{Text.Capitalize(owner.Name)} topples to the ground.");
                         }
                         break;
                         // no_stand: passive — the stand handler refuses while crippled
@@ -172,7 +173,7 @@ public static class Damage
         {
             world.SetFieldOverride(item.Id, "wearable", "worn", World.World.ToJson(false));
             world.MoveObject(item.Id, room.Id);
-            fragments.Add($"{Capitalize(item.Name)} clatters to the ground.");
+            fragments.Add($"{Text.Capitalize(item.Name)} clatters to the ground.");
         }
     }
 
@@ -194,10 +195,8 @@ public static class Damage
             world.SetFieldOverride(target.Id, "agent", "posture", World.World.ToJson(Postures.Prone));
         if (signals is not null && target.HasModule("agent"))
             signals.SendTo(target, collapses ? "You collapse, incapacitated!" : "You are incapacitated!");
-        var capitalized = Capitalize(target.Name);
+        var capitalized = Text.Capitalize(target.Name);
         return collapses ? $"{capitalized} collapses, incapacitated!" : $"{capitalized} is incapacitated!";
     }
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }

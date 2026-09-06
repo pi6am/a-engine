@@ -368,7 +368,5 @@ public sealed class PlanExecutor
         });
     }
 
-    private static string Normalize(string s) =>
-        string.Join(' ', s.ToLowerInvariant()
-            .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+    private static string Normalize(string s) => AEngine.Core.Text.NormalizeWords(s);
 }

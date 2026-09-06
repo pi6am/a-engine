@@ -1,3 +1,4 @@
+using AEngine.Core;
 using AEngine.Core.Modules;
 using AEngine.Core.World;
 
@@ -154,9 +155,9 @@ public static class Condition
         {
             if (Overall(world, modules, target) is { } o &&
                 !Health.IsIncapacitated(world, modules, target))
-                lines.Add($"{Capitalize(target.Name)} is {o.Label}.");
+                lines.Add($"{Text.Capitalize(target.Name)} is {o.Label}.");
             foreach (var part in CrippledParts(world, modules, target))
-                lines.Add($"{Capitalize(target.Name)}'s {part.Name} is crippled.");
+                lines.Add($"{Text.Capitalize(target.Name)}'s {part.Name} is crippled.");
             return lines;
         }
         var wounded = BodyParts.Of(world, target).Where(p => p.HasModule("health")).ToList();
@@ -169,6 +170,4 @@ public static class Condition
         return lines;
     }
 
-    private static string Capitalize(string s) =>
-        s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 }

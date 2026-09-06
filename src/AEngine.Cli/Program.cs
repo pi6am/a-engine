@@ -799,10 +799,7 @@ static string RenderSignal(Signal signal) =>
         ? signal.Sense == SignalSense.Visual
             ? $"You see: {signal.Text}"
             : $"You hear: {signal.Text}"
-        : Capitalize(signal.Text);
-
-static string Capitalize(string s) =>
-    s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
+        : AEngine.Core.Text.Capitalize(signal.Text);
 
 static string? FindScenarioDir(string relative)
 {
