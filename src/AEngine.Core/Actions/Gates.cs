@@ -72,7 +72,40 @@ public sealed class GateRegistry
     public static IEnumerable<IActionGate> Builtins() =>
         [new ConditionGate(), new FieldGate(), new ExposedGate(), new CoveredGate(),
          new EmbracedGate(), new PartsFreeGate(), new ExitGate(), new BarredGate(),
+         new GuardGate(),
          new CarryingGate(), new NotCarryingGate(), new LoadUnderGate(), new AllowOnlyGate()];
+}
+
+/// <summary>
+/// The guard gate: an item's own fields say who protects it. While the
+/// agent named in <c>guardedBy</c> is still in the fight — carrying none
+/// of the condition kinds listed in <c>guardConditions</c> — the item
+/// cannot be taken ("You'd be stabbed in the back first."). The message
+/// comes from <c>guardedText</c> through <see cref="Message"/>.
+/// </summary>
+public sealed class GuardGate : IActionGate
+{
+    public string Id => "guard";
+
+    public bool Blocks(ActionContext ctx, GateSpec spec)
+    {
+        var item = ctx.Target;
+        if (item is null || !item.HasModule("portable"))
+            return false;
+        var guardId = ctx.Modules.ResolveString(item, "portable", "guardedBy");
+        if (guardId is not { Length: > 0 } || !ctx.World.HasObject(guardId))
+            return false;
+        var guard = ctx.World.GetObject(guardId);
+        var releases = ctx.Modules.ResolveStringList(item, "portable", "guardConditions") ?? [];
+        return releases.Count == 0 ||
+               releases.All(kind => !Conditions.Has(ctx.World, ctx.Modules, guard, kind));
+    }
+
+    public string? Message(ActionContext ctx, GateSpec spec) =>
+        ctx.Target is { } item &&
+        ctx.Modules.ResolveString(item, "portable", "guardedText") is { Length: > 0 } text
+            ? text
+            : "Someone would stop you.";
 }
 
 /// <summary>

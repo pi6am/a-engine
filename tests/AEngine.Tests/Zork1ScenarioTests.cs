@@ -112,6 +112,32 @@ public class Zork1ScenarioTests
         Assert.DoesNotContain("path around the house, ", look);
     }
 
+    /// <summary>
+    /// Doors open and close in the original's voice: authored
+    /// openText/closeText on the shared door state own the whole line.
+    /// </summary>
+    [Fact]
+    public void DoorFlavor_IsTheOriginalText()
+    {
+        var engine = NewEngine();
+        var result = WalkthroughRunner.Run(engine,
+        [
+            "Go north", "Go southeast",
+            "Open the kitchen window", "Close the kitchen window", "Open the kitchen window",
+            "Go west", "Go west",
+            "Move the large oriental rug", "Open the trap door", "Close the trap door",
+        ]);
+        Assert.True(result.Success, result.Error);
+        Assert.Equal("With great effort, you open the window far enough to allow entry.",
+            result.Transcript[2]);
+        Assert.Equal("The window closes (more easily than it opened).",
+            result.Transcript[3]);
+        Assert.Equal(
+            "The door reluctantly opens to reveal a rickety staircase descending into darkness.",
+            result.Transcript[8]);
+        Assert.Equal("The door swings shut and closes.", result.Transcript[9]);
+    }
+
     [Fact]
     public void WestOfHouse_HasTheMailboxAndLeaflet()
     {
@@ -125,7 +151,7 @@ public class Zork1ScenarioTests
         var look = engine.TurnManager.Execute(world.GetObject("player"), "look", "player");
         Assert.Contains("small mailbox", look.Message);
         // the leaflet is inside a closed container: invisible
-        Assert.DoesNotContain(look.Message, "leaflet");
+        Assert.DoesNotContain("leaflet", look.Message);
 
         var result = WalkthroughRunner.Run(engine,
         [

@@ -99,7 +99,10 @@ public sealed class AgentContextBuilder
                          _engine.World, _engine.ModuleRegistry, room, agent.Id))
                 sb.AppendLine(line);
 
-            var exits = _engine.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
+            var exits = _engine.World.ChildrenOf(room.Id)
+                .Where(c => c.HasModule("portal") &&
+                            !Perception.IsConcealed(_engine.ModuleRegistry, c))
+                .ToList();
             if (exits.Count > 0)
             {
                 var parts = exits.Select(p =>

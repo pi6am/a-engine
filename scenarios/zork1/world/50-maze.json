@@ -1,0 +1,1510 @@
+{
+  "world": [
+    {
+      "id": "maze_1",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_1_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "troll_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_1_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maze_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_1_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_1_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_2",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_2_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_2_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "maze_4"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_2_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_3",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_3_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_3_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maze_4"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_3_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "maze_5"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_4",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_4_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_4_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maze_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_4_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "dead_end_1"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_5",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike. A skeleton, probably the remains of a luckless adventurer, lies here.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_5_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "dead_end_2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_5_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maze_3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_5_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "maze_6"
+              }
+            }
+          ]
+        },
+        {
+          "id": "skeleton",
+          "name": "skeleton",
+          "description": "The skeleton of a luckless adventurer, still wearing the tatters of a pack.",
+          "modules": [
+            "shiftable",
+            {
+              "module": "shiftable",
+              "overrides": {
+                "once": true,
+                "onMove": [
+                  {
+                    "signal": {
+                      "from": "skeleton",
+                      "sense": "visual",
+                      "text": "A ghost appears in the room and is appalled at the way you've been treating its remains. It casts a curse on your valuables and departs, moaning and groaning."
+                    }
+                  },
+                  {
+                    "scatter": {
+                      "from": "player",
+                      "filterModule": "treasure",
+                      "to": [
+                        "land_of_living_dead"
+                      ]
+                    }
+                  },
+                  {
+                    "set": {
+                      "of": "skeleton",
+                      "module": "shiftable",
+                      "field": "moved",
+                      "value": true
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "bag_of_coins",
+          "name": "leather bag of coins",
+          "description": "An old leather bag, heavy with coins.",
+          "modules": [
+            "portable",
+            "treasure",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 15
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 10,
+                "tvalue": 5
+              }
+            }
+          ]
+        },
+        {
+          "id": "rusty_knife",
+          "name": "rusty knife",
+          "description": "An ancient knife, its blade orange with rust.",
+          "modules": [
+            "portable",
+            "weapon",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            }
+          ]
+        },
+        {
+          "id": "keys",
+          "name": "skeleton key",
+          "description": "A gleaming key, carved from bone.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "dead_lantern",
+          "name": "burned-out lantern",
+          "description": "A lantern whose flame, and prospects, have long since gone out.",
+          "modules": [
+            "portable",
+            "lightsource",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 15
+              }
+            },
+            {
+              "module": "lightsource",
+              "overrides": {
+                "dead": true,
+                "fuel": 0
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_6",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_6_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "maze_5"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_6_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_7"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_6_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_6"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_6_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "maze_9"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_7",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_7_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "maze_14"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_7_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_6"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_7_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "dead_end_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_7_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_8"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_7_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_15"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_8",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_8_northeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "maze_7"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_8_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_8"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_8_southeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "dead_end_3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_9",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_9_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maze_6"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_9_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "maze_11"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_9_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_10"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_9_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_13"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_9_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_12"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_9_northwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "maze_9"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_10",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_10_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_9"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_10_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_13"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_10_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "maze_11"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_11",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_11_northeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "grating_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_11_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "maze_10"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_11_northwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "maze_13"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_11_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "maze_12"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_12",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_12_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "maze_5"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_12_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "maze_11"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_12_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_13"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_12_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "maze_9"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_12_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "dead_end_4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_13",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_13_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maze_9"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_13_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "maze_12"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_13_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_10"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_13_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_11"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_14",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_14_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_15"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_14_northwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "maze_14"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_14_northeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "maze_7"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_14_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_7"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maze_15",
+      "name": "Maze",
+      "description": "This is part of a maze of twisty little passages, all alike.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "maze_15_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_14"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_15_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_7"
+              }
+            }
+          ]
+        },
+        {
+          "id": "maze_15_southeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "cyclops_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dead_end_1",
+      "name": "Dead End",
+      "description": "You have come to a dead end in the maze.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dead_end_1_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dead_end_2",
+      "name": "Dead End",
+      "description": "You have come to a dead end in the maze.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dead_end_2_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_5"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dead_end_3",
+      "name": "Dead End",
+      "description": "You have come to a dead end in the maze.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dead_end_3_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maze_8"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dead_end_4",
+      "name": "Dead End",
+      "description": "You have come to a dead end in the maze.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dead_end_4_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "maze_12"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grating_room",
+      "name": "Grating Room",
+      "description": "You are in a small room near the maze. There are twisty passages in the immediate vicinity.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "grating_room_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "maze_11"
+              }
+            }
+          ]
+        },
+        {
+          "id": "gr_up",
+          "name": "steel grating",
+          "description": "A heavy steel grating, lockable from below.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "grate_state",
+                "direction": "up",
+                "to": "grating_clearing"
+              }
+            },
+            "door",
+            {
+              "module": "lockable",
+              "overrides": {
+                "keyRef": "keys"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "grate_state",
+      "name": "grate state",
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "grate_revealed",
+      "name": "grate revealed",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "grate_open_reveals",
+      "name": "an open grate is revealed above",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "grate_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "of": "grate_revealed",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "reveal": {
+                  "object": "gc_down"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "clearing_text_grate_open",
+      "name": "clearing text: the open grating",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "grate_revealed",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "grate_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "grating_clearing",
+                  "description": "You are in a clearing, with a forest surrounding you on all sides. A path leads south. There is an open grating, descending into darkness."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "clearing_text_grate_shut",
+      "name": "clearing text: the fastened grating",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "grate_revealed",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "grate_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "grating_clearing",
+                  "description": "You are in a clearing, with a forest surrounding you on all sides. A path leads south. There is a grating securely fastened into the ground."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "grating_room_lit",
+      "name": "sunlight falls through the open grate",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "grate_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "of": "grating_room",
+                  "module": "room",
+                  "field": "dark",
+                  "value": false
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "grating_room_dark",
+      "name": "the grate closes and the light goes with it",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "grate_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "of": "grating_room",
+                  "module": "room",
+                  "field": "dark",
+                  "value": true
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,603 @@
+{
+  "world": [
+    {
+      "id": "magic_state",
+      "name": "magic flag",
+      "description": "The cyclops has fled through the east wall.",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "cyclops_out",
+      "name": "cyclops out",
+      "description": "The cyclops sleeps or is gone; the staircase is passable.",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "cyclops_hungry",
+      "name": "cyclops desperate for a drink",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "cyclops_room",
+      "name": "Cyclops Room",
+      "description": "This room has an exit on the northwest, and a staircase leading up. A cyclops, who looks prepared to eat horses (much less mere adventurers), blocks the staircase.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "cyclops",
+          "name": "cyclops",
+          "description": "A menacing cyclops. Unfriendly in the extreme.",
+          "modules": [
+            "agent",
+            "immobile",
+            {
+              "module": "agent",
+              "overrides": {
+                "policy": "player",
+                "incognito": "a towering one-eyed giant",
+                "goals": "Guard the staircase. Eat anyone who lingers.",
+                "traits": "Huge, dim, perpetually hungry. Fears one name above all others."
+              }
+            },
+            {
+              "module": "duelist",
+              "overrides": {
+                "strength": 10000
+              }
+            },
+            "attackable",
+            "askable",
+            {
+              "module": "askable",
+              "overrides": {
+                "answers": {
+                  "odysseus": [
+                    {
+                      "destroy": {
+                        "object": "cyclops"
+                      }
+                    },
+                    {
+                      "set": {
+                        "object": "magic_state",
+                        "module": "flag",
+                        "field": "value",
+                        "value": true
+                      }
+                    },
+                    {
+                      "set": {
+                        "object": "cyclops_out",
+                        "module": "flag",
+                        "field": "value",
+                        "value": true
+                      }
+                    },
+                    {
+                      "signal": {
+                        "from": "cyclops",
+                        "sense": "visual",
+                        "text": "The cyclops, hearing the name of his father's murderer, flees the room by knocking a huge hole in the east wall!"
+                      }
+                    }
+                  ],
+                  "ulysses": [
+                    {
+                      "destroy": {
+                        "object": "cyclops"
+                      }
+                    },
+                    {
+                      "set": {
+                        "object": "magic_state",
+                        "module": "flag",
+                        "field": "value",
+                        "value": true
+                      }
+                    },
+                    {
+                      "set": {
+                        "object": "cyclops_out",
+                        "module": "flag",
+                        "field": "value",
+                        "value": true
+                      }
+                    },
+                    {
+                      "signal": {
+                        "from": "cyclops",
+                        "sense": "visual",
+                        "text": "The cyclops, hearing the name of his father's murderer, flees the room by knocking a huge hole in the east wall!"
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "cy_northwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "maze_15"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cy_east",
+          "name": "east wall",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "strange_passage",
+                "requires": "magic_state",
+                "blockedText": "The east wall is solid rock."
+              }
+            }
+          ]
+        },
+        {
+          "id": "cy_up",
+          "name": "staircase",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "treasure_room",
+                "requires": "cyclops_out",
+                "blockedText": "The cyclops doesn't look like he'll let you past."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "strange_passage",
+      "name": "Strange Passage",
+      "description": "This is a long passage. To the west is one entrance. On the east there is an old wooden door, with a large opening in it (about cyclops sized).",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sp_west",
+          "name": "entrance",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "cyclops_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sp_east",
+          "name": "wooden door",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "living_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "treasure_room",
+      "name": "Treasure Room",
+      "description": "This is a large room, whose east wall is solid granite. A number of discarded bags, which crumble at your touch, are scattered about on the floor. There is an exit down a staircase.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true,
+            "value": 25
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "thief",
+          "name": "thief",
+          "description": "A seedy-looking individual, wearing a large bag slung over his shoulder and carrying a finely crafted stiletto.",
+          "modules": [
+            "agent",
+            "immobile",
+            {
+              "module": "agent",
+              "overrides": {
+                "policy": "player",
+                "incognito": "a seedy-looking individual",
+                "goals": "Guard this hideaway. Collect valuables; open clever containers.",
+                "traits": "Dangerous, covetous, and deft with a blade."
+              }
+            },
+            {
+              "module": "duelist",
+              "overrides": {
+                "strength": 5,
+                "weakTo": [
+                  "knife"
+                ]
+              }
+            },
+            "attackable"
+          ],
+          "children": [
+            {
+              "id": "stiletto",
+              "name": "stiletto",
+              "description": "A finely crafted stiletto, its blade gleaming.",
+              "modules": [
+                "portable",
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 10
+                  }
+                },
+                "weapon"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "chalice",
+          "name": "silver chalice",
+          "description": "A chalice made of silver, and marked with graven runes.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10,
+                "guardedBy": "thief",
+                "guardConditions": [
+                  "dead",
+                  "unconscious"
+                ],
+                "guardedText": "You'd be stabbed in the back first."
+              }
+            },
+            "treasure",
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 10,
+                "tvalue": 5
+              }
+            }
+          ]
+        },
+        {
+          "id": "tr_down",
+          "name": "staircase",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "cyclops_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canary",
+      "name": "golden clockwork canary",
+      "description": "A finely crafted clockwork canary, made of gold.",
+      "modules": [
+        "portable",
+        {
+          "module": "portable",
+          "overrides": {
+            "weight": 1
+          }
+        },
+        "treasure",
+        {
+          "module": "treasure",
+          "overrides": {
+            "value": 6,
+            "tvalue": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_eats_the_lunch",
+      "name": "the cyclops wolfs down the lunch",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "holder": "cyclops",
+                "holds": "lunch"
+              }
+            ],
+            "effects": [
+              {
+                "destroy": {
+                  "object": "lunch"
+                }
+              },
+              {
+                "set": {
+                  "object": "cyclops_hungry",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "signal": {
+                  "from": "cyclops",
+                  "sense": "visual",
+                  "text": "The cyclops wolfs down the sandwich. He seems to be suffering from heartburn, and clutching his throat, he asks for something to drink."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_drinks_and_sleeps",
+      "name": "the hot-peppered cyclops drinks and collapses",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "holder": "cyclops",
+                "holds": "bottle"
+              },
+              {
+                "of": "cyclops_hungry",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "destroy": {
+                  "object": "water"
+                }
+              },
+              {
+                "attach": {
+                  "condition": "cond_unconscious",
+                  "to": "cyclops"
+                }
+              },
+              {
+                "set": {
+                  "object": "cyclops",
+                  "module": "duelist",
+                  "field": "out",
+                  "value": true
+                }
+              },
+              {
+                "set": {
+                  "object": "cyclops_out",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "signal": {
+                  "from": "cyclops",
+                  "sense": "visual",
+                  "text": "The cyclops grabs the bottle, drinks deeply, and falls into a deep slumber."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "thief_opens_the_egg",
+      "name": "the thief, given the egg, opens it with care",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "holder": "thief",
+                "holds": "egg"
+              }
+            ],
+            "effects": [
+              {
+                "addModule": {
+                  "object": "egg",
+                  "module": "container"
+                }
+              },
+              {
+                "addModule": {
+                  "object": "egg",
+                  "module": "openable"
+                }
+              },
+              {
+                "set": {
+                  "object": "egg",
+                  "module": "openable",
+                  "field": "open",
+                  "value": true
+                }
+              },
+              {
+                "move": {
+                  "object": "canary",
+                  "to": "egg"
+                }
+              },
+              {
+                "signal": {
+                  "from": "thief",
+                  "sense": "visual",
+                  "text": "The thief, with a deft flick of his stiletto, opens the jewel-encrusted egg without scratching it."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_room_text_fled",
+      "name": "cyclops room text: the hole in the east wall",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "magic_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "cyclops_room",
+                  "description": "This room has an exit on the northwest, and a staircase leading up. The east wall, previously solid, now has a cyclops-sized opening in it."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_room_text_sleeping",
+      "name": "cyclops room text: the sleeping giant",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "magic_state",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "cyclops_out",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "cyclops_room",
+                  "description": "This room has an exit on the northwest, and a staircase leading up. The cyclops is sleeping blissfully at the foot of the stairs."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "thief_defends_arrivals",
+      "name": "the treasure room's guardian stirs",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "treasure_room"
+              },
+              {
+                "of": "thief",
+                "hasCondition": "dead",
+                "negate": true
+              }
+            ],
+            "effects": [
+              {
+                "signal": {
+                  "from": "thief",
+                  "sense": "visual",
+                  "text": "A scream of anguish echoes from somewhere nearby: the thief has noticed your intrusion into his hideaway, and rushes to defend it!"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

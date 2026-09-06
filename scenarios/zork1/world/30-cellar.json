@@ -4,7 +4,15 @@
       "id": "trapdoor_state",
       "name": "trap door state",
       "modules": [
-        { "module": "doorstate", "overrides": { "open": false, "locked": false } }
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": false,
+            "openText": "The door reluctantly opens to reveal a rickety staircase descending into darkness.",
+            "closeText": "The door swings shut and closes."
+          }
+        }
       ]
     },
     {
@@ -13,7 +21,12 @@
       "description": "Whether the cellar's slam still lurks (cleared once it fires; re-armed by a chimney climb over a closed door).",
       "modules": [
         "flag",
-        { "module": "flag", "overrides": { "value": true } }
+        {
+          "module": "flag",
+          "overrides": {
+            "value": true
+          }
+        }
       ]
     },
     {
@@ -22,7 +35,12 @@
       "description": "Whether the troll's passages are passable.",
       "modules": [
         "flag",
-        { "module": "flag", "overrides": { "value": false } }
+        {
+          "module": "flag",
+          "overrides": {
+            "value": false
+          }
+        }
       ]
     },
     {
@@ -30,28 +48,66 @@
       "name": "dead",
       "description": "The cessation of all adventuring.",
       "modules": [
-        { "module": "condition", "overrides": { "kind": "dead", "label": "dead", "visible": true, "selfText": "You have died. Somehow, though, you still feel like walking..." } }
+        {
+          "module": "condition",
+          "overrides": {
+            "kind": "dead",
+            "label": "dead",
+            "visible": true,
+            "selfText": "You have died. Somehow, though, you still feel like walking..."
+          }
+        }
       ]
     },
     {
       "id": "cond_unconscious",
       "name": "unconscious",
       "modules": [
-        { "module": "condition", "overrides": { "kind": "unconscious", "label": "unconscious", "visible": true, "selfText": "You are out cold." } }
+        {
+          "module": "condition",
+          "overrides": {
+            "kind": "unconscious",
+            "label": "unconscious",
+            "visible": true,
+            "selfText": "You are out cold."
+          }
+        }
       ]
     },
     {
       "id": "cond_light_wound",
       "name": "light wound",
       "modules": [
-        { "module": "condition", "overrides": { "kind": "light_wound", "label": "wounded", "visible": true, "selfText": "You feel a light wound.", "statMods": { "strength": -1 } } }
+        {
+          "module": "condition",
+          "overrides": {
+            "kind": "light_wound",
+            "label": "wounded",
+            "visible": true,
+            "selfText": "You feel a light wound.",
+            "statMods": {
+              "strength": -1
+            }
+          }
+        }
       ]
     },
     {
       "id": "cond_serious_wound",
       "name": "serious wound",
       "modules": [
-        { "module": "condition", "overrides": { "kind": "serious_wound", "label": "seriously wounded", "visible": true, "selfText": "You feel a serious wound.", "statMods": { "strength": -2 } } }
+        {
+          "module": "condition",
+          "overrides": {
+            "kind": "serious_wound",
+            "label": "seriously wounded",
+            "visible": true,
+            "selfText": "You feel a serious wound.",
+            "statMods": {
+              "strength": -2
+            }
+          }
+        }
       ]
     },
     {
@@ -60,10 +116,20 @@
       "description": "You are in a dark and damp cellar with a narrow passageway leading north, and a crawlway to the south. On the west is the bottom of a steep metal ramp which is unclimbable.",
       "modules": [
         "room",
-        { "module": "room", "overrides": { "dark": true, "value": 25 } }
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true,
+            "value": 25
+          }
+        }
       ],
       "children": [
-        { "id": "cellar_up", "name": "trap door", "description": "A heavy wooden trap door above you.", "modules": [
+        {
+          "id": "cellar_up",
+          "name": "trap door",
+          "description": "A heavy wooden trap door above you.",
+          "modules": [
             {
               "module": "portal",
               "overrides": {
@@ -75,9 +141,36 @@
               }
             },
             "door"
-          ] },
-        { "id": "cellar_north", "name": "narrow passageway", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "north", "to": "troll_room" } }] },
-        { "id": "cellar_south", "name": "crawlway", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "south", "to": "east_of_chasm" } }] }
+          ]
+        },
+        {
+          "id": "cellar_north",
+          "name": "narrow passageway",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "troll_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cellar_south",
+          "name": "crawlway",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "east_of_chasm"
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -86,7 +179,12 @@
       "description": "This is a small room with passages to the east and south and a forbidding hole leading west. Bloodstains and deep scratches (perhaps made by an axe) mar the walls.",
       "modules": [
         "room",
-        { "module": "room", "overrides": { "dark": true } }
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
       ],
       "children": [
         {
@@ -96,8 +194,24 @@
           "modules": [
             "agent",
             "immobile",
-            { "module": "agent", "overrides": { "policy": "player", "incognito": "a hulking, nasty-looking troll", "goals": "Guard this room. Fend off anyone who tries to pass east or west.", "traits": "Dumb, brutal, territorial. Blocks passages with menacing gestures." } },
-            { "module": "duelist", "overrides": { "strength": 2, "weakTo": ["sword"] } },
+            {
+              "module": "agent",
+              "overrides": {
+                "policy": "player",
+                "incognito": "a hulking, nasty-looking troll",
+                "goals": "Guard this room. Fend off anyone who tries to pass east or west.",
+                "traits": "Dumb, brutal, territorial. Blocks passages with menacing gestures."
+              }
+            },
+            {
+              "module": "duelist",
+              "overrides": {
+                "strength": 2,
+                "weakTo": [
+                  "sword"
+                ]
+              }
+            },
             "attackable"
           ],
           "children": [
@@ -107,13 +221,31 @@
               "description": "A vicious axe, its blade stained dark.",
               "modules": [
                 "portable",
-                { "module": "portable", "overrides": { "weight": 25 } },
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 25
+                  }
+                },
                 "weapon"
               ]
             }
           ]
         },
-        { "id": "troll_south", "name": "passageway", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "south", "to": "cellar" } }] },
+        {
+          "id": "troll_south",
+          "name": "passageway",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "cellar"
+              }
+            }
+          ]
+        },
         {
           "id": "troll_east",
           "name": "passage",
@@ -129,6 +261,22 @@
               }
             }
           ]
+        },
+        {
+          "id": "troll_west",
+          "name": "forbidding hole",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "maze_1",
+                "requires": "troll_state",
+                "blockedText": "The troll fends you off with a menacing gesture."
+              }
+            }
+          ]
         }
       ]
     },
@@ -138,18 +286,51 @@
       "description": "You are on the east edge of a chasm, the bottom of which cannot be seen. A narrow passage goes north, and the path you are on continues to the east.",
       "modules": [
         "room",
-        { "module": "room", "overrides": { "dark": true } }
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
       ],
       "children": [
-        { "id": "chasm_north", "name": "narrow passage", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "north", "to": "cellar" } }] },
-        { "id": "chasm_east", "name": "path", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "east", "to": "gallery" } }] }
+        {
+          "id": "chasm_north",
+          "name": "narrow passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "cellar"
+              }
+            }
+          ]
+        },
+        {
+          "id": "chasm_east",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "gallery"
+              }
+            }
+          ]
+        }
       ]
     },
     {
       "id": "gallery",
       "name": "Gallery",
       "description": "This is an art gallery. Most of the paintings have been stolen by vandals with exceptional taste. The vandals left through either the north or west exits.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "painting",
@@ -157,13 +338,50 @@
           "description": "Fortunately, there is still one painting left. It is primarily a picture of three clowns splashing around in a fall auction.",
           "modules": [
             "portable",
-            { "module": "portable", "overrides": { "weight": 15 } },
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 15
+              }
+            },
             "treasure",
-            { "module": "treasure", "overrides": { "value": 4, "tvalue": 6 } }
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 4,
+                "tvalue": 6
+              }
+            }
           ]
         },
-        { "id": "gallery_west", "name": "exit", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "west", "to": "east_of_chasm" } }] },
-        { "id": "gallery_north", "name": "exit", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "north", "to": "studio" } }] }
+        {
+          "id": "gallery_west",
+          "name": "exit",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "east_of_chasm"
+              }
+            }
+          ]
+        },
+        {
+          "id": "gallery_north",
+          "name": "exit",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "studio"
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -172,7 +390,12 @@
       "description": "This appears to have been an artist's studio. The walls and floors are splattered with paints of 69 different colors. Strangely enough, nothing of value is hanging here. At the south end of the room is an open door (also covered with paint). A dark and narrow chimney leads up from a fireplace; although you might be able to get up it, it seems unlikely you could get back down.",
       "modules": [
         "room",
-        { "module": "room", "overrides": { "dark": true } }
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
       ],
       "children": [
         {
@@ -186,23 +409,50 @@
                 "stateRef": "passage_state",
                 "direction": "up",
                 "to": "kitchen",
-                "requiresCarrying": ["lamp"],
-                "allowOnly": ["lamp"],
+                "requiresCarrying": [
+                  "lamp"
+                ],
+                "allowOnly": [
+                  "lamp"
+                ],
                 "allowPlus": 1,
                 "blockedText": "You can't get up the chimney with what you're carrying.",
                 "onExit": [
                   {
                     "when": [
-                      { "of": "trapdoor_state", "module": "doorstate", "field": "open", "equals": false }
+                      {
+                        "of": "trapdoor_state",
+                        "module": "doorstate",
+                        "field": "open",
+                        "equals": false
+                      }
                     ],
-                    "set": { "object": "trapdoor_armed", "module": "flag", "field": "value", "value": true }
+                    "set": {
+                      "object": "trapdoor_armed",
+                      "module": "flag",
+                      "field": "value",
+                      "value": true
+                    }
                   }
                 ]
               }
             }
           ]
         },
-        { "id": "studio_south", "name": "open door", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "south", "to": "gallery" } }] }
+        {
+          "id": "studio_south",
+          "name": "open door",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "gallery"
+              }
+            }
+          ]
+        }
       ]
     },
     {
@@ -211,10 +461,29 @@
       "description": "This is a long and narrow corridor, fresh air somehow enters from the north. The corridor widens here, and a narrow crawlway leads south.",
       "modules": [
         "room",
-        { "module": "room", "overrides": { "dark": true, "value": 5 } }
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true,
+            "value": 5
+          }
+        }
       ],
       "children": [
-        { "id": "ew_west", "name": "passage", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "west", "to": "troll_room" } }] }
+        {
+          "id": "ew_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "troll_room"
+              }
+            }
+          ]
+        }
       ]
     }
   ]

@@ -4,7 +4,9 @@
       "id": "rug_state",
       "name": "rug state",
       "description": "Whether the living room rug has been moved.",
-      "modules": ["flag"]
+      "modules": [
+        "flag"
+      ]
     },
     {
       "id": "window_opens_text",
@@ -15,11 +17,26 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "window_state", "module": "doorstate", "field": "open", "equals": true }
+              {
+                "of": "window_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              }
             ],
             "effects": [
-              { "rename": { "object": "kitchen", "description": "You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is open." } },
-              { "rename": { "object": "east_of_house", "description": "You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is open." } }
+              {
+                "rename": {
+                  "object": "kitchen",
+                  "description": "You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is open."
+                }
+              },
+              {
+                "rename": {
+                  "object": "east_of_house",
+                  "description": "You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is open."
+                }
+              }
             ]
           }
         }
@@ -34,11 +51,26 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "window_state", "module": "doorstate", "field": "open", "equals": false }
+              {
+                "of": "window_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": false
+              }
             ],
             "effects": [
-              { "rename": { "object": "kitchen", "description": "You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is slightly ajar." } },
-              { "rename": { "object": "east_of_house", "description": "You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar." } }
+              {
+                "rename": {
+                  "object": "kitchen",
+                  "description": "You are in the kitchen of the white house. A table seems to have been used recently for the preparation of food. A passage leads to the west and a dark staircase can be seen leading upward. A dark chimney leads down and to the east is a small window which is slightly ajar."
+                }
+              },
+              {
+                "rename": {
+                  "object": "east_of_house",
+                  "description": "You are behind the white house. A path leads into the forest to the east. In one corner of the house there is a small window which is slightly ajar."
+                }
+              }
             ]
           }
         }
@@ -53,11 +85,32 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "rug_state", "module": "flag", "field": "value", "equals": true },
-              { "of": "trapdoor_state", "module": "doorstate", "field": "open", "equals": false }
+              {
+                "of": "rug_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "trapdoor_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": false
+              },
+              {
+                "of": "magic_state",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
             ],
             "effects": [
-              { "rename": { "object": "living_room", "description": "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a closed trap door at your feet." } }
+              {
+                "rename": {
+                  "object": "living_room",
+                  "description": "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a closed trap door at your feet."
+                }
+              }
             ]
           }
         }
@@ -72,11 +125,32 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "rug_state", "module": "flag", "field": "value", "equals": true },
-              { "of": "trapdoor_state", "module": "doorstate", "field": "open", "equals": true }
+              {
+                "of": "rug_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "trapdoor_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              },
+              {
+                "of": "magic_state",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
             ],
             "effects": [
-              { "rename": { "object": "living_room", "description": "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a rug lying beside an open trap door." } }
+              {
+                "rename": {
+                  "object": "living_room",
+                  "description": "You are in the living room. There is a doorway to the east, a wooden door with strange gothic lettering to the west, which appears to be nailed shut, a trophy case, and a rug lying beside an open trap door."
+                }
+              }
             ]
           }
         }
@@ -91,14 +165,46 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "player", "inRoom": "cellar" },
-              { "of": "trapdoor_state", "module": "doorstate", "field": "open", "equals": true },
-              { "of": "trapdoor_armed", "module": "flag", "field": "value", "equals": true }
+              {
+                "of": "player",
+                "inRoom": "cellar"
+              },
+              {
+                "of": "trapdoor_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              },
+              {
+                "of": "trapdoor_armed",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
             ],
             "effects": [
-              { "set": { "object": "trapdoor_state", "module": "doorstate", "field": "open", "value": false } },
-              { "set": { "object": "trapdoor_armed", "module": "flag", "field": "value", "value": false } },
-              { "say": { "to": "player", "text": "The trap door crashes shut, and you hear someone barring it." } }
+              {
+                "set": {
+                  "object": "trapdoor_state",
+                  "module": "doorstate",
+                  "field": "open",
+                  "value": false
+                }
+              },
+              {
+                "set": {
+                  "object": "trapdoor_armed",
+                  "module": "flag",
+                  "field": "value",
+                  "value": false
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The trap door crashes shut, and you hear someone barring it."
+                }
+              }
             ]
           }
         }
@@ -112,9 +218,21 @@
         {
           "module": "automation",
           "overrides": {
-            "when": [{ "of": "troll", "hasCondition": "dead" }],
+            "when": [
+              {
+                "of": "troll",
+                "hasCondition": "dead"
+              }
+            ],
             "effects": [
-              { "set": { "object": "troll_state", "module": "flag", "field": "value", "value": true } }
+              {
+                "set": {
+                  "object": "troll_state",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              }
             ]
           }
         }
@@ -128,9 +246,21 @@
         {
           "module": "automation",
           "overrides": {
-            "when": [{ "of": "troll", "hasCondition": "unconscious" }],
+            "when": [
+              {
+                "of": "troll",
+                "hasCondition": "unconscious"
+              }
+            ],
             "effects": [
-              { "set": { "object": "troll_state", "module": "flag", "field": "value", "value": true } }
+              {
+                "set": {
+                  "object": "troll_state",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              }
             ]
           }
         }
@@ -145,11 +275,26 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "troll", "hasCondition": "dead", "negate": true },
-              { "of": "troll", "hasCondition": "unconscious", "negate": true }
+              {
+                "of": "troll",
+                "hasCondition": "dead",
+                "negate": true
+              },
+              {
+                "of": "troll",
+                "hasCondition": "unconscious",
+                "negate": true
+              }
             ],
             "effects": [
-              { "set": { "object": "troll_state", "module": "flag", "field": "value", "value": false } }
+              {
+                "set": {
+                  "object": "troll_state",
+                  "module": "flag",
+                  "field": "value",
+                  "value": false
+                }
+              }
             ]
           }
         }
@@ -164,9 +309,23 @@
           "module": "automation",
           "overrides": {
             "every": 1,
-            "when": [{ "of": "troll", "module": "duelist", "field": "wakeIn", "min": 1 }],
+            "when": [
+              {
+                "of": "troll",
+                "module": "duelist",
+                "field": "wakeIn",
+                "min": 1
+              }
+            ],
             "effects": [
-              { "adjust": { "object": "troll", "module": "duelist", "field": "wakeIn", "by": -1 } }
+              {
+                "adjust": {
+                  "object": "troll",
+                  "module": "duelist",
+                  "field": "wakeIn",
+                  "by": -1
+                }
+              }
             ]
           }
         }
@@ -181,14 +340,47 @@
           "module": "automation",
           "overrides": {
             "when": [
-              { "of": "troll", "hasCondition": "unconscious" },
-              { "of": "troll", "module": "duelist", "field": "wakeIn", "max": 0 }
+              {
+                "of": "troll",
+                "hasCondition": "unconscious"
+              },
+              {
+                "of": "troll",
+                "module": "duelist",
+                "field": "wakeIn",
+                "max": 0
+              }
             ],
             "effects": [
-              { "detach": { "from": "troll", "kind": "unconscious" } },
-              { "set": { "object": "troll", "module": "duelist", "field": "out", "value": false } },
-              { "set": { "object": "troll", "module": "duelist", "field": "wakeIn", "value": -1 } },
-              { "signal": { "from": "troll", "sense": "visual", "text": "The troll stirs, and hauls himself back to his feet with a snarl." } }
+              {
+                "detach": {
+                  "from": "troll",
+                  "kind": "unconscious"
+                }
+              },
+              {
+                "set": {
+                  "object": "troll",
+                  "module": "duelist",
+                  "field": "out",
+                  "value": false
+                }
+              },
+              {
+                "set": {
+                  "object": "troll",
+                  "module": "duelist",
+                  "field": "wakeIn",
+                  "value": -1
+                }
+              },
+              {
+                "signal": {
+                  "from": "troll",
+                  "sense": "visual",
+                  "text": "The troll stirs, and hauls himself back to his feet with a snarl."
+                }
+              }
             ]
           }
         }
@@ -204,10 +396,25 @@
           "overrides": {
             "once": true,
             "delay": 30,
-            "when": [{ "of": "player", "hasCondition": "light_wound" }],
+            "when": [
+              {
+                "of": "player",
+                "hasCondition": "light_wound"
+              }
+            ],
             "effects": [
-              { "detach": { "from": "player", "kind": "light_wound" } },
-              { "say": { "to": "player", "text": "You feel much better." } }
+              {
+                "detach": {
+                  "from": "player",
+                  "kind": "light_wound"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You feel much better."
+                }
+              }
             ]
           }
         }
@@ -223,10 +430,105 @@
           "overrides": {
             "once": true,
             "delay": 30,
-            "when": [{ "of": "player", "hasCondition": "serious_wound" }],
+            "when": [
+              {
+                "of": "player",
+                "hasCondition": "serious_wound"
+              }
+            ],
             "effects": [
-              { "detach": { "from": "player", "kind": "serious_wound" } },
-              { "say": { "to": "player", "text": "You feel stronger now; your wound has healed." } }
+              {
+                "detach": {
+                  "from": "player",
+                  "kind": "serious_wound"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You feel stronger now; your wound has healed."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "living_room_magic_open_text",
+      "name": "living room: the cyclops hole, trap door open",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "magic_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "rug_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "trapdoor_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "living_room",
+                  "description": "You are in the living room. There is a doorway to the east. To the west is a cyclops-shaped opening in an old wooden door, above which is some strange gothic lettering, a trophy case, and a rug lying beside an open trap door."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "living_room_magic_closed_text",
+      "name": "living room: the cyclops hole, trap door closed",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "magic_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "rug_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "trapdoor_state",
+                "module": "doorstate",
+                "field": "open",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "living_room",
+                  "description": "You are in the living room. There is a doorway to the east. To the west is a cyclops-shaped opening in an old wooden door, above which is some strange gothic lettering, a trophy case, and a closed trap door at your feet."
+                }
+              }
             ]
           }
         }

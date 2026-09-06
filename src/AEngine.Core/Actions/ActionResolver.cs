@@ -379,12 +379,14 @@ public sealed class ActionResolver
                 }
                 // give is a two-object verb on the held item: one entry per
                 // recipient, the item riding as AuxTargetId (the recipient
-                // stays TargetId so the accept/decline reaction finds them)
+                // stays TargetId so the accept/decline reaction finds them).
+                // The recipient's article comes from WithDefiniteArticle —
+                // descriptive names get "the", proper names stay bare
                 if (affordance.Verb == "give")
                 {
                     foreach (var other in others)
                         actions.Add(new AvailableAction(
-                            "give", other.Id, $"Give {The(agent, target)} to {NameFor(agent, other)}",
+                            "give", other.Id, $"Give {The(agent, target)} to {The(agent, other)}",
                             affordance.Handler, attachment.ModuleId, affordance.Prompt, i)
                         { AuxTargetId = target.Id });
                     continue;

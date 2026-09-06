@@ -122,7 +122,9 @@ public static class BuiltinHandlers
             foreach (var line in Perception.DressedLines(ctx.World, ctx.Modules, room, ctx.Agent.Id))
                 sb.AppendLine(line);
 
-            var exits = ctx.World.ChildrenOf(room.Id).Where(c => c.HasModule("portal")).ToList();
+            var exits = ctx.World.ChildrenOf(room.Id)
+                .Where(c => c.HasModule("portal") && !Perception.IsConcealed(ctx.Modules, c))
+                .ToList();
             if (exits.Count > 0)
             {
                 // bare passages show no state — only doors that can be
@@ -224,17 +226,26 @@ public static class BuiltinHandlers
         public ActionResult Execute(ActionContext ctx)
         {
             var target = ctx.Target ?? throw new InvalidOperationException("open requires a target.");
-            if (HandlerState.GetOpenState(ctx, target) is null)
+            var state = HandlerState.GetOpenState(ctx, target);
+            if (state is null)
                 return ActionResult.Fail($"You can't open the {target.Name}.");
             if (HandlerState.IsLocked(ctx, target))
                 return ActionResult.Fail($"The {target.Name} is locked.");
             if (HandlerState.IsOpen(ctx, target))
                 return ActionResult.Noop($"The {target.Name} is already open.");
             HandlerState.SetOpen(ctx, target, true);
-            var message = $"You open the {target.Name}.";
-            // report what's inside a freshly opened container
-            if (target.HasModule("container"))
-                message += " " + Perception.ContentsSentence(ctx.World, target);
+            // an authored openText on the open-state's own module (the
+            // shared doorstate of a portal, the openable itself) owns the
+            // whole line — flavor lives in data, per door; without one
+            // the generic line reports a container's contents too
+            var authored = ctx.Modules.ResolveString(state.Value.StateObject,
+                state.Value.ModuleId, "openText");
+            var message = authored is { Length: > 0 }
+                ? authored
+                : $"You open the {target.Name}." +
+                  (target.HasModule("container")
+                      ? " " + Perception.ContentsSentence(ctx.World, target)
+                      : "");
             return ActionResult.Ok(message);
         }
     }
@@ -246,12 +257,17 @@ public static class BuiltinHandlers
         public ActionResult Execute(ActionContext ctx)
         {
             var target = ctx.Target ?? throw new InvalidOperationException("close requires a target.");
-            if (HandlerState.GetOpenState(ctx, target) is null)
+            var state = HandlerState.GetOpenState(ctx, target);
+            if (state is null)
                 return ActionResult.Fail($"You can't close the {target.Name}.");
             if (!HandlerState.IsOpen(ctx, target))
                 return ActionResult.Noop($"The {target.Name} is already closed.");
             HandlerState.SetOpen(ctx, target, false);
-            return ActionResult.Ok($"You close the {target.Name}.");
+            var message = ctx.Modules.ResolveString(state.Value.StateObject,
+                state.Value.ModuleId, "closeText") is { Length: > 0 } text
+                ? text
+                : $"You close the {target.Name}.";
+            return ActionResult.Ok(message);
         }
     }
 
@@ -303,6 +319,11 @@ public static class BuiltinHandlers
                         link.HasModule("sittable") || link.HasModule("lyable"))
                     {
                         // pass through
+                    }
+                    else if (link.Id == ctx.Agent.Id)
+                    {
+                        // the actor's own pockets are transparent — the
+                        // garlic inside your open sack is yours to take
                     }
                     else if (link.HasModule("agent"))
                     {

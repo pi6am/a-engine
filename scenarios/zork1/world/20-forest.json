@@ -435,14 +435,73 @@
         },
         {
           "id": "leaves",
-          "name": "mass of leaves",
-          "description": "A heap of dry leaves, deep enough to hide something beneath.",
+          "name": "pile of leaves",
+          "description": "On the ground is a pile of leaves.",
           "modules": [
+            "shiftable",
+            {
+              "module": "shiftable",
+              "overrides": {
+                "once": true,
+                "onMove": [
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "In disturbing the pile of leaves, a grating is revealed."
+                    }
+                  },
+                  {
+                    "reveal": {
+                      "object": "gc_down"
+                    }
+                  },
+                  {
+                    "set": {
+                      "of": "grate_revealed",
+                      "module": "flag",
+                      "field": "value",
+                      "value": true
+                    }
+                  },
+                  {
+                    "rename": {
+                      "object": "leaves",
+                      "description": "The leaves have been pushed aside, uncovering a steel grating."
+                    }
+                  },
+                  {
+                    "set": {
+                      "of": "leaves",
+                      "module": "shiftable",
+                      "field": "moved",
+                      "value": true
+                    }
+                  }
+                ],
+                "moveText": "Done."
+              }
+            }
+          ]
+        },
+        {
+          "id": "gc_down",
+          "name": "steel grating",
+          "description": "A heavy steel grating set into the ground, hideable under leaves.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "grate_state",
+                "direction": "down",
+                "to": "grating_room"
+              }
+            },
+            "door",
             "hideable",
             {
               "module": "hideable",
               "overrides": {
-                "concealed": false
+                "concealed": true
               }
             }
           ]

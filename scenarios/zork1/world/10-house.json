@@ -399,7 +399,9 @@
           "module": "doorstate",
           "overrides": {
             "open": false,
-            "locked": false
+            "locked": false,
+            "openText": "With great effort, you open the window far enough to allow entry.",
+            "closeText": "The window closes (more easily than it opened)."
           }
         }
       ]
@@ -698,7 +700,8 @@
               "module": "sense",
               "overrides": {
                 "senses": [
-                  "troll"
+                  "troll",
+                  "thief"
                 ],
                 "onFaint": "Your sword has begun to glow with a faint blue glow.",
                 "onBright": "Your sword is glowing very brightly!",
@@ -749,7 +752,8 @@
                       "description": "It has been pulled aside, heaped against the trophy case."
                     }
                   }
-                ]
+                ],
+                "moveText": "With a great effort, the rug is moved to one side of the room, revealing the dusty cover of a closed trap door."
               }
             }
           ]
@@ -773,6 +777,23 @@
               "module": "hideable",
               "overrides": {
                 "concealed": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "lr_west",
+          "name": "wooden door",
+          "description": "An old wooden door with strange gothic lettering.",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "strange_passage",
+                "requires": "magic_state",
+                "blockedText": "The door is nailed shut."
               }
             }
           ]

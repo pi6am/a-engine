@@ -830,16 +830,18 @@ generic throughout.
   classic-adventure fight for `duelist`s: strength from the module
   field plus live wound condition statMods plus (rules
   `strengthFromScore`) a point per N score for scorecard-carrying
-  heroes; a held `weapon` item is required (bare hands fail); the
-  defender's `weakTo` list names blades that fight them at an advantage
-  (−1). One d9 + strength-difference roll picks the outcome: miss (a
-  success-outcome swing — plans and walkthroughs keep stepping through
-  it), light/serious wounds (strength drains, wound conditions weaken
-  further attacks, timed automations heal), stagger, unconscious (the
-  data-named condition attaches, the duelist is `out` — the resolver
-  withdraws the attack — and a randomized `wakeIn` countdown hands off
-  to the scenario's wake automation), or dead (condition attached,
-  belongings dropped where they fell).
+  heroes; a held `weapon` item is required (bare hands fail), and the
+  wielded blade prefers the defender's `weakTo` list (the elvish sword
+  against the troll, the nasty knife against the thief — the
+  best-weapon rule) before whatever else is at hand, lowering their
+  effective strength by one. One d9 + strength-difference roll picks
+  the outcome: miss (a success-outcome swing — plans and walkthroughs
+  keep stepping through it), light/serious wounds (strength drains,
+  wound conditions weaken further attacks, timed automations heal),
+  stagger, unconscious (the data-named condition attaches, the duelist
+  is `out` — the resolver withdraws the attack — and a randomized
+  `wakeIn` countdown hands off to the scenario's wake automation), or
+  dead (condition attached, belongings dropped where they fell).
 - **Proximity senses** (`sense` module, same file) — a held object
   watching named agents: glow 2 while one shares the holder's room, 1
   while one is a portal away; level changes message the holder with
@@ -860,6 +862,10 @@ generic throughout.
   affordance) — a portal side with `barred: true` never opens from
   its own side ("The door is locked from above."); its mirror side
   opens freely. Close stays ungated.
+- **Guarded loot** (the `guard` gate, on the take affordance) — an
+  item's `guardedBy` agent protects it until they carry one of the
+  `guardConditions` kinds (dead, unconscious): "You'd be stabbed in
+  the back first."
 - **The effect vocabulary** (`Core/Actions/Effects.cs`) — one JSON shape
   shared by the `effect` handler (verbs as data: move/ring/wave/dig/
   wind/pray/press/turn/tie/raise are affordances naming an effect list

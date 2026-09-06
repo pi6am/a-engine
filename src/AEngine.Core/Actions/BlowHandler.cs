@@ -42,8 +42,15 @@ public sealed class BlowHandler : IActionHandler
         if (ctx.Modules.ResolveBool(target, "duelist", "out"))
             return ActionResult.Noop(
                 $"{Capitalize(target.Name)} is in no shape to fight.");
+        // the wielded weapon: a held item with the weapon module,
+        // preferring the defender's own weakTo blade (the elvish sword
+        // against the troll, the nasty knife against the thief) — the
+        // best-weapon rule — before whatever else is at hand
+        var weakTo = ctx.Modules.ResolveStringList(target, "duelist", "weakTo") ?? [];
         var weapon = ctx.World.ChildrenOf(ctx.Agent.Id)
-            .FirstOrDefault(w => w.HasModule("weapon"));
+            .FirstOrDefault(w => weakTo.Contains(w.Id) && w.HasModule("weapon")) ??
+            ctx.World.ChildrenOf(ctx.Agent.Id)
+                .FirstOrDefault(w => w.HasModule("weapon"));
         if (weapon is null)
             return ActionResult.Fail(
                 $"Bare-handed combat against {target.Name} would be suicidal.");
@@ -51,8 +58,7 @@ public sealed class BlowHandler : IActionHandler
         var random = ctx.Random ?? new Random();
         var attack = Strength(ctx, ctx.Agent);
         var defense = Strength(ctx, target);
-        if ((ctx.Modules.ResolveStringList(target, "duelist", "weakTo") ?? [])
-            .Contains(weapon.Id))
+        if (weakTo.Contains(weapon.Id))
             defense -= 1;
 
         var roll = Math.Clamp(

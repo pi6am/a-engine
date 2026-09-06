@@ -86,10 +86,16 @@ public class Zork1Stage1Tests
         [
             "Go north", "Go southeast", "Open the kitchen window", "Go west", "Go west",
             "Take the brass lantern",
-            "Move the large oriental rug", "Open the trap door", "Go down",
-            "Turn on the brass lantern",
+            "Move the large oriental rug",
         ]);
+        // the rug announces what it revealed, in the original's words
         Assert.True(result.Success, result.Error);
+        Assert.Equal(
+            "With a great effort, the rug is moved to one side of the room, revealing the dusty cover of a closed trap door.",
+            result.Transcript[^1]);
+
+        var down = RunScript(engine, ["Open the trap door", "Go down", "Turn on the brass lantern"]);
+        Assert.True(down.Success, down.Error);
         // the slam is a private sensation, delivered with the arrival
         Assert.Contains(engine.SignalBus.Drain("player").Select(s => s.Text),
             t => t.Contains("crashes shut"));

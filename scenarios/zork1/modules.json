@@ -5,9 +5,21 @@
       "id": "room",
       "name": "Room",
       "fields": [
-        { "name": "dark", "type": "bool", "default": false },
-        { "name": "value", "type": "int", "default": 0 },
-        { "name": "visited", "type": "bool", "default": false }
+        {
+          "name": "dark",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "value",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "visited",
+          "type": "bool",
+          "default": false
+        }
       ],
       "affordances": []
     },
@@ -15,24 +27,87 @@
       "id": "agent",
       "name": "Agent",
       "fields": [
-        { "name": "policy", "type": "string", "default": "player" },
-        { "name": "character", "type": "string", "default": "" },
-        { "name": "goals", "type": "string", "default": "" },
-        { "name": "traits", "type": "string", "default": "" },
-        { "name": "memoryLength", "type": "int", "default": 25 },
-        { "name": "posture", "type": "string", "default": "standing" },
-        { "name": "alwaysLit", "type": "bool", "default": false },
-        { "name": "activity", "type": "string", "default": "" },
-        { "name": "speakingSoon", "type": "bool", "default": false },
-        { "name": "voice", "type": "string", "default": "" },
-        { "name": "properNames", "type": "list", "default": [] },
-        { "name": "incognito", "type": "string", "default": "" },
-        { "name": "incognitoDescription", "type": "string", "default": "" }
+        {
+          "name": "policy",
+          "type": "string",
+          "default": "player"
+        },
+        {
+          "name": "character",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "goals",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "traits",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "memoryLength",
+          "type": "int",
+          "default": 25
+        },
+        {
+          "name": "posture",
+          "type": "string",
+          "default": "standing"
+        },
+        {
+          "name": "alwaysLit",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "activity",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "speakingSoon",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "voice",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "properNames",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "incognito",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "incognitoDescription",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": [
-        { "verb": "look", "handler": "look", "repeatBackoff": true },
-        { "verb": "inventory", "handler": "inventory" },
-        { "verb": "wait", "handler": "wait", "repeatBackoff": true }
+        {
+          "verb": "look",
+          "handler": "look",
+          "repeatBackoff": true
+        },
+        {
+          "verb": "inventory",
+          "handler": "inventory"
+        },
+        {
+          "verb": "wait",
+          "handler": "wait",
+          "repeatBackoff": true
+        }
       ]
     },
     {
@@ -46,9 +121,22 @@
           "speech": true,
           "prompt": "Say what?",
           "signals": [
-            { "sense": "audible", "priority": 10, "audience": "onlyTarget", "text": "{agent} says to you: \"{arg}\"" },
-            { "sense": "audible", "priority": 10, "text": "{agent} says: \"{arg}\"" },
-            { "sense": "visual", "priority": 1, "text": "{agent}'s lips move." }
+            {
+              "sense": "audible",
+              "priority": 10,
+              "audience": "onlyTarget",
+              "text": "{agent} says to you: \"{arg}\""
+            },
+            {
+              "sense": "audible",
+              "priority": 10,
+              "text": "{agent} says: \"{arg}\""
+            },
+            {
+              "sense": "visual",
+              "priority": 1,
+              "text": "{agent}'s lips move."
+            }
           ]
         }
       ]
@@ -57,38 +145,127 @@
       "id": "portal",
       "name": "Portal (door side)",
       "fields": [
-        { "name": "stateRef", "type": "ref", "default": null },
-        { "name": "direction", "type": "string", "default": "" },
-        { "name": "to", "type": "ref", "default": null },
-        { "name": "transmitVisual", "type": "string", "default": "whenOpen" },
-        { "name": "transmitAudio", "type": "string", "default": "always" },
-        { "name": "requires", "type": "ref", "default": null },
-        { "name": "requiresCarrying", "type": "list", "default": [] },
-        { "name": "notCarrying", "type": "list", "default": [] },
-        { "name": "allowOnly", "type": "list", "default": [] },
-        { "name": "allowPlus", "type": "int", "default": 0 },
-        { "name": "loadUnder", "type": "int", "default": 0 },
-        { "name": "blockedText", "type": "string", "default": "" },
-        { "name": "barred", "type": "bool", "default": false },
-        { "name": "barredText", "type": "string", "default": "" },
-        { "name": "onExit", "type": "list", "default": [] }
+        {
+          "name": "stateRef",
+          "type": "ref",
+          "default": null
+        },
+        {
+          "name": "direction",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "to",
+          "type": "ref",
+          "default": null
+        },
+        {
+          "name": "transmitVisual",
+          "type": "string",
+          "default": "whenOpen"
+        },
+        {
+          "name": "transmitAudio",
+          "type": "string",
+          "default": "always"
+        },
+        {
+          "name": "requires",
+          "type": "ref",
+          "default": null
+        },
+        {
+          "name": "requiresCarrying",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "notCarrying",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "allowOnly",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "allowPlus",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "loadUnder",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "blockedText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "barred",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "barredText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "onExit",
+          "type": "list",
+          "default": []
+        }
       ],
       "affordances": [
         {
           "verb": "go",
           "handler": "go",
-          "postures": ["standing"],
+          "postures": [
+            "standing"
+          ],
           "when": [
-            { "module": "immobile", "absent": true, "on": "actor", "field": "value" }
+            {
+              "module": "immobile",
+              "absent": true,
+              "on": "actor",
+              "field": "value"
+            }
           ],
           "gates": [
-            { "kind": "exit" }
+            {
+              "kind": "exit"
+            }
           ],
           "signals": [
-            { "sense": "visual", "priority": 10, "scope": "departure", "text": "{agent} exits through the {exitPortal} to the {exitDirection}." },
-            { "sense": "audible", "priority": 5, "scope": "departure", "text": "You hear {agent} leave through the {exitPortal}." },
-            { "sense": "visual", "priority": 10, "scope": "arrival", "text": "{agent} enters from the {entryPortal} to the {entryDirection}." },
-            { "sense": "audible", "priority": 5, "scope": "arrival", "text": "You hear footsteps approaching from the {entryPortal}." }
+            {
+              "sense": "visual",
+              "priority": 10,
+              "scope": "departure",
+              "text": "{agent} exits through the {exitPortal} to the {exitDirection}."
+            },
+            {
+              "sense": "audible",
+              "priority": 5,
+              "scope": "departure",
+              "text": "You hear {agent} leave through the {exitPortal}."
+            },
+            {
+              "sense": "visual",
+              "priority": 10,
+              "scope": "arrival",
+              "text": "{agent} enters from the {entryPortal} to the {entryDirection}."
+            },
+            {
+              "sense": "audible",
+              "priority": 5,
+              "scope": "arrival",
+              "text": "You hear footsteps approaching from the {entryPortal}."
+            }
           ]
         }
       ]
@@ -102,10 +279,22 @@
           "verb": "open",
           "handler": "open",
           "duration": 2,
-          "gates": [{ "kind": "barred" }],
+          "gates": [
+            {
+              "kind": "barred"
+            }
+          ],
           "signals": [
-            { "sense": "visual", "priority": 10, "text": "{agent} opens the {target}." },
-            { "sense": "audible", "priority": 5, "text": "the sound of a door opening." }
+            {
+              "sense": "visual",
+              "priority": 10,
+              "text": "{agent} opens the {target}."
+            },
+            {
+              "sense": "audible",
+              "priority": 5,
+              "text": "the sound of a door opening."
+            }
           ]
         },
         {
@@ -113,8 +302,16 @@
           "handler": "close",
           "duration": 2,
           "signals": [
-            { "sense": "visual", "priority": 10, "text": "{agent} closes the {target}." },
-            { "sense": "audible", "priority": 5, "text": "a door thudding shut." }
+            {
+              "sense": "visual",
+              "priority": 10,
+              "text": "{agent} closes the {target}."
+            },
+            {
+              "sense": "audible",
+              "priority": 5,
+              "text": "a door thudding shut."
+            }
           ]
         }
       ]
@@ -123,8 +320,26 @@
       "id": "doorstate",
       "name": "Shared door state",
       "fields": [
-        { "name": "open", "type": "bool", "default": false },
-        { "name": "locked", "type": "bool", "default": false }
+        {
+          "name": "open",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "locked",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "openText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "closeText",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": []
     },
@@ -132,52 +347,131 @@
       "id": "openable",
       "name": "Openable",
       "fields": [
-        { "name": "open", "type": "bool", "default": false }
+        {
+          "name": "open",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "openText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "closeText",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": [
-        { "verb": "open", "handler": "open" },
-        { "verb": "close", "handler": "close" }
+        {
+          "verb": "open",
+          "handler": "open"
+        },
+        {
+          "verb": "close",
+          "handler": "close"
+        }
       ]
     },
     {
       "id": "container",
       "name": "Container",
       "fields": [
-        { "name": "capacity", "type": "int", "default": 10 }
+        {
+          "name": "capacity",
+          "type": "int",
+          "default": 10
+        }
       ],
       "affordances": [
-        { "verb": "put", "handler": "put", "duration": 2 }
+        {
+          "verb": "put",
+          "handler": "put",
+          "duration": 2,
+          "excludes": "dead"
+        }
       ]
     },
     {
       "id": "portable",
       "name": "Portable",
       "fields": [
-        { "name": "weight", "type": "int", "default": 5 }
+        {
+          "name": "weight",
+          "type": "int",
+          "default": 5
+        },
+        {
+          "name": "guardedBy",
+          "type": "ref",
+          "default": null
+        },
+        {
+          "name": "guardConditions",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "guardedText",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": [
         {
           "verb": "take",
           "handler": "take",
+          "excludes": "dead",
           "gates": [
             {
               "kind": "loadUnder",
-              "args": { "max": 100, "includeTarget": true },
+              "args": {
+                "max": 100,
+                "includeTarget": true
+              },
               "failText": "Your load is too heavy."
+            },
+            {
+              "kind": "guard"
             }
           ],
           "signals": [
-            { "sense": "visual", "priority": 5, "text": "{agent} picks up the {target}{container}." }
+            {
+              "sense": "visual",
+              "priority": 5,
+              "text": "{agent} picks up the {target}{container}."
+            }
           ]
         },
-        { "verb": "drop", "handler": "drop" }
+        {
+          "verb": "drop",
+          "handler": "drop",
+          "excludes": "dead"
+        },
+        {
+          "verb": "give",
+          "handler": "give",
+          "excludes": "dead",
+          "signals": [
+            {
+              "sense": "visual",
+              "priority": 5,
+              "text": "{agent} gives the {item} to {target}."
+            }
+          ]
+        }
       ]
     },
     {
       "id": "surface",
       "name": "Surface",
       "fields": [
-        { "name": "capacity", "type": "int", "default": 10 }
+        {
+          "name": "capacity",
+          "type": "int",
+          "default": 10
+        }
       ],
       "affordances": []
     },
@@ -191,7 +485,11 @@
           "handler": "put",
           "duration": 2,
           "signals": [
-            { "sense": "visual", "priority": 5, "text": "{agent} puts the {item} onto the {target}." }
+            {
+              "sense": "visual",
+              "priority": 5,
+              "text": "{agent} puts the {item} onto the {target}."
+            }
           ]
         }
       ]
@@ -200,18 +498,32 @@
       "id": "lockable",
       "name": "Lockable",
       "fields": [
-        { "name": "keyRef", "type": "ref", "default": null }
+        {
+          "name": "keyRef",
+          "type": "ref",
+          "default": null
+        }
       ],
       "affordances": [
-        { "verb": "unlock", "handler": "unlock" },
-        { "verb": "lock", "handler": "lock" }
+        {
+          "verb": "unlock",
+          "handler": "unlock"
+        },
+        {
+          "verb": "lock",
+          "handler": "lock"
+        }
       ]
     },
     {
       "id": "hideable",
       "name": "Hideable",
       "fields": [
-        { "name": "concealed", "type": "bool", "default": false }
+        {
+          "name": "concealed",
+          "type": "bool",
+          "default": false
+        }
       ],
       "affordances": []
     },
@@ -219,39 +531,88 @@
       "id": "readable",
       "name": "Readable",
       "fields": [
-        { "name": "text", "type": "string", "default": "" }
+        {
+          "name": "text",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": [
-        { "verb": "read", "handler": "read" }
+        {
+          "verb": "read",
+          "handler": "read"
+        }
       ]
     },
     {
       "id": "lightsource",
       "name": "Light source",
       "fields": [
-        { "name": "on", "type": "bool", "default": false },
-        { "name": "fuel", "type": "int", "default": -1 },
-        { "name": "dead", "type": "bool", "default": false },
-        { "name": "outText", "type": "string", "default": "" },
-        { "name": "burnStages", "type": "list", "default": [] }
+        {
+          "name": "on",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "fuel",
+          "type": "int",
+          "default": -1
+        },
+        {
+          "name": "dead",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "outText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "burnStages",
+          "type": "list",
+          "default": []
+        }
       ],
       "affordances": [
         {
           "verb": "turn on",
           "handler": "set",
           "when": [
-            { "module": "lightsource", "field": "on", "equals": false },
-            { "module": "lightsource", "field": "dead", "equals": false }
+            {
+              "module": "lightsource",
+              "field": "on",
+              "equals": false
+            },
+            {
+              "module": "lightsource",
+              "field": "dead",
+              "equals": false
+            }
           ],
-          "data": { "module": "lightsource", "field": "on", "value": "true", "self": "You turn on {target}." }
+          "data": {
+            "module": "lightsource",
+            "field": "on",
+            "value": "true",
+            "self": "You turn on {target}."
+          }
         },
         {
           "verb": "turn off",
           "handler": "set",
           "when": [
-            { "module": "lightsource", "field": "on", "equals": true }
+            {
+              "module": "lightsource",
+              "field": "on",
+              "equals": true
+            }
           ],
-          "data": { "module": "lightsource", "field": "on", "value": "false", "self": "You turn off {target}." }
+          "data": {
+            "module": "lightsource",
+            "field": "on",
+            "value": "false",
+            "self": "You turn off {target}."
+          }
         }
       ]
     },
@@ -259,9 +620,21 @@
       "id": "treasure",
       "name": "Treasure",
       "fields": [
-        { "name": "value", "type": "int", "default": 0 },
-        { "name": "tvalue", "type": "int", "default": 0 },
-        { "name": "scored", "type": "bool", "default": false }
+        {
+          "name": "value",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "tvalue",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "scored",
+          "type": "bool",
+          "default": false
+        }
       ],
       "affordances": []
     },
@@ -269,31 +642,99 @@
       "id": "scorecard",
       "name": "Scorecard",
       "fields": [
-        { "name": "score", "type": "int", "default": 0 },
-        { "name": "deaths", "type": "int", "default": 0 },
-        { "name": "caseRef", "type": "ref", "default": null }
+        {
+          "name": "score",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "deaths",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "caseRef",
+          "type": "ref",
+          "default": null
+        }
       ],
       "affordances": [
-        { "verb": "score", "handler": "score", "repeatBackoff": true }
+        {
+          "verb": "score",
+          "handler": "score",
+          "repeatBackoff": true
+        }
       ]
     },
     {
       "id": "rules",
       "name": "Rules",
       "fields": [
-        { "name": "diceCount", "type": "int", "default": 1 },
-        { "name": "diceSides", "type": "int", "default": 20 },
-        { "name": "npcLodFactor", "type": "int", "default": 10 },
-        { "name": "winScore", "type": "int", "default": 0 },
-        { "name": "won", "type": "bool", "default": false },
-        { "name": "winText", "type": "string", "default": "" },
-        { "name": "strengthFromScore", "type": "int", "default": 0 },
-        { "name": "ranks", "type": "list", "default": [] },
-        { "name": "darkHazardChance", "type": "int", "default": 0 },
-        { "name": "darkHazardText", "type": "string", "default": "" },
-        { "name": "darkHazardCondition", "type": "ref", "default": null },
-        { "name": "darkArrivalText", "type": "string", "default": "You have moved into a dark place." },
-        { "name": "darkText", "type": "string", "default": "" }
+        {
+          "name": "diceCount",
+          "type": "int",
+          "default": 1
+        },
+        {
+          "name": "diceSides",
+          "type": "int",
+          "default": 20
+        },
+        {
+          "name": "npcLodFactor",
+          "type": "int",
+          "default": 10
+        },
+        {
+          "name": "winScore",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "won",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "winText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "strengthFromScore",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "ranks",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "darkHazardChance",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "darkHazardText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "darkHazardCondition",
+          "type": "ref",
+          "default": null
+        },
+        {
+          "name": "darkArrivalText",
+          "type": "string",
+          "default": "You have moved into a dark place."
+        },
+        {
+          "name": "darkText",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": []
     },
@@ -307,7 +748,11 @@
       "id": "weapon",
       "name": "Weapon",
       "fields": [
-        { "name": "edge", "type": "int", "default": 0 }
+        {
+          "name": "edge",
+          "type": "int",
+          "default": 0
+        }
       ],
       "affordances": []
     },
@@ -315,10 +760,26 @@
       "id": "duelist",
       "name": "Duelist (wound-level combat)",
       "fields": [
-        { "name": "strength", "type": "int", "default": 2 },
-        { "name": "weakTo", "type": "list", "default": [] },
-        { "name": "wakeIn", "type": "int", "default": -1 },
-        { "name": "out", "type": "bool", "default": false }
+        {
+          "name": "strength",
+          "type": "int",
+          "default": 2
+        },
+        {
+          "name": "weakTo",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "wakeIn",
+          "type": "int",
+          "default": -1
+        },
+        {
+          "name": "out",
+          "type": "bool",
+          "default": false
+        }
       ],
       "affordances": []
     },
@@ -331,9 +792,16 @@
           "verb": "attack",
           "handler": "blow",
           "duration": 2,
-          "postures": ["standing"],
+          "postures": [
+            "standing"
+          ],
+          "excludes": "dead",
           "when": [
-            { "module": "duelist", "field": "out", "equals": false }
+            {
+              "module": "duelist",
+              "field": "out",
+              "equals": false
+            }
           ],
           "data": {
             "unconsciousCondition": "cond_unconscious",
@@ -343,20 +811,92 @@
       ]
     },
     {
+      "id": "askable",
+      "name": "Askable (answer-table speech)",
+      "fields": [
+        {
+          "name": "answers",
+          "type": "list",
+          "default": []
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "speak to",
+          "handler": "answer",
+          "prompt": "What do you say?",
+          "data": {
+            "answersField": "answers",
+            "onWrong": "There is no reply."
+          }
+        }
+      ]
+    },
+    {
+      "id": "pray_site",
+      "name": "Pray site (resurrection / petition)",
+      "fields": [
+        {
+          "name": "resurrectEffects",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "livingEffects",
+          "type": "list",
+          "default": []
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "pray at",
+          "handler": "effect",
+          "label": "Pray at the {target}",
+          "requires": "dead",
+          "data": {
+            "effectsField": "resurrectEffects"
+          }
+        },
+        {
+          "verb": "pray at",
+          "handler": "effect",
+          "label": "Pray at the {target}",
+          "excludes": "dead",
+          "data": {
+            "effectsField": "livingEffects"
+          }
+        }
+      ]
+    },
+    {
       "id": "drinkable",
       "name": "Drinkable",
       "fields": [
-        { "name": "destroyOnConsume", "type": "bool", "default": true }
+        {
+          "name": "destroyOnConsume",
+          "type": "bool",
+          "default": true
+        }
       ],
       "affordances": [
-        { "verb": "drink", "handler": "consume", "data": { "self": "You drink {target}. I was rather thirsty." } }
+        {
+          "verb": "drink",
+          "handler": "consume",
+          "data": {
+            "self": "You drink {target}. I was rather thirsty."
+          }
+        }
       ]
     },
     {
       "id": "flag",
       "name": "Flag (named world state)",
       "fields": [
-        { "name": "value", "type": "bool", "default": false }
+        {
+          "name": "value",
+          "type": "bool",
+          "default": false
+        }
       ],
       "affordances": []
     },
@@ -364,18 +904,43 @@
       "id": "shiftable",
       "name": "Shiftable scenery (move-verb effects)",
       "fields": [
-        { "name": "onMove", "type": "list", "default": [] },
-        { "name": "once", "type": "bool", "default": false },
-        { "name": "moved", "type": "bool", "default": false }
+        {
+          "name": "onMove",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "moveText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "once",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "moved",
+          "type": "bool",
+          "default": false
+        }
       ],
       "affordances": [
         {
           "verb": "move",
           "handler": "effect",
           "when": [
-            { "module": "shiftable", "field": "moved", "equals": false }
+            {
+              "module": "shiftable",
+              "field": "moved",
+              "equals": false
+            }
           ],
-          "data": { "effectsField": "onMove", "self": "You move {target}." }
+          "data": {
+            "effectsField": "onMove",
+            "selfField": "moveText",
+            "self": "You move {target}."
+          }
         }
       ]
     },
@@ -383,12 +948,36 @@
       "id": "sense",
       "name": "Sense (proximity glow)",
       "fields": [
-        { "name": "senses", "type": "list", "default": [] },
-        { "name": "ignoresConditions", "type": "list", "default": [] },
-        { "name": "glow", "type": "int", "default": 0 },
-        { "name": "onFaint", "type": "string", "default": "" },
-        { "name": "onBright", "type": "string", "default": "" },
-        { "name": "onDim", "type": "string", "default": "" }
+        {
+          "name": "senses",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "ignoresConditions",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "glow",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "onFaint",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "onBright",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "onDim",
+          "type": "string",
+          "default": ""
+        }
       ],
       "affordances": []
     },
@@ -396,12 +985,36 @@
       "id": "automation",
       "name": "Automation rule",
       "fields": [
-        { "name": "when", "type": "list", "default": [] },
-        { "name": "effects", "type": "list", "default": [] },
-        { "name": "once", "type": "bool", "default": false },
-        { "name": "every", "type": "int", "default": 0 },
-        { "name": "delay", "type": "int", "default": 0 },
-        { "name": "armed", "type": "bool", "default": true }
+        {
+          "name": "when",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "effects",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "once",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "every",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "delay",
+          "type": "int",
+          "default": 0
+        },
+        {
+          "name": "armed",
+          "type": "bool",
+          "default": true
+        }
       ],
       "affordances": []
     }

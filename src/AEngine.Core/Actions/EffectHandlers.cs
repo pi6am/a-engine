@@ -46,9 +46,17 @@ public sealed class EffectHandler : IActionHandler
                 "effect requires Data 'effects' (inline JSON) or 'effectsField' naming an array field.");
         Effects.Apply(ctx.Engine, list,
             new EffectContext(ctx.Agent, target, ctx.AuxTarget, target, ctx.Random));
-        var self = Data("self") is { Length: > 0 } s
-            ? s
-            : "You {verb} {target}.";
+        // the actor's message: a per-object field wins (each shiftable
+        // authors its own line — Zork's rug reveal), else the data
+        // template, else the naive verb
+        var self = (ctx.ModuleId is not null &&
+                    Data("selfField") is { Length: > 0 } selfField &&
+                    ctx.Modules.ResolveString(target, ctx.ModuleId, selfField) is
+                        { Length: > 0 } authored)
+            ? authored
+            : Data("self") is { Length: > 0 } s
+                ? s
+                : "You {verb} {target}.";
         return ActionResult.Ok(char.ToUpperInvariant(self[0]) + self[1..]
             .Replace("{verb}", ctx.Verb ?? "act", StringComparison.Ordinal)
             .Replace("{target}",
