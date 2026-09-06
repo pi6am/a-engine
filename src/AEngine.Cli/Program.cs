@@ -554,10 +554,13 @@ while (true)
                 RunNpcTurnsAndResolve(); // real-time: the timer drives NPCs
         });
         var lastStep = steps[^1];
-        var note = lastStep.Note
-            ?? (lastStep.Result is { Outcome: ActionOutcome.Failure } && steps.Count < plan.Count
-                ? "Plan stopped." // only when later steps were skipped
-                : null);
+        // the executor's own note ("I don't know how to...") is real
+        // feedback about the world; the plan meta line is only for
+        // players following the plan (/showplan), noise otherwise
+        var note = lastStep.Note;
+        if (note is null && output.ShowPlan &&
+            lastStep.Result is { Outcome: ActionOutcome.Failure } && steps.Count < plan.Count)
+            note = "Plan stopped."; // only when later steps were skipped
         // narrated: the prose explains the failure, so the meta line
         // follows it; raw: the meta line precedes the closing blank
         if (NarrateActions())
