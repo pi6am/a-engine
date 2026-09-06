@@ -80,8 +80,11 @@ public sealed class GateRegistry
 /// The guard gate: an item's own fields say who protects it. While the
 /// agent named in <c>guardedBy</c> is still in the fight — carrying none
 /// of the condition kinds listed in <c>guardConditions</c> — the item
-/// cannot be taken ("You'd be stabbed in the back first."). The message
-/// comes from <c>guardedText</c> through <see cref="Message"/>.
+/// cannot be taken ("You'd be stabbed in the back first."). An optional
+/// <c>needsFlag</c> (a flag object that must be true) guards on world
+/// state instead: the platinum bar stays untakeable until its room is
+/// quieted. The message comes from <c>guardedText</c> through
+/// <see cref="Message"/>.
 /// </summary>
 public sealed class GuardGate : IActionGate
 {
@@ -92,6 +95,14 @@ public sealed class GuardGate : IActionGate
         var item = ctx.Target;
         if (item is null || !item.HasModule("portable"))
             return false;
+        var needsFlag = ctx.Modules.ResolveString(item, "portable", "needsFlag");
+        if (needsFlag is { Length: > 0 } && ctx.World.HasObject(needsFlag))
+        {
+            var flag = ctx.World.GetObject(needsFlag);
+            if (flag.HasModule("flag") &&
+                !ctx.Modules.ResolveBool(flag, "flag", "value"))
+                return true;
+        }
         var guardId = ctx.Modules.ResolveString(item, "portable", "guardedBy");
         if (guardId is not { Length: > 0 } || !ctx.World.HasObject(guardId))
             return false;

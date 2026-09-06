@@ -90,6 +90,22 @@ public static class Effects
                     world.SetFieldOverride(obj.Id, module, field, value.Clone());
                     break;
                 }
+                case "toggle":
+                {
+                    // flip a bool in place — the no-race way to reverse
+                    // state from an effect list (conditional set+set pairs
+                    // re-evaluate mid-list and undo themselves)
+                    var obj = Sel(args, "of") ?? Sel(args, "object");
+                    var module = Str(args, "module");
+                    var field = Str(args, "field");
+                    if (obj is null || module is null || field is null || !obj.HasModule(module))
+                        break;
+                    if (modules.ResolveField(obj, module, field) is
+                            { ValueKind: JsonValueKind.True or JsonValueKind.False } current)
+                        world.SetFieldOverride(obj.Id, module, field,
+                            World.World.ToJson(!current.GetBoolean()));
+                    break;
+                }
                 case "adjust":
                 {
                     var obj = Sel(args, "of") ?? Sel(args, "object");
@@ -132,9 +148,26 @@ public static class Effects
                 case "teleport":
                 {
                     var obj = Sel(args, "object");
-                    var room = Sel(args, "to");
-                    if (obj is not null && room is not null)
+                    if (obj is null)
+                        break;
+                    // "to" is one room, or a list the engine picks from
+                    // (seeded Random — the vampire bat's abduction)
+                    if (args.TryGetProperty("to", out var toArray) &&
+                        toArray.ValueKind == JsonValueKind.Array)
+                    {
+                        var rooms = toArray.EnumerateArray()
+                            .Where(x => x.ValueKind == JsonValueKind.String)
+                            .Select(x => x.GetString()!)
+                            .Where(world.HasObject)
+                            .ToList();
+                        if (rooms.Count > 0)
+                            MoveAndAward(engine, obj,
+                                rooms[(ctx.Random ?? engine.Random).Next(rooms.Count)], ctx);
+                    }
+                    else if (Sel(args, "to") is { } room)
+                    {
                         MoveAndAward(engine, obj, room.Id, ctx);
+                    }
                     break;
                 }
                 case "scatter":

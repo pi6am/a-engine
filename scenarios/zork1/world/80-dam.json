@@ -1,0 +1,2255 @@
+{
+  "world": [
+    {
+      "id": "round_room",
+      "name": "Round Room",
+      "description": "This is a circular stone room with passages in all directions. Several of them have unfortunately been blocked by cave-ins.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rr_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "ew_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rr_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "loud_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rr_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "ns_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rr_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "narrow_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rr_southeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "engavings_cave"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ns_passage",
+      "name": "North-South Passage",
+      "description": "This is a high north-south passage, which forks to the northeast.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "nsp_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "chasm_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "nsp_northeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "deep_canyon"
+              }
+            }
+          ]
+        },
+        {
+          "id": "nsp_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "round_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "chasm_room",
+      "name": "Chasm",
+      "description": "A chasm runs southwest to northeast and the path follows it. You are on the south side of the chasm, where a crack opens into a passage.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "ch_ne",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "reservoir_south"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ch_sw",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "ew_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ch_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "ew_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ch_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "ns_passage"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "deep_canyon",
+      "name": "Deep Canyon",
+      "description": "You are on the south edge of a deep canyon. Passages lead off to the east, northwest and southwest. A stairway leads down.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dc_northwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "reservoir_south"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dc_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "dam_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dc_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "ns_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dc_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "loud_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "damp_cave",
+      "name": "Damp Cave",
+      "description": "This cave has exits to the west and east, and narrows to a crack toward the south. The earth is particularly damp here.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dcv_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "loud_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dcv_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "white_cliffs_north"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "loud_room",
+      "name": "Loud Room",
+      "description": "This is a large room with a ceiling which cannot be detected from the floor. There are exits to the east and west, and a staircase leading up. The room is deafeningly loud with an undetermined source of noise.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "loud_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "damp_cave"
+              }
+            }
+          ]
+        },
+        {
+          "id": "loud_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "round_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "loud_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "deep_canyon"
+              }
+            }
+          ]
+        },
+        {
+          "id": "platinum_bar",
+          "name": "platinum bar",
+          "description": "A bar of solid platinum, gleaming dully through the din.",
+          "modules": [
+            "portable",
+            "treasure",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 20,
+                "needsFlag": "loud_quiet",
+                "guardedText": "You cannot even hear yourself think in here."
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 10,
+                "tvalue": 5
+              }
+            }
+          ]
+        },
+        {
+          "id": "loud_quiet",
+          "name": "loud room quieted",
+          "modules": [
+            "flag"
+          ]
+        },
+        {
+          "id": "echo",
+          "name": "echo",
+          "description": "The room's own voice, shouting back at you.",
+          "modules": []
+        },
+        {
+          "id": "the_echo",
+          "name": "echo",
+          "description": "The room's own voice, shouting back at you.",
+          "modules": [
+            "askable",
+            {
+              "module": "askable",
+              "overrides": {
+                "answers": {
+                  "echo": [
+                    {
+                      "set": {
+                        "object": "echo_solved",
+                        "module": "flag",
+                        "field": "value",
+                        "value": true
+                      }
+                    },
+                    {
+                      "signal": {
+                        "from": "the_echo",
+                        "sense": "audible",
+                        "text": "The acoustics of the room change subtly."
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dam_room",
+      "name": "Dam",
+      "description": "You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. There are paths to the north, south, and west, and a scramble down. The sluice gates are shut, and the stream is quiet. Behind the dam, there is a large lake, which is almost ready to overflow the dam.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dam_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "deep_canyon"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dam_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "dam_base"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dam_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "dam_lobby"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dam_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "reservoir_south"
+              }
+            }
+          ]
+        },
+        {
+          "id": "control_panel",
+          "name": "control panel",
+          "description": "A mass of machinery, buttons, and gauges.",
+          "modules": []
+        },
+        {
+          "id": "bubble",
+          "name": "green bubble",
+          "description": "A translucent green bubble floating in the panel.",
+          "modules": []
+        },
+        {
+          "id": "bolt",
+          "name": "bolt",
+          "description": "A metal bolt, two feet across, set into the dam's sluice gates.",
+          "modules": [
+            "turnable",
+            {
+              "module": "turnable",
+              "overrides": {
+                "onTurn": [
+                  {
+                    "toggle": {
+                      "object": "gates_open",
+                      "module": "flag",
+                      "field": "value"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "dam",
+          "name": "dam",
+          "description": "Flood Control Dam #3, a triumph of engineering and tourism alike.",
+          "modules": []
+        }
+      ]
+    },
+    {
+      "id": "dam_lobby",
+      "name": "Dam Lobby",
+      "description": "This room appears to have been the waiting room for groups touring the dam. There are open doorways here to the north and east marked \"Private\", and there is a path leading south over the top of the dam.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dl_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "dam_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dl_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "maintenance_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dl_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "maintenance_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "match",
+          "name": "matchbook",
+          "description": "A matchbook whose cover says \"Visit Beautiful FCD#3\".",
+          "modules": [
+            "portable",
+            "readable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 2
+              }
+            },
+            {
+              "module": "readable",
+              "overrides": {
+                "text": "You are in a large room with a large door presumably to the east. There is a sign on the wall reading \"Flood Control Dam #3 Hutber and Lil, Consulting Engineers\"."
+              }
+            },
+            {
+              "module": "lightsource",
+              "overrides": {
+                "fuel": 2,
+                "selfLighting": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "tour_guide",
+          "name": "tour guidebook",
+          "description": "A tattered guidebook, half mildewed.",
+          "modules": [
+            "portable",
+            "readable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 2
+              }
+            },
+            {
+              "module": "readable",
+              "overrides": {
+                "text": "The guidebook is mostly ruined by water damage. A few paragraphs remain legible: \"Welcome to Flood Control Dam #3... The dam was constructed in 783 GUE... FCD#3 was presumably built to control the great seasonal fluctuations of the Frigid River...\""
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maintenance_room",
+      "name": "Maintenance Room",
+      "description": "This is what appears to have been the maintenance room for Flood Control Dam #3. Apparently, this room has been ransacked recently, for most of the valuable equipment is gone. On the wall in front of you is a group of buttons colored blue, yellow, brown, and red. There are doorways to the west and south.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "mr_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "dam_lobby"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mr_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "dam_lobby"
+              }
+            }
+          ]
+        },
+        {
+          "id": "wrench",
+          "name": "wrench",
+          "description": "A sturdy toolroom wrench.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            }
+          ]
+        },
+        {
+          "id": "screwdriver",
+          "name": "screwdriver",
+          "description": "A common screwdriver.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 5
+              }
+            }
+          ]
+        },
+        {
+          "id": "blue_button",
+          "name": "blue button",
+          "description": "A blue button on the wall.",
+          "modules": [
+            "pressable",
+            {
+              "module": "pressable",
+              "overrides": {
+                "pressText": "There is a rumbling sound and a stream of water appears to burst from the east wall, apparently from a pipe which runs from the reservoir.",
+                "onPress": [
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "The blue button appears to be jammed."
+                    },
+                    "when": [
+                      {
+                        "of": "leak_level",
+                        "module": "flag",
+                        "field": "count",
+                        "min": 1
+                      }
+                    ]
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "There is a rumbling sound and a stream of water appears to burst from the east wall, apparently from a pipe which runs from the reservoir."
+                    },
+                    "when": [
+                      {
+                        "of": "leak_level",
+                        "module": "flag",
+                        "field": "count",
+                        "max": 0
+                      }
+                    ]
+                  },
+                  {
+                    "set": {
+                      "object": "leak_level",
+                      "module": "flag",
+                      "field": "count",
+                      "value": 1
+                    },
+                    "when": [
+                      {
+                        "of": "leak_level",
+                        "module": "flag",
+                        "field": "count",
+                        "max": 0
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "red_button",
+          "name": "red button",
+          "description": "A red button on the wall.",
+          "modules": [
+            "pressable",
+            {
+              "module": "pressable",
+              "overrides": {
+                "pressText": "Click.",
+                "onPress": [
+                  {
+                    "toggle": {
+                      "object": "maintenance_room",
+                      "module": "room",
+                      "field": "dark"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "brown_button",
+          "name": "brown button",
+          "description": "A brown button on the wall.",
+          "modules": [
+            "pressable",
+            {
+              "module": "pressable",
+              "overrides": {
+                "pressText": "Click.",
+                "onPress": [
+                  {
+                    "set": {
+                      "object": "gate_glow",
+                      "module": "flag",
+                      "field": "value",
+                      "value": false
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "yellow_button",
+          "name": "yellow button",
+          "description": "A yellow button on the wall.",
+          "modules": [
+            "pressable",
+            {
+              "module": "pressable",
+              "overrides": {
+                "pressText": "Click.",
+                "onPress": [
+                  {
+                    "set": {
+                      "object": "gate_glow",
+                      "module": "flag",
+                      "field": "value",
+                      "value": true
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "tube",
+          "name": "tube",
+          "description": "A small tube, its end crimped.",
+          "modules": [
+            "container",
+            "openable",
+            "portable",
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 7
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            },
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 6
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "putty",
+              "name": "viscous material",
+              "description": "A lump of grey, sticky material.",
+              "modules": [
+                "portable",
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 6
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "leak",
+          "name": "leak",
+          "description": "A stream of water spraying from a pipe.",
+          "modules": [
+            "patchable",
+            {
+              "module": "patchable",
+              "overrides": {
+                "onPatch": [
+                  {
+                    "set": {
+                      "object": "leak_level",
+                      "module": "flag",
+                      "field": "count",
+                      "value": 0
+                    }
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "The leak is plugged, and the remaining water drains away."
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reservoir_south",
+      "name": "Reservoir South",
+      "description": "You are in a long room. To the north is a large lake, too deep to cross. To the east there is a small stream flowing out of a hole in the rock about three feet up. Through the stream, you can see a main tunnel leading into darkness.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rs_southeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "deep_canyon"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rs_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "chasm_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rs_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "dam_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rs_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "stream_view"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rs_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "reservoir",
+                "requires": "low_tide",
+                "blockedText": "You would drown."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reservoir",
+      "name": "Reservoir",
+      "description": "You are on the gently flowing stream. The upstream route is too narrow to navigate, and the downstream route is invisible due to twisting walls. There is a narrow beach to land on.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "res_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "reservoir_north"
+              }
+            }
+          ]
+        },
+        {
+          "id": "res_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "reservoir_south"
+              }
+            }
+          ]
+        },
+        {
+          "id": "res_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "in_stream"
+              }
+            }
+          ]
+        },
+        {
+          "id": "res_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "in_stream"
+              }
+            }
+          ]
+        },
+        {
+          "id": "trunk",
+          "name": "trunk of jewels",
+          "description": "An old sea trunk, packed to the corners with precious gems.",
+          "modules": [
+            "portable",
+            "treasure",
+            "hideable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 35
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 15,
+                "tvalue": 5
+              }
+            },
+            {
+              "module": "hideable",
+              "overrides": {
+                "concealed": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "reservoir_north",
+      "name": "Reservoir North",
+      "description": "You are in a large cavernous area. To the south is a wide lake, whose water level appears to be falling rapidly.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rn_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "atlantis_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rn_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "reservoir",
+                "requires": "low_tide",
+                "blockedText": "You would drown."
+              }
+            }
+          ]
+        },
+        {
+          "id": "pump",
+          "name": "hand-held air pump",
+          "description": "A small hand pump, good for inflating things.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stream_view",
+      "name": "Stream View",
+      "description": "You are standing on a path beside a gently flowing stream. The path follows the stream, which flows from west to east.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sv_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "reservoir_south"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "in_stream",
+      "name": "Stream",
+      "description": "You are on the gently flowing stream. The upstream route is too narrow to navigate, and the downstream route is invisible due to twisting walls. There is a narrow beach to land on.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "ist_land",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "land",
+                "to": "stream_view"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ist_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "reservoir"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ist_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "reservoir"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dam_state",
+      "name": "dam state",
+      "description": "The shared state of Flood Control Dam #3.",
+      "modules": [
+        "flag",
+        {
+          "module": "flag",
+          "overrides": {
+            "value": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "gates_open",
+      "name": "sluice gates open",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "low_tide",
+      "name": "reservoir drained",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "leak_level",
+      "name": "maintenance room leak",
+      "modules": [
+        "flag",
+        {
+          "module": "flag",
+          "overrides": {
+            "count": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "gate_glow",
+      "name": "gate control glowing",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "echo_solved",
+      "name": "the echo answered",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "gates_opened_say",
+      "name": "gates_opened_say",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "signal": {
+                  "from": "dam",
+                  "sense": "audible",
+                  "text": "The sluice gates open and water pours through the dam."
+                }
+              }
+            ],
+            "once": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "gates_closed_say",
+      "name": "gates_closed_say",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "signal": {
+                  "from": "dam",
+                  "sense": "audible",
+                  "text": "The sluice gates close and water starts to collect behind the dam."
+                }
+              }
+            ],
+            "once": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "reservoir_drains",
+      "name": "reservoir_drains",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "low_tide",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "reveal": {
+                  "object": "trunk"
+                }
+              },
+              {
+                "signal": {
+                  "from": "dam",
+                  "sense": "audible",
+                  "text": "You hear what sounds like rushing water in the distance."
+                }
+              }
+            ],
+            "once": true,
+            "delay": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "reservoir_refills",
+      "name": "reservoir_refills",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "low_tide",
+                  "module": "flag",
+                  "field": "value",
+                  "value": false
+                }
+              },
+              {
+                "conceal": {
+                  "object": "trunk"
+                }
+              },
+              {
+                "signal": {
+                  "from": "dam",
+                  "sense": "audible",
+                  "text": "You hear what sounds like surging water in the distance."
+                }
+              }
+            ],
+            "once": true,
+            "delay": 8
+          }
+        }
+      ]
+    },
+    {
+      "id": "dam_text_full",
+      "name": "dam_text_full",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "dam_room",
+                  "description": "You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. There are paths to the north, south, and west, and a scramble down. The sluice gates on the dam are closed. Behind the dam, there can be seen a wide reservoir. Water is pouring over the top of the now abandoned dam. There is a control panel here, on which a large metal bolt is mounted. Directly above the bolt is a small green plastic bubble."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dam_text_draining",
+      "name": "dam_text_draining",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "dam_room",
+                  "description": "You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. There are paths to the north, south, and west, and a scramble down. The sluice gates are open, and water rushes through the dam. The water level behind the dam is still high. There is a control panel here, on which a large metal bolt is mounted. Directly above the bolt is a small green plastic bubble."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dam_text_drained",
+      "name": "dam_text_drained",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "dam_room",
+                  "description": "You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. There are paths to the north, south, and west, and a scramble down. The water level behind the dam is low: The sluice gates have been opened. Water rushes through the dam and downstream. There is a control panel here, on which a large metal bolt is mounted. Directly above the bolt is a small green plastic bubble."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "dam_text_rising",
+      "name": "dam_text_rising",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "dam_room",
+                  "description": "You are standing on the top of the Flood Control Dam #3, which was quite a tourist attraction in times far distant. There are paths to the north, south, and west, and a scramble down. The sluice gates are closed. The water level in the reservoir is quite low, but the level is rising quickly. There is a control panel here, on which a large metal bolt is mounted. Directly above the bolt is a small green plastic bubble."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rs_text_full",
+      "name": "rs_text_full",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_south",
+                  "description": "You are in a long room on the south shore of a large lake, far too deep and wide for crossing."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rs_text_draining",
+      "name": "rs_text_draining",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_south",
+                  "description": "You are in a long room. To the north is a large lake, too deep to cross. You notice, however, that the water level appears to be dropping at a rapid rate. Before long, it might be possible to cross to the other side from here."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rs_text_drained",
+      "name": "rs_text_drained",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_south",
+                  "description": "You are in a long room, to the north of which was formerly a lake. However, with the water level lowered, there is merely a wide stream running through the center of the room."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rs_text_rising",
+      "name": "rs_text_rising",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_south",
+                  "description": "You are in a long room, to the north of which is a wide area which was formerly a reservoir, but now is merely a stream. You notice, however, that the level of the stream is rising quickly and that before long it will be impossible to cross here."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rn_text_full",
+      "name": "rn_text_full",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_north",
+                  "description": "You are in a large cavernous room, north of a large lake. There is a slimy stairway leaving the room to the north."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rn_text_draining",
+      "name": "rn_text_draining",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_north",
+                  "description": "You are in a large cavernous area. To the south is a wide lake, whose water level appears to be falling rapidly. There is a slimy stairway leaving the room to the north."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rn_text_drained",
+      "name": "rn_text_drained",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_north",
+                  "description": "You are in a large cavernous room, the south of which was formerly a lake. However, with the water level lowered, there is merely a wide stream running through there. There is a slimy stairway leaving the room to the north."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "rn_text_rising",
+      "name": "rn_text_rising",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "reservoir_north",
+                  "description": "You are in a cavernous area, to the south of which is a very wide stream. The level of the stream is rising rapidly, and it appears that before long it will be impossible to cross to the other side. There is a slimy stairway leaving the room to the north."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "loud_quiet_off",
+      "name": "loud_quiet_off",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "echo_solved",
+                "module": "flag",
+                "field": "value",
+                "equals": false,
+                "negate": false
+              },
+              {
+                "of": "echo_solved",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "loud_quiet",
+                  "module": "flag",
+                  "field": "value",
+                  "value": false
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "loud_quiet_on_drain",
+      "name": "loud_quiet_on_drain",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "gates_open",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "loud_quiet",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "loud_quiet_on_echo",
+      "name": "loud_quiet_on_echo",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "echo_solved",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "loud_quiet",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "loud_room_text",
+      "name": "loud_room_text",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "loud_quiet",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "loud_room",
+                  "description": "This is a large room with a ceiling which cannot be detected from the floor. There are exits to the east and west, and a staircase leading up. The room is deafeningly loud with an undetermined source of noise."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "loud_room_text_quiet",
+      "name": "loud_room_text_quiet",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "loud_quiet",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "loud_room",
+                  "description": "This is a large room with a ceiling which cannot be detected from the floor. There are exits to the east and west, and a staircase leading up. The room is eerie in its quietness."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "bubble_text_glow",
+      "name": "bubble_text_glow",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gate_glow",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "bubble",
+                  "name": "glowing bubble",
+                  "description": "A translucent green plastic bubble, glowing serenely."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "bubble_text_dim",
+      "name": "bubble_text_dim",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "gate_glow",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "bubble",
+                  "name": "green bubble",
+                  "description": "A translucent green plastic bubble, quiet for now."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "leak_rises",
+      "name": "leak_rises",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "leak_level",
+                "module": "flag",
+                "field": "count",
+                "min": 1,
+                "max": 13
+              }
+            ],
+            "effects": [
+              {
+                "adjust": {
+                  "object": "leak_level",
+                  "module": "flag",
+                  "field": "count",
+                  "by": 1
+                }
+              }
+            ],
+            "every": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "leak_message_ankles",
+      "name": "leak_message_ankles",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "leak_level",
+                "module": "flag",
+                "field": "count",
+                "equals": 2
+              }
+            ],
+            "effects": [
+              {
+                "signal": {
+                  "from": "leak",
+                  "sense": "visual",
+                  "text": "You are ankle-deep in water and rising."
+                }
+              }
+            ],
+            "once": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "leak_message_waist",
+      "name": "leak_message_waist",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "leak_level",
+                "module": "flag",
+                "field": "count",
+                "equals": 6
+              }
+            ],
+            "effects": [
+              {
+                "signal": {
+                  "from": "leak",
+                  "sense": "visual",
+                  "text": "The water is up to your waist now."
+                }
+              }
+            ],
+            "once": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "leak_floods",
+      "name": "leak_floods",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "leak_level",
+                "module": "flag",
+                "field": "count",
+                "min": 14
+              }
+            ],
+            "effects": [
+              {
+                "endsGame": {
+                  "text": "The room is now full of water, and so are your lungs."
+                }
+              }
+            ],
+            "once": true
+          }
+        }
+      ]
+    }
+  ]
+}

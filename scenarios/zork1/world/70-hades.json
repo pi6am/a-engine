@@ -4,13 +4,17 @@
       "id": "lld_state",
       "name": "exorcism complete",
       "description": "The gate to the Land of the Living Dead stands open.",
-      "modules": ["flag"]
+      "modules": [
+        "flag"
+      ]
     },
     {
       "id": "entrance_to_hades",
       "name": "Entrance to Hades",
       "description": "You are at the edge of a large chasm filled with heavy mist. The chasm can only be crossed via a rickety wooden bridge, which stands to the west of where you are. In the distance you can see a large gate, over which a string of lights is strung. The gates are open, but strange guttural chanting can be heard from within, and it does not sound like it would be wise to enter.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "hades_gate_south",
@@ -27,6 +31,20 @@
               }
             }
           ]
+        },
+        {
+          "id": "hades_up",
+          "name": "staircase",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "tiny_cave"
+              }
+            }
+          ]
         }
       ]
     },
@@ -34,7 +52,9 @@
       "id": "land_of_living_dead",
       "name": "Land of the Dead",
       "description": "You have entered the Land of the Living Dead. Thousands of lost souls can be heard weeping and moaning. In the corner are stacked the remains of dozens of previous adventurers less fortunate than yourself. A passage exits to the north.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "skull",
@@ -42,19 +62,45 @@
           "description": "A skull of the clearest crystal, gleaming coldly.",
           "modules": [
             "portable",
-            { "module": "portable", "overrides": { "weight": 10 } },
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            },
             "treasure",
-            { "module": "treasure", "overrides": { "value": 10, "tvalue": 10 } }
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 10,
+                "tvalue": 10
+              }
+            }
           ]
         },
-        { "id": "lld_north", "name": "passage", "modules": [{ "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "north", "to": "entrance_to_hades" } }] }
+        {
+          "id": "lld_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "entrance_to_hades"
+              }
+            }
+          ]
+        }
       ]
     },
     {
       "id": "south_temple",
       "name": "Altar",
       "description": "This is the south end of a large temple. In front of you is what appears to be an altar. In one corner is a small hole in the floor which leads into darkness. You probably could not get back up it.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "altar",
@@ -66,15 +112,129 @@
               "module": "pray_site",
               "overrides": {
                 "resurrectEffects": [
-                  { "detach": { "from": "player", "kind": "dead" } },
-                  { "set": { "object": "player", "module": "agent", "field": "alwaysLit", "value": false } },
-                  { "teleport": { "object": "player", "to": "forest_1" } },
-                  { "say": { "to": "player", "text": "From the distance the sound of a lone trumpet is heard. The room becomes very bright and you feel disembodied. In a moment, the brightness fades and you find yourself rising as if from a long sleep, deep in the woods. In the distance you can faintly hear a songbird and the sounds of the forest." } }
+                  {
+                    "detach": {
+                      "from": "player",
+                      "kind": "dead"
+                    }
+                  },
+                  {
+                    "set": {
+                      "object": "player",
+                      "module": "agent",
+                      "field": "alwaysLit",
+                      "value": false
+                    }
+                  },
+                  {
+                    "teleport": {
+                      "object": "player",
+                      "to": "forest_1"
+                    }
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "From the distance the sound of a lone trumpet is heard. The room becomes very bright and you feel disembodied. In a moment, the brightness fades and you find yourself rising as if from a long sleep, deep in the woods. In the distance you can faintly hear a songbird and the sounds of the forest."
+                    }
+                  }
                 ],
                 "livingEffects": [
-                  { "teleport": { "object": "player", "to": "forest_1" } },
-                  { "say": { "to": "player", "text": "A feeling of peace settles over you. When it passes, you are somewhere else entirely." } }
+                  {
+                    "teleport": {
+                      "object": "player",
+                      "to": "forest_1"
+                    }
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "A feeling of peace settles over you. When it passes, you are somewhere else entirely."
+                    }
+                  }
                 ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "st_north",
+          "name": "temple",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "north_temple"
+              }
+            }
+          ]
+        },
+        {
+          "id": "st_down",
+          "name": "hole",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "tiny_cave",
+                "notCarrying": [
+                  "coffin"
+                ],
+                "blockedText": "You haven't a prayer of getting the coffin down there."
+              }
+            }
+          ]
+        },
+        {
+          "id": "candles",
+          "name": "pair of candles",
+          "description": "Two candles of black wax, their wicks blackened.",
+          "modules": [
+            "portable",
+            "lightsource",
+            "match_lit",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            },
+            {
+              "module": "lightsource",
+              "overrides": {
+                "on": true,
+                "fuel": 40,
+                "burnStages": [
+                  "20|The candles grow shorter.",
+                  "10|The candles are quite short now.",
+                  "5|The candles won't last much longer."
+                ],
+                "outText": "The candles are extinguished, leaving only stubs of black wax."
+              }
+            }
+          ]
+        },
+        {
+          "id": "black_book",
+          "name": "black book",
+          "description": "A dusty black book, lying open to a page marked 569.",
+          "modules": [
+            "portable",
+            "readable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            },
+            {
+              "module": "readable",
+              "overrides": {
+                "text": "The book relates the tale of the worship of Hades, ending with a prayer for the exorcism of evil spirits: 'Begone, fiends, back to the depths from which you came!'"
               }
             }
           ]
@@ -90,16 +250,78 @@
           "module": "automation",
           "overrides": {
             "once": true,
-            "when": [{ "of": "player", "hasCondition": "dead" }],
+            "when": [
+              {
+                "of": "player",
+                "hasCondition": "dead"
+              }
+            ],
             "effects": [
-              { "set": { "object": "player", "module": "agent", "field": "alwaysLit", "value": true } },
-              { "adjust": { "object": "player", "module": "scorecard", "field": "score", "by": -10 } },
-              { "adjust": { "object": "player", "module": "scorecard", "field": "deaths", "by": 1 } },
-              { "move": { "object": "lamp", "to": "living_room" } },
-              { "scatter": { "from": "player", "filterModule": "treasure", "to": ["maze_2", "maze_5", "maze_8", "maze_10", "maze_12", "dead_end_2", "troll_room"] } },
-              { "set": { "object": "troll_state", "module": "flag", "field": "value", "value": true } },
-              { "teleport": { "object": "player", "to": "entrance_to_hades" } },
-              { "say": { "to": "player", "text": "As you take your last breath, you feel relieved of your burdens. The feeling passes as you find yourself before the gates of Hell, where the spirits jeer at you and deny you entry. Your senses are disturbed. The objects in the dungeon appear indistinct, bleached of color, even unreal." } }
+              {
+                "set": {
+                  "object": "player",
+                  "module": "agent",
+                  "field": "alwaysLit",
+                  "value": true
+                }
+              },
+              {
+                "adjust": {
+                  "object": "player",
+                  "module": "scorecard",
+                  "field": "score",
+                  "by": -10
+                }
+              },
+              {
+                "adjust": {
+                  "object": "player",
+                  "module": "scorecard",
+                  "field": "deaths",
+                  "by": 1
+                }
+              },
+              {
+                "move": {
+                  "object": "lamp",
+                  "to": "living_room"
+                }
+              },
+              {
+                "scatter": {
+                  "from": "player",
+                  "filterModule": "treasure",
+                  "to": [
+                    "maze_2",
+                    "maze_5",
+                    "maze_8",
+                    "maze_10",
+                    "maze_12",
+                    "dead_end_2",
+                    "troll_room"
+                  ]
+                }
+              },
+              {
+                "set": {
+                  "object": "troll_state",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "teleport": {
+                  "object": "player",
+                  "to": "entrance_to_hades"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "As you take your last breath, you feel relieved of your burdens. The feeling passes as you find yourself before the gates of Hell, where the spirits jeer at you and deny you entry. Your senses are disturbed. The objects in the dungeon appear indistinct, bleached of color, even unreal."
+                }
+              }
             ]
           }
         }
@@ -115,11 +337,95 @@
           "overrides": {
             "once": true,
             "when": [
-              { "of": "player", "hasCondition": "dead" },
-              { "of": "player", "module": "scorecard", "field": "deaths", "min": 3 }
+              {
+                "of": "player",
+                "hasCondition": "dead"
+              },
+              {
+                "of": "player",
+                "module": "scorecard",
+                "field": "deaths",
+                "min": 3
+              }
             ],
             "effects": [
-              { "endsGame": { "text": "You clearly are a suicidal maniac. We don't allow psychotics in the cave, since they may harm other adventurers. Your remains will be installed in the Land of the Living Dead, where your fellow adventurers may gloat over them." } }
+              {
+                "endsGame": {
+                  "text": "You clearly are a suicidal maniac. We don't allow psychotics in the cave, since they may harm other adventurers. Your remains will be installed in the Land of the Living Dead, where your fellow adventurers may gloat over them."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stone_barrow",
+      "name": "Stone Barrow",
+      "description": "You are standing in front of a massive barrow of stone. In the east face is a huge stone door which is open. You cannot see into the dark of the tomb.",
+      "modules": [
+        "room"
+      ],
+      "children": [
+        {
+          "id": "sb_northeast",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "west_of_house"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "won_flag",
+      "name": "the game is won",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "barrow_enters",
+      "name": "entering the barrow ends the adventure",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "game_rules",
+                "module": "rules",
+                "field": "won",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "won_flag",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "reveal": {
+                  "object": "woh_southwest"
+                }
+              },
+              {
+                "rename": {
+                  "object": "west_of_house",
+                  "description": "You are standing in an open field west of a white house, with a boarded front door. A secret path leads southwest into the forest."
+                }
+              }
             ]
           }
         }

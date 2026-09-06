@@ -1,0 +1,1817 @@
+{
+  "world": [
+    {
+      "id": "dam_base",
+      "name": "Dam Base",
+      "description": "You are at the base of Flood Control Dam #3, which looms above you and to the north. The river Frigid is flowing by here. Along the river are the White Cliffs which seem to form giant walls stretching from north to south along the shores of the river as it winds its way downstream.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "db_north",
+          "name": "scramble",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "dam_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "db_up",
+          "name": "scramble",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "dam_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pile_of_plastic",
+          "name": "pile of plastic",
+          "description": "A folded heap of plastic, with a valve at one corner.",
+          "modules": [
+            "sittable",
+            "portable",
+            "inflatable",
+            "boat",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 20
+              }
+            },
+            {
+              "module": "inflatable",
+              "overrides": {
+                "onInflate": [
+                  {
+                    "set": {
+                      "object": "pile_of_plastic",
+                      "module": "inflatable",
+                      "field": "inflated",
+                      "value": true
+                    }
+                  },
+                  {
+                    "rename": {
+                      "object": "pile_of_plastic",
+                      "name": "magic boat",
+                      "description": "An inflated boat of green plastic, with a tan label on its side."
+                    }
+                  },
+                  {
+                    "spawn": {
+                      "template": "tpl_boat_label",
+                      "to": "pile_of_plastic"
+                    }
+                  }
+                ],
+                "onDeflate": [
+                  {
+                    "set": {
+                      "object": "pile_of_plastic",
+                      "module": "inflatable",
+                      "field": "inflated",
+                      "value": false
+                    }
+                  },
+                  {
+                    "rename": {
+                      "object": "pile_of_plastic",
+                      "name": "pile of plastic",
+                      "description": "A folded heap of plastic, with a valve at one corner."
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              "module": "boat",
+              "overrides": {
+                "launchText": "You push off from the shore, and the current takes hold of the boat.",
+                "onLaunch": [
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "river_1"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "dam_base"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "dam_base"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "river_3"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "white_cliffs_north"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "white_cliffs_north"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "river_4"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "white_cliffs_south"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "white_cliffs_south"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "river_5"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "shore"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "shore"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "river_4"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "sandy_beach"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "sandy_beach"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "reservoir"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "reservoir_south"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "reservoir_south"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "reservoir"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "reservoir_north"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "reservoir_north"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "in_stream"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "stream_view"
+                      },
+                      {
+                        "holder": "player",
+                        "holds": "pile_of_plastic",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "stream_view"
+                      }
+                    ]
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "The boat cannot be launched here."
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "dam_base",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "white_cliffs_north",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "white_cliffs_south",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "shore",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "sandy_beach",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "reservoir_south",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "reservoir_north",
+                        "negate": true
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "stream_view",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "dam_base",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "white_cliffs_north",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "white_cliffs_south",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "shore",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "sandy_beach",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "reservoir_south",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "reservoir_north",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "stream_view",
+                        "negate": true
+                      }
+                    ]
+                  }
+                ],
+                "landText": "You guide the boat skillfully to the shore.",
+                "onLand": [
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "dam_base"
+                    },
+                    "when": [
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_1"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "white_cliffs_north"
+                    },
+                    "when": [
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_3"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "sandy_beach"
+                    },
+                    "when": [
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_4"
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "pile_of_plastic",
+                      "to": "shore"
+                    },
+                    "when": [
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_5"
+                      }
+                    ]
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "There is no safe landing spot here."
+                    },
+                    "when": [
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_1",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_3",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_4",
+                        "negate": true
+                      },
+                      {
+                        "of": "pile_of_plastic",
+                        "inRoom": "river_5",
+                        "negate": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            },
+            {
+              "module": "sittable",
+              "overrides": {
+                "capacity": 1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river_1",
+      "name": "Frigid River",
+      "description": "You are on the Frigid River in the vicinity of the Dam. The river flows quietly here. There is a landing on the west shore.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rv1_west",
+          "name": "landing",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "dam_base"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river_2",
+      "name": "Frigid River",
+      "description": "The river turns a corner here making it impossible to see the landing on the west.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "id": "river_3",
+      "name": "Frigid River",
+      "description": "The river descends here into a valley. There is a narrow beach on the west shore below the cliffs. In the distance a faint rumbling can be heard.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rv3_west",
+          "name": "landing",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "white_cliffs_north"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river_4",
+      "name": "Frigid River",
+      "description": "The river is running faster here and the sound ahead appears to be that of rushing water. On the east shore is a sandy beach. A small area of beach can also be seen below the cliffs on the west shore.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rv4_east",
+          "name": "landing",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "sandy_beach"
+              }
+            }
+          ]
+        },
+        {
+          "id": "rv4_west",
+          "name": "landing",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "white_cliffs_south"
+              }
+            }
+          ]
+        },
+        {
+          "id": "buoy",
+          "name": "red buoy",
+          "description": "A red buoy, bobbing placidly in the current. There is something odd about the way it floats.",
+          "modules": [
+            "container",
+            "openable",
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 20
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "emerald",
+              "name": "large emerald",
+              "description": "A large emerald, green as the river it rode in on.",
+              "modules": [
+                "portable",
+                "treasure",
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 5
+                  }
+                },
+                {
+                  "module": "treasure",
+                  "overrides": {
+                    "value": 5,
+                    "tvalue": 10
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "river_5",
+      "name": "Frigid River",
+      "description": "The sound of rushing water is nearly unbearable here. On the east shore is a large landing area.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "rv5_east",
+          "name": "landing",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "shore"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "white_cliffs_north",
+      "name": "White Cliffs Beach",
+      "description": "You are on a narrow strip of beach which runs along the base of the White Cliffs. There is a narrow path heading south along the Cliffs and a tight passage leading west into the cliffs themselves.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "wcn_south",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "white_cliffs_south",
+                "notCarrying": [
+                  "pile_of_plastic"
+                ],
+                "blockedText": "The path is too narrow."
+              }
+            }
+          ]
+        },
+        {
+          "id": "wcn_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "damp_cave"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "white_cliffs_south",
+      "name": "White Cliffs Beach",
+      "description": "You are on a rocky, narrow strip of beach beside the Cliffs. A narrow path leads north along the shore.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "wcs_north",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "white_cliffs_north",
+                "notCarrying": [
+                  "pile_of_plastic"
+                ],
+                "blockedText": "The path is too narrow."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shore",
+      "name": "Shore",
+      "description": "You are on the east shore of the river. The water here seems somewhat treacherous. A path travels from north to south here, the south end quickly turning around a sharp corner.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "shore_north",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "sandy_beach"
+              }
+            }
+          ]
+        },
+        {
+          "id": "shore_south",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "aragain_falls"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandy_beach",
+      "name": "Sandy Beach",
+      "description": "You are on a large sandy beach on the east shore of the river, which is flowing quickly by. A path runs beside the river to the south here, and a small cove can be seen to the northeast.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sb_south",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "shore"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sb_northeast",
+          "name": "cove",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "sandy_cave"
+              }
+            }
+          ]
+        },
+        {
+          "id": "shovel",
+          "name": "shovel",
+          "description": "A sturdy shovel, its blade pitted with rust.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sandy_cave",
+      "name": "Sandy Cave",
+      "description": "This is a sand-filled cave whose exit is to the southwest.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "scv_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "sandy_beach"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sand",
+          "name": "sand",
+          "description": "A floor of soft, deep sand.",
+          "modules": [
+            "diggable",
+            {
+              "module": "diggable",
+              "overrides": {
+                "onDig0": [
+                  {
+                    "adjust": {
+                      "object": "self",
+                      "module": "diggable",
+                      "field": "count",
+                      "by": 1
+                    }
+                  }
+                ],
+                "onDig1": [
+                  {
+                    "adjust": {
+                      "object": "self",
+                      "module": "diggable",
+                      "field": "count",
+                      "by": 1
+                    }
+                  }
+                ],
+                "onDig2": [
+                  {
+                    "adjust": {
+                      "object": "self",
+                      "module": "diggable",
+                      "field": "count",
+                      "by": 1
+                    }
+                  },
+                  {
+                    "reveal": {
+                      "object": "scarab"
+                    }
+                  }
+                ],
+                "onDig3": [
+                  {
+                    "endsGame": {
+                      "text": "The walls of the hole collapse around you, and you are buried beneath an eternity of sand."
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "scarab",
+          "name": "jeweled scarab",
+          "description": "A scarab of lapis lazuli, winged with jewels.",
+          "modules": [
+            "portable",
+            "treasure",
+            "hideable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 8
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 5,
+                "tvalue": 5
+              }
+            },
+            {
+              "module": "hideable",
+              "overrides": {
+                "concealed": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "aragain_falls",
+      "name": "Aragain Falls",
+      "description": "You are at the top of Aragain Falls, an enormous waterfall with a drop of about 450 feet. The only path here is on the north end.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "af_north",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "shore"
+              }
+            }
+          ]
+        },
+        {
+          "id": "af_west",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "on_rainbow",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        },
+        {
+          "id": "af_up",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "on_rainbow",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "on_rainbow",
+      "name": "On the Rainbow",
+      "description": "You are on top of a rainbow (I bet you never thought you would walk on a rainbow), with a magnificent view of the Falls. The rainbow travels east-west here.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "or_west",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "end_of_rainbow",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        },
+        {
+          "id": "or_east",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "aragain_falls",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "end_of_rainbow",
+      "name": "End of Rainbow",
+      "description": "You are on a small, rocky beach on the continuation of the Frigid River past the Falls. The beach is narrow due to the presence of the White Cliffs. The river canyon opens here and sunlight shines in from above. A rainbow crosses over the falls to the east and a narrow path continues to the southwest.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "eor_northeast",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "on_rainbow",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        },
+        {
+          "id": "eor_east",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "on_rainbow",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        },
+        {
+          "id": "eor_up",
+          "name": "rainbow",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "on_rainbow",
+                "requires": "rainbow_solid",
+                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+              }
+            }
+          ]
+        },
+        {
+          "id": "eor_southwest",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "canyon_bottom"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pot_of_gold",
+          "name": "pot of gold",
+          "description": "A great iron pot, filled to the brim with gold coins.",
+          "modules": [
+            "portable",
+            "treasure",
+            "hideable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 15
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 10,
+                "tvalue": 10
+              }
+            },
+            {
+              "module": "hideable",
+              "overrides": {
+                "concealed": true
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canyon_bottom",
+      "name": "Canyon Bottom",
+      "description": "You are beneath the walls of the river canyon which may be climbable here. The lesser part of the runoff of Aragain Falls flows by below. To the north is a narrow path.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "cb_up",
+          "name": "cliff",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "cliff_middle"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cb_north",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "end_of_rainbow"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cliff_middle",
+      "name": "Rocky Ledge",
+      "description": "You are on a ledge about halfway up the wall of the river canyon. You can see from here that the main flow from Aragain Falls twists along a passage which it is impossible for you to enter. Below you is the canyon bottom. Above you is more cliff, which appears climbable.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "cm_up",
+          "name": "cliff",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "canyon_view"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cm_down",
+          "name": "cliff",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "canyon_bottom"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "canyon_view",
+      "name": "Canyon View",
+      "description": "You are at the top of the Great Canyon on its west wall. From here there is a marvelous view of the canyon and parts of the Frigid River upstream.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "cv_east",
+          "name": "cliff",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "cliff_middle"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cv_down",
+          "name": "cliff",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "cliff_middle"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cv_northwest",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "clearing"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cv_west",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "forest_3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tpl_boat_label",
+      "name": "tan label",
+      "description": "The label reads: Frobozz Magic Boat Factory.",
+      "modules": [
+        "readable",
+        {
+          "module": "readable",
+          "overrides": {
+            "text": "\"FROBOZZ MAGIC BOAT FACTORY. The Magic Boat is a product of the Frobozz Magic Boat Corporation. The instructions are destroyed by the label glue. Sorry.\""
+          }
+        }
+      ]
+    },
+    {
+      "id": "bauble",
+      "name": "brass bauble",
+      "description": "A small sphere of hammered brass, catching the light.",
+      "modules": [
+        "portable",
+        "treasure",
+        {
+          "module": "portable",
+          "overrides": {
+            "weight": 1
+          }
+        },
+        {
+          "module": "treasure",
+          "overrides": {
+            "value": 1,
+            "tvalue": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "rainbow_solid",
+      "name": "the rainbow is solid",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "river_drifts_0",
+      "name": "river_drifts_0",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "river_1"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "pile_of_plastic",
+                  "to": "river_2"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The boat drifts lazily downstream with the current."
+                }
+              }
+            ],
+            "every": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "river_drifts_1",
+      "name": "river_drifts_1",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "river_2"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "pile_of_plastic",
+                  "to": "river_3"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The boat drifts lazily downstream with the current."
+                }
+              }
+            ],
+            "every": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "river_drifts_2",
+      "name": "river_drifts_2",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "river_3"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "pile_of_plastic",
+                  "to": "river_4"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The boat drifts lazily downstream with the current."
+                }
+              }
+            ],
+            "every": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "river_drifts_3",
+      "name": "river_drifts_3",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "river_4"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "pile_of_plastic",
+                  "to": "river_5"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The boat drifts lazily downstream with the current."
+                }
+              }
+            ],
+            "every": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "river_carries_over_the_falls",
+      "name": "river_carries_over_the_falls",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "river_5"
+              }
+            ],
+            "effects": [
+              {
+                "endsGame": {
+                  "text": "The boat is carried over the falls, and you with it. It is a long way down."
+                }
+              }
+            ],
+            "every": 1,
+            "delay": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "swimmer_drowns_1",
+      "name": "swimmer_drowns_1",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "river_1"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are in the middle of the Frigid River, and the current is far too strong to swim. You go under for the last time."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "swimmer_drowns_2",
+      "name": "swimmer_drowns_2",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "river_2"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are in the middle of the Frigid River, and the current is far too strong to swim. You go under for the last time."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "swimmer_drowns_3",
+      "name": "swimmer_drowns_3",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "river_3"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are in the middle of the Frigid River, and the current is far too strong to swim. You go under for the last time."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "swimmer_drowns_4",
+      "name": "swimmer_drowns_4",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "river_4"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are in the middle of the Frigid River, and the current is far too strong to swim. You go under for the last time."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "swimmer_drowns_5",
+      "name": "swimmer_drowns_5",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "river_5"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are in the middle of the Frigid River, and the current is far too strong to swim. You go under for the last time."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "reservoir_swimmer_drowns",
+      "name": "reservoir_swimmer_drowns",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "reservoir"
+              },
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "reservoir",
+                "negate": true
+              },
+              {
+                "holder": "player",
+                "holds": "pile_of_plastic",
+                "negate": true
+              },
+              {
+                "of": "low_tide",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are swept over the dam, and the fall kills you."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "stream_swimmer_drowns",
+      "name": "stream_swimmer_drowns",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "in_stream"
+              },
+              {
+                "of": "pile_of_plastic",
+                "inRoom": "in_stream",
+                "negate": true
+              },
+              {
+                "holder": "player",
+                "holds": "pile_of_plastic",
+                "negate": true
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "You are swept down the stream, and the fall kills you."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "white_cliffs_need_deflation",
+      "name": "white_cliffs_need_deflation",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "white_cliffs_north"
+              },
+              {
+                "holder": "player",
+                "holds": "pile_of_plastic"
+              },
+              {
+                "of": "pile_of_plastic",
+                "module": "inflatable",
+                "field": "inflated",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The path along the Cliffs is too narrow to carry the inflated boat."
+                }
+              }
+            ],
+            "once": true
+          }
+        }
+      ]
+    }
+  ]
+}

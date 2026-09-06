@@ -865,7 +865,18 @@ generic throughout.
 - **Guarded loot** (the `guard` gate, on the take affordance) — an
   item's `guardedBy` agent protects it until they carry one of the
   `guardConditions` kinds (dead, unconscious): "You'd be stabbed in
-  the back first."
+  the back first." An optional `needsFlag` (a flag object that must
+  be true) guards on world state instead — the platinum bar waits
+  for its room to quiet.
+- **Vehicles as data** — the reference implementation is Zork's magic
+  boat: a `sittable` object (board = sit aboard; the carried-agent
+  and furniture-occupant rules make actions work from inside), a
+  `boat` module whose launch/land affordances are effect lists of
+  conditional teleports keyed on the current room (one per shore),
+  guarded against sharp cargo by the `notCarrying` gate; drift is a
+  family of `every: n` automations moving the boat downstream, and
+  swimmers drown via state rules watching the water rooms. Nothing
+  here is boat-shaped in the engine.
 - **The effect vocabulary** (`Core/Actions/Effects.cs`) — one JSON shape
   shared by the `effect` handler (verbs as data: move/ring/wave/dig/
   wind/pray/press/turn/tie/raise are affordances naming an effect list
@@ -884,7 +895,13 @@ generic throughout.
    Selectors: object ids or `actor`/`target`/`aux`/`self`; any single
    effect may carry a `when` condition array (the automation condition
    kinds, shared through `RuleConditions`) and simply doesn't happen
-   while it doesn't hold.
+   while it doesn't hold. Two authoring cautions: conditions evaluate
+   against the LIVE world mid-list (an effect that un-holds an item
+   starves the next effect's `holds` condition — order state changes
+   after the checks that depend on them), and `toggle` is the no-race
+   way to reverse state (a conditional set/set pair re-evaluates and
+   undoes itself). `teleport` with an array `to` picks a destination
+   from the engine's seeded Random (the vampire bat's abduction).
 - **Automations** (`Core/Runtime/Automations.cs`) — conditional rules
   and timers as top-level objects with the `automation` module,
   evaluated once per player turn on the world-clock pass (deterministic
@@ -895,8 +912,10 @@ generic throughout.
   (`{of, inRoom}`). Timing: plain rules fire every pass while true;
   `once` is edge-triggered and re-arms when conditions go false again
   (die, resurrect, die again); `delay` fires n turns after truth
-  begins; `every` re-fires at an interval — the reservoir drains, the
-  flood rises, wounds heal, all as data.
+  begins; `every` arms its interval on the first true pass and
+  re-fires each time it elapses (chained movers never cascade) — the
+  reservoir drains, the flood rises, wounds heal, the river carries
+  the boat, all as data.
 - **Scoring** (`Core/Actions/Score.cs`) — treasures carry `value`
   (points on first take) and `tvalue` (points while deposited in the
   scorecard's `caseRef` container — the live sum, so trophies can be

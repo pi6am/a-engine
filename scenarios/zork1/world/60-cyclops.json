@@ -345,6 +345,82 @@
             "value": 6,
             "tvalue": 4
           }
+        },
+        {
+          "module": "windable",
+          "overrides": {
+            "windText": "The canary chirps, a little off key. Somewhere nearby, a songbird answers.",
+            "onWind": [
+              {
+                "move": {
+                  "object": "bauble",
+                  "to": "actor"
+                },
+                "when": [
+                  {
+                    "of": "player",
+                    "inRoom": "forest_1"
+                  }
+                ]
+              },
+              {
+                "move": {
+                  "object": "bauble",
+                  "to": "actor"
+                },
+                "when": [
+                  {
+                    "of": "player",
+                    "inRoom": "forest_2"
+                  }
+                ]
+              },
+              {
+                "move": {
+                  "object": "bauble",
+                  "to": "actor"
+                },
+                "when": [
+                  {
+                    "of": "player",
+                    "inRoom": "forest_3"
+                  }
+                ]
+              },
+              {
+                "move": {
+                  "object": "bauble",
+                  "to": "actor"
+                },
+                "when": [
+                  {
+                    "of": "player",
+                    "inRoom": "path"
+                  }
+                ]
+              },
+              {
+                "move": {
+                  "object": "bauble",
+                  "to": "actor"
+                },
+                "when": [
+                  {
+                    "of": "player",
+                    "inRoom": "up_a_tree"
+                  }
+                ]
+              },
+              {
+                "set": {
+                  "object": "canary",
+                  "module": "windable",
+                  "field": "done",
+                  "value": true
+                }
+              }
+            ]
+          }
         }
       ]
     },

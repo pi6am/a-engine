@@ -233,6 +233,20 @@
             }
           ],
           "name": "trail"
+        },
+        {
+          "id": "f3_east",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "canyon_view"
+              }
+            }
+          ]
         }
       ]
     },
@@ -557,6 +571,20 @@
             }
           ],
           "name": "path"
+        },
+        {
+          "id": "cl_east",
+          "name": "path",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "canyon_view"
+              }
+            }
+          ]
         }
       ]
     }

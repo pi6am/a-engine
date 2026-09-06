@@ -1,0 +1,1438 @@
+{
+  "world": [
+    {
+      "id": "mirror_room_1",
+      "name": "Mirror Room",
+      "description": "You are in a large square room with tall ceilings. On the south wall is an enormous mirror which fills the entire wall. Within the mirror is a reflection of the room. Perpendicular to the mirror is a shiny metal bar, sticking out of the wall half way up.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "mr1_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "cold_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mr1_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "twisting_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mr1_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "small_cave"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mirror_1",
+          "name": "enormous mirror",
+          "description": "A reflection of the room \u2014 and of you.",
+          "modules": [
+            "rubable",
+            {
+              "module": "rubable",
+              "overrides": {
+                "rubText": "There is a rumble from deep within the earth and the room shakes.",
+                "onRub": [
+                  {
+                    "teleport": {
+                      "object": "player",
+                      "to": "mirror_room_2"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mirror_room_2",
+      "name": "Mirror Room",
+      "description": "You are in a large square room with tall ceilings. On the south wall is an enormous mirror which fills the entire wall. Within the mirror is a reflection of the room. Perpendicular to the mirror is a shiny metal bar, sticking out of the wall half way up.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "mr2_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "winding_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mr2_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "narrow_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mr2_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "tiny_cave"
+              }
+            }
+          ]
+        },
+        {
+          "id": "mirror_2",
+          "name": "enormous mirror",
+          "description": "A reflection of the room \u2014 and of you.",
+          "modules": [
+            "rubable",
+            {
+              "module": "rubable",
+              "overrides": {
+                "rubText": "There is a rumble from deep within the earth and the room shakes.",
+                "onRub": [
+                  {
+                    "teleport": {
+                      "object": "player",
+                      "to": "mirror_room_1"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cold_passage",
+      "name": "Cold Passage",
+      "description": "This is a cold and damp corridor where a long east-west passageway turns into a shorter passage leading south.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "cp_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "mirror_room_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "cp_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "slide_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "twisting_passage",
+      "name": "Twisting Passage",
+      "description": "This is a winding passage, which twists and turns in every direction, resembling the small intestine of some unfortunate animal.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "tp_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mirror_room_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tp_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "small_cave"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "winding_passage",
+      "name": "Winding Passage",
+      "description": "This is a winding passage. It seems that there is only one exit, to the north.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "wp_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mirror_room_2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "wp_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "tiny_cave"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "narrow_passage",
+      "name": "Narrow Passage",
+      "description": "This is a long and narrow corridor, running north and south. There is a tight bend in the passage at either end.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "np_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "round_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "np_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "mirror_room_2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "small_cave",
+      "name": "Cave",
+      "description": "This is a small primitive cave with a narrow crack in the north wall, a stone stairway leading down, and a passageway leading west.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sc_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mirror_room_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sc_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "atlantis_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sc_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "atlantis_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sc_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "twisting_passage"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tiny_cave",
+      "name": "Cave",
+      "description": "This is a tiny cave with a dark and forbidding staircase leading down, and a faint, evil smell rising from below.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "tc_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mirror_room_2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tc_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "winding_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tc_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "entrance_to_hades"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "atlantis_room",
+      "name": "Atlantis Room",
+      "description": "This is an ancient room, once under water. There is an opening to the south and a stairway leading up.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "atl_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "small_cave"
+              }
+            }
+          ]
+        },
+        {
+          "id": "atl_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "reservoir_north"
+              }
+            }
+          ]
+        },
+        {
+          "id": "trident",
+          "name": "crystal trident",
+          "description": "A trident of the clearest crystal, gleaming with cold light.",
+          "modules": [
+            "portable",
+            "treasure",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 20
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 4,
+                "tvalue": 11
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "engavings_cave",
+      "name": "Engravings Cave",
+      "description": "This is a cave with an engraving on the wall, and a path leading northwest.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "ec_northwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northwest",
+                "to": "round_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ec_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "dome_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "engravings",
+          "name": "engravings",
+          "description": "The engravings cover the wall in an ancient script.",
+          "modules": [
+            "readable",
+            {
+              "module": "readable",
+              "overrides": {
+                "text": "The engraving is a poem, part of which goes: 'No one shall pass who does not have the courage to stop, look, and listen...'"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dome_room",
+      "name": "Dome Room",
+      "description": "This is a large circular room with a high domed ceiling. The exit is to the northwest, and above you is a dome which can be seen to have an unusually large amount of debris on top of it.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "dome_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "engavings_cave"
+              }
+            }
+          ]
+        },
+        {
+          "id": "dome_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "torch_room",
+                "requires": "dome_tied",
+                "blockedText": "You cannot go down without fracturing many bones."
+              }
+            }
+          ]
+        },
+        {
+          "id": "railing",
+          "name": "railing",
+          "description": "A sturdy railing at the edge of the dome.",
+          "modules": [
+            "tiable",
+            {
+              "module": "tiable",
+              "overrides": {
+                "tieText": "The rope drops over the side and comes within ten feet of the floor.",
+                "onTie": [
+                  {
+                    "set": {
+                      "object": "dome_tied",
+                      "module": "flag",
+                      "field": "value",
+                      "value": true
+                    }
+                  },
+                  {
+                    "move": {
+                      "object": "rope",
+                      "to": "dome_room"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "torch_room",
+      "name": "Torch Room",
+      "description": "This is a large room with a prominent doorway leading to the south. To the east is a large stone which has been cut out of the room, leaving a large but shallow pit. There is a small bundle of sticks tied together with a golden cord at the bottom of the pit, and a narrow rope hanging from the ceiling above the pit.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "tor_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "north_temple"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tor_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "north_temple"
+              }
+            }
+          ]
+        },
+        {
+          "id": "pedestal",
+          "name": "pedestal",
+          "description": "A carved stone pedestal, cut from the floor.",
+          "modules": []
+        },
+        {
+          "id": "torch",
+          "name": "flaming ivory torch",
+          "description": "An ivory torch, burning with a steady white flame.",
+          "modules": [
+            "portable",
+            "treasure",
+            "lightsource",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 20
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 14,
+                "tvalue": 6
+              }
+            },
+            {
+              "module": "lightsource",
+              "overrides": {
+                "on": true,
+                "fuel": -1
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "north_temple",
+      "name": "Temple",
+      "description": "This is the north end of a large temple. On the east wall is an ancient inscription, probably a prayer in a strange language. Below the prayer is a stone stairway leading down to a hole in the floor, which is surrounded by a misty white haze. Above the stairway is a large bell.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": false
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "nt_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "south_temple"
+              }
+            }
+          ]
+        },
+        {
+          "id": "nt_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "egypt_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "nt_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "torch_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "bell",
+          "name": "brass bell",
+          "description": "A large brass bell, cold to the touch.",
+          "modules": [
+            "portable",
+            "ringable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            },
+            {
+              "module": "ringable",
+              "overrides": {
+                "onRing": [
+                  {
+                    "set": {
+                      "object": "hades_stage",
+                      "module": "flag",
+                      "field": "count",
+                      "value": 1
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  },
+                  {
+                    "move": {
+                      "object": "bell",
+                      "to": "entrance_to_hades"
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  },
+                  {
+                    "rename": {
+                      "object": "bell",
+                      "name": "red-hot bell",
+                      "description": "A large brass bell, far too hot to hold."
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "The bell suddenly becomes red hot and falls to the ground. The wraiths, as if paralyzed, stop their jeering and slowly turn to face you. On their ashen faces, the expression of a long-forgotten terror takes shape."
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  },
+                  {
+                    "set": {
+                      "object": "candles",
+                      "module": "lightsource",
+                      "field": "on",
+                      "value": false
+                    },
+                    "when": [
+                      {
+                        "holder": "player",
+                        "holds": "candles"
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  },
+                  {
+                    "move": {
+                      "object": "candles",
+                      "to": "entrance_to_hades"
+                    },
+                    "when": [
+                      {
+                        "holder": "player",
+                        "holds": "candles"
+                      },
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "In your confusion, the candles drop to the ground (and they are out)."
+                    },
+                    "when": [
+                      {
+                        "of": "player",
+                        "inRoom": "entrance_to_hades"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "egypt_room",
+      "name": "Egyptian Room",
+      "description": "This is a room which looks like an Egyptian tomb. There is a staircase leading down, and a passageway leading west, from which a foul stench wafts.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "eg_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "north_temple"
+              }
+            }
+          ]
+        },
+        {
+          "id": "eg_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "north_temple"
+              }
+            }
+          ]
+        },
+        {
+          "id": "coffin",
+          "name": "gold coffin",
+          "description": "A solid gold coffin, used by the ancient kings of the land.",
+          "modules": [
+            "container",
+            "openable",
+            "portable",
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 35
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            },
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 55
+              }
+            },
+            "treasure",
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 10,
+                "tvalue": 15
+              }
+            }
+          ],
+          "children": [
+            {
+              "id": "sceptre",
+              "name": "Ramses' sceptre",
+              "description": "A sceptre of solid gold, crowned with a glittering ruby.",
+              "modules": [
+                "portable",
+                "treasure",
+                "weapon",
+                {
+                  "module": "portable",
+                  "overrides": {
+                    "weight": 3
+                  }
+                },
+                {
+                  "module": "treasure",
+                  "overrides": {
+                    "value": 4,
+                    "tvalue": 6
+                  }
+                },
+                {
+                  "module": "waveable",
+                  "overrides": {
+                    "onWave": [
+                      {
+                        "toggle": {
+                          "object": "rainbow_solid",
+                          "module": "flag",
+                          "field": "value"
+                        },
+                        "when": [
+                          {
+                            "of": "player",
+                            "inRoom": "aragain_falls"
+                          },
+                          {
+                            "of": "player",
+                            "inRoom": "on_rainbow",
+                            "negate": true
+                          }
+                        ]
+                      },
+                      {
+                        "toggle": {
+                          "object": "rainbow_solid",
+                          "module": "flag",
+                          "field": "value"
+                        },
+                        "when": [
+                          {
+                            "of": "player",
+                            "inRoom": "end_of_rainbow"
+                          }
+                        ]
+                      },
+                      {
+                        "reveal": {
+                          "object": "pot_of_gold"
+                        },
+                        "when": [
+                          {
+                            "of": "rainbow_solid",
+                            "module": "flag",
+                            "field": "value",
+                            "equals": true
+                          }
+                        ]
+                      },
+                      {
+                        "conceal": {
+                          "object": "pot_of_gold"
+                        },
+                        "when": [
+                          {
+                            "of": "rainbow_solid",
+                            "module": "flag",
+                            "field": "value",
+                            "equals": false
+                          }
+                        ]
+                      },
+                      {
+                        "say": {
+                          "to": "player",
+                          "text": "The crystal arch of the rainbow solidifies into a bridge of colored light."
+                        },
+                        "when": [
+                          {
+                            "of": "rainbow_solid",
+                            "module": "flag",
+                            "field": "value",
+                            "equals": true
+                          }
+                        ]
+                      },
+                      {
+                        "say": {
+                          "to": "player",
+                          "text": "The rainbow fades back into mist and spray."
+                        },
+                        "when": [
+                          {
+                            "of": "rainbow_solid",
+                            "module": "flag",
+                            "field": "value",
+                            "equals": false
+                          }
+                        ]
+                      },
+                      {
+                        "say": {
+                          "to": "player",
+                          "text": "The sceptre flashes briefly, casting strange shadows."
+                        },
+                        "when": [
+                          {
+                            "of": "player",
+                            "inRoom": "aragain_falls",
+                            "negate": true
+                          },
+                          {
+                            "of": "player",
+                            "inRoom": "end_of_rainbow",
+                            "negate": true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dome_tied",
+      "name": "rope tied to the railing",
+      "modules": [
+        "flag"
+      ]
+    },
+    {
+      "id": "hades_stage",
+      "name": "exorcism ceremony stage",
+      "modules": [
+        "flag",
+        {
+          "module": "flag",
+          "overrides": {
+            "count": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ceremony_tension_breaks",
+      "name": "ceremony_tension_breaks",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "hades_stage",
+                "module": "flag",
+                "field": "count",
+                "equals": 1
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "hades_stage",
+                  "module": "flag",
+                  "field": "count",
+                  "value": 0
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The tension of this ceremony is broken, and the wraiths, amused but shaken at your clumsy attempt, resume their hideous jeering."
+                }
+              }
+            ],
+            "once": true,
+            "delay": 6
+          }
+        }
+      ]
+    },
+    {
+      "id": "ceremony_candles_dance",
+      "name": "ceremony_candles_dance",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "hades_stage",
+                "module": "flag",
+                "field": "count",
+                "equals": 1
+              },
+              {
+                "holder": "player",
+                "holds": "candles"
+              },
+              {
+                "of": "candles",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "of": "player",
+                "inRoom": "entrance_to_hades"
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "hades_stage",
+                  "module": "flag",
+                  "field": "count",
+                  "value": 2
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The flames flicker wildly and appear to dance. The earth beneath your feet trembles, and your legs nearly buckle beneath you. The spirits cower at your unearthly power."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "ceremony_dance_fades",
+      "name": "ceremony_dance_fades",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "hades_stage",
+                "module": "flag",
+                "field": "count",
+                "equals": 2
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "hades_stage",
+                  "module": "flag",
+                  "field": "count",
+                  "value": 0
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The tension of this ceremony is broken, and the wraiths, amused but shaken at your clumsy attempt, resume their hideous jeering."
+                }
+              }
+            ],
+            "once": true,
+            "delay": 3
+          }
+        }
+      ]
+    },
+    {
+      "id": "ceremony_prayer_banishes",
+      "name": "ceremony_prayer_banishes",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "hades_stage",
+                "module": "flag",
+                "field": "count",
+                "equals": 2
+              },
+              {
+                "holder": "player",
+                "holds": "black_book"
+              },
+              {
+                "of": "player",
+                "inRoom": "entrance_to_hades"
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "lld_state",
+                  "module": "flag",
+                  "field": "value",
+                  "value": true
+                }
+              },
+              {
+                "set": {
+                  "object": "hades_stage",
+                  "module": "flag",
+                  "field": "count",
+                  "value": 0
+                }
+              },
+              {
+                "signal": {
+                  "from": "player",
+                  "sense": "visual",
+                  "text": "Each word of the prayer reverberates through the hall in a deafening confusion. As the last word fades, a voice, loud and commanding, speaks: \"Begone, fiends!\" A heart-stopping scream fills the cavern, and the spirits, sensing a greater power, flee through the walls."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "hades_text_sealed",
+      "name": "hades_text_sealed",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "lld_state",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "entrance_to_hades",
+                  "description": "You are outside a large gateway, on which is inscribed Abandon Every Hope, All Ye Who Enter Here. The gate is open; through it you can see a desolation, with a pile of mangled bodies in one corner. Thousands of voices, lamenting some hideous fate, can be heard. The way through the gate is barred by evil spirits, who jeer at your attempts to pass."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "hades_text_open",
+      "name": "hades_text_open",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "lld_state",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "entrance_to_hades",
+                  "description": "You are outside a large gateway, on which is inscribed Abandon Every Hope, All Ye Who Enter Here. The gate is open; through it you can see a desolation, with a pile of mangled bodies in one corner. Thousands of voices, lamenting some hideous fate, can be heard."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "bell_cools",
+      "name": "bell_cools",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "bell",
+                "inRoom": "entrance_to_hades"
+              },
+              {
+                "of": "hades_stage",
+                "module": "flag",
+                "field": "count",
+                "max": 0
+              }
+            ],
+            "effects": [
+              {
+                "rename": {
+                  "object": "bell",
+                  "name": "brass bell",
+                  "description": "A large brass bell, cold to the touch."
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The bell appears to have cooled down."
+                }
+              }
+            ],
+            "once": true,
+            "delay": 20
+          }
+        }
+      ]
+    }
+  ]
+}

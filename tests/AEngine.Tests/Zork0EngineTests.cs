@@ -684,11 +684,13 @@ public class Zork0EngineTests
             """[ { "adjust": { "of": "player", "module": "scorecard", "field": "score", "by": 1 } } ]""",
             every: 2);
 
-        Do(engine, "wait"); // pass 1: fires (countdown 0 -> fire -> reset 2)
+        Do(engine, "wait"); // pass 1: arms the interval (no fire yet)
+        Assert.Equal(0, Ticks(engine));
+        Do(engine, "wait"); // pass 2: the interval elapses, fires
         Assert.Equal(1, Ticks(engine));
-        Do(engine, "wait"); // pass 2: countdown 1
+        Do(engine, "wait"); // re-armed
         Assert.Equal(1, Ticks(engine));
-        Do(engine, "wait"); // fire again
+        Do(engine, "wait"); // fires again
         Assert.Equal(2, Ticks(engine));
     }
 

@@ -413,6 +413,11 @@
           "default": []
         },
         {
+          "name": "needsFlag",
+          "type": "ref",
+          "default": null
+        },
+        {
           "name": "guardedText",
           "type": "string",
           "default": ""
@@ -572,6 +577,11 @@
           "name": "burnStages",
           "type": "list",
           "default": []
+        },
+        {
+          "name": "selfLighting",
+          "type": "bool",
+          "default": false
         }
       ],
       "affordances": [
@@ -612,6 +622,33 @@
             "field": "on",
             "value": "false",
             "self": "You turn off {target}."
+          }
+        },
+        {
+          "verb": "light",
+          "handler": "set",
+          "when": [
+            {
+              "module": "lightsource",
+              "field": "on",
+              "equals": false
+            },
+            {
+              "module": "lightsource",
+              "field": "dead",
+              "equals": false
+            },
+            {
+              "module": "lightsource",
+              "field": "selfLighting",
+              "equals": true
+            }
+          ],
+          "data": {
+            "module": "lightsource",
+            "field": "on",
+            "value": "true",
+            "self": "You light {target}."
           }
         }
       ]
@@ -896,6 +933,11 @@
           "name": "value",
           "type": "bool",
           "default": false
+        },
+        {
+          "name": "count",
+          "type": "int",
+          "default": 0
         }
       ],
       "affordances": []
@@ -1014,6 +1056,610 @@
           "name": "armed",
           "type": "bool",
           "default": true
+        }
+      ],
+      "affordances": []
+    },
+    {
+      "id": "turnable",
+      "name": "Turnable (turn-verb effects)",
+      "fields": [
+        {
+          "name": "onTurn",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "turnText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "turn",
+          "handler": "effect",
+          "gates": [
+            {
+              "kind": "carrying",
+              "args": {
+                "item": "wrench"
+              },
+              "failText": "The bolt won't turn without a good wrench."
+            },
+            {
+              "kind": "field",
+              "args": {
+                "of": "gate_glow",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              "failText": "The bolt won't turn with your best effort."
+            }
+          ],
+          "data": {
+            "effectsField": "onTurn",
+            "selfField": "turnText"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pressable",
+      "name": "Pressable (press-verb effects)",
+      "fields": [
+        {
+          "name": "onPress",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "pressText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "press",
+          "handler": "effect",
+          "data": {
+            "effectsField": "onPress",
+            "selfField": "pressText",
+            "self": "Pressed."
+          }
+        }
+      ]
+    },
+    {
+      "id": "windable",
+      "name": "Windable (wind-verb effects)",
+      "fields": [
+        {
+          "name": "onWind",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "windText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "done",
+          "type": "bool",
+          "default": false
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "wind",
+          "handler": "effect",
+          "data": {
+            "effectsField": "onWind",
+            "selfField": "windText"
+          },
+          "when": [
+            {
+              "module": "windable",
+              "field": "done",
+              "equals": false
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "match_lit",
+      "name": "Match-lit (a flame only a burning match may kindle)",
+      "fields": [],
+      "affordances": [
+        {
+          "verb": "light",
+          "handler": "set",
+          "when": [
+            {
+              "module": "lightsource",
+              "field": "on",
+              "equals": false
+            },
+            {
+              "module": "lightsource",
+              "field": "dead",
+              "equals": false
+            }
+          ],
+          "gates": [
+            {
+              "kind": "carrying",
+              "args": {
+                "item": "match"
+              }
+            },
+            {
+              "kind": "field",
+              "args": {
+                "of": "match",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              }
+            }
+          ],
+          "data": {
+            "module": "lightsource",
+            "field": "on",
+            "value": "true",
+            "self": "The pair of candles are now lit."
+          }
+        }
+      ]
+    },
+    {
+      "id": "patchable",
+      "name": "Patchable (patch-verb effects)",
+      "fields": [
+        {
+          "name": "onPatch",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "patchText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "patched",
+          "type": "bool",
+          "default": false
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "patch",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "patchable",
+              "field": "patched",
+              "equals": false
+            }
+          ],
+          "gates": [
+            {
+              "kind": "carrying",
+              "args": {
+                "item": "putty"
+              },
+              "failText": "You have nothing to plug the leak with."
+            }
+          ],
+          "data": {
+            "effectsField": "onPatch",
+            "selfField": "patchText",
+            "self": "You patch the leak."
+          }
+        }
+      ]
+    },
+    {
+      "id": "rubable",
+      "name": "Rubable (rub-verb effects)",
+      "fields": [
+        {
+          "name": "onRub",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "rubText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "rub",
+          "handler": "effect",
+          "data": {
+            "effectsField": "onRub",
+            "selfField": "rubText"
+          }
+        }
+      ]
+    },
+    {
+      "id": "ringable",
+      "name": "Ringable (ring-verb effects)",
+      "fields": [
+        {
+          "name": "onRing",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "ringText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "ring",
+          "handler": "effect",
+          "data": {
+            "effectsField": "onRing",
+            "selfField": "ringText",
+            "self": "Ding, dong."
+          }
+        }
+      ]
+    },
+    {
+      "id": "tiable",
+      "name": "Tiable (tie-verb effects)",
+      "fields": [
+        {
+          "name": "onTie",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "tieText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "tie",
+          "handler": "effect",
+          "gates": [
+            {
+              "kind": "carrying",
+              "args": {
+                "item": "rope"
+              },
+              "failText": "You have nothing to tie to it."
+            }
+          ],
+          "data": {
+            "effectsField": "onTie",
+            "selfField": "tieText"
+          },
+          "label": "Tie the rope to the {target}"
+        }
+      ]
+    },
+    {
+      "id": "raisable",
+      "name": "Raisable (raise-verb effects)",
+      "fields": [
+        {
+          "name": "onRaise",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "raiseText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "raise",
+          "handler": "effect",
+          "data": {
+            "effectsField": "onRaise",
+            "selfField": "raiseText"
+          }
+        }
+      ]
+    },
+    {
+      "id": "switchable",
+      "name": "Switchable (turn-verb effects, screwdriver)",
+      "fields": [
+        {
+          "name": "onTurn",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "turnText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "turn",
+          "handler": "effect",
+          "gates": [
+            {
+              "kind": "carrying",
+              "args": {
+                "item": "screwdriver"
+              },
+              "failText": "You can't turn the switch without a screwdriver."
+            }
+          ],
+          "data": {
+            "effectsField": "onTurn",
+            "selfField": "turnText"
+          }
+        }
+      ]
+    },
+    {
+      "id": "boat",
+      "name": "Boat (boardable, launchable, landable)",
+      "fields": [
+        {
+          "name": "onLaunch",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "launchText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "onLand",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "landText",
+          "type": "string",
+          "default": ""
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "board",
+          "handler": "sit",
+          "gates": [
+            {
+              "kind": "notCarrying",
+              "args": {
+                "item": [
+                  "sword",
+                  "knife",
+                  "rusty_knife",
+                  "axe",
+                  "stiletto",
+                  "sceptre"
+                ]
+              },
+              "failText": "There is a hole in the boat! The boat, and you, are sinking."
+            }
+          ]
+        },
+        {
+          "verb": "launch",
+          "handler": "effect",
+          "postures": [
+            "standing",
+            "sitting"
+          ],
+          "data": {
+            "effectsField": "onLaunch",
+            "selfField": "launchText"
+          }
+        },
+        {
+          "verb": "land",
+          "handler": "effect",
+          "postures": [
+            "standing",
+            "sitting"
+          ],
+          "data": {
+            "effectsField": "onLand",
+            "selfField": "landText"
+          }
+        }
+      ]
+    },
+    {
+      "id": "inflatable",
+      "name": "Inflatable (a boat in a pile of plastic)",
+      "fields": [
+        {
+          "name": "inflated",
+          "type": "bool",
+          "default": false
+        },
+        {
+          "name": "onInflate",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "onDeflate",
+          "type": "list",
+          "default": []
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "inflate",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "inflatable",
+              "field": "inflated",
+              "equals": false
+            }
+          ],
+          "gates": [
+            {
+              "kind": "carrying",
+              "args": {
+                "item": "pump"
+              },
+              "failText": "You'll need something to inflate it with."
+            }
+          ],
+          "data": {
+            "effectsField": "onInflate",
+            "self": "With great effort, you inflate the pile of plastic."
+          }
+        },
+        {
+          "verb": "deflate",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "inflatable",
+              "field": "inflated",
+              "equals": true
+            }
+          ],
+          "data": {
+            "effectsField": "onDeflate",
+            "self": "The boat deflates with a whoosh, leaving a pile of plastic."
+          }
+        }
+      ]
+    },
+    {
+      "id": "waveable",
+      "name": "Waveable (wave-verb effects)",
+      "fields": [
+        {
+          "name": "onWave",
+          "type": "list",
+          "default": []
+        },
+        {
+          "name": "waveText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "done",
+          "type": "bool",
+          "default": false
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "wave",
+          "handler": "effect",
+          "data": {
+            "effectsField": "onWave",
+            "selfField": "waveText"
+          }
+        }
+      ]
+    },
+    {
+      "id": "diggable",
+      "name": "Diggable (dig-verb, count-driven)",
+      "fields": [
+        {
+          "name": "count",
+          "type": "int",
+          "default": 0
+        }
+      ],
+      "affordances": [
+        {
+          "verb": "dig",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "diggable",
+              "field": "count",
+              "equals": 0
+            }
+          ],
+          "data": {
+            "effectsField": "onDig0",
+            "self": "You seem to be digging a hole here."
+          }
+        },
+        {
+          "verb": "dig",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "diggable",
+              "field": "count",
+              "equals": 1
+            }
+          ],
+          "data": {
+            "effectsField": "onDig1",
+            "self": "The hole is getting deeper, but that's about it."
+          }
+        },
+        {
+          "verb": "dig",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "diggable",
+              "field": "count",
+              "equals": 2
+            }
+          ],
+          "data": {
+            "effectsField": "onDig2",
+            "self": "You are surrounded by a wall of sand on all sides!"
+          }
+        },
+        {
+          "verb": "dig",
+          "handler": "effect",
+          "when": [
+            {
+              "module": "diggable",
+              "field": "count",
+              "min": 3
+            }
+          ],
+          "data": {
+            "effectsField": "onDig3",
+            "self": "You have dug yourself into a hole from which there is no return."
+          }
+        }
+      ]
+    },
+    {
+      "id": "sittable",
+      "name": "Sittable (furniture and vehicles)",
+      "fields": [
+        {
+          "name": "capacity",
+          "type": "int",
+          "default": 2
         }
       ],
       "affordances": []

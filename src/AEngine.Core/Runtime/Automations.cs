@@ -69,13 +69,15 @@ public static class Automations
             if (once && !armed)
                 continue; // already fired for this stretch of truth
 
-            if (delay > 0 && countdown <= 0)
+            // arming: a delay rule waits out its delay before firing; an
+            // interval rule waits out its interval FIRST (otherwise the
+            // first pass fires instantly, and chained movers cascade)
+            if ((delay > 0 || every > 0) && countdown <= 0)
             {
-                // truth just began (or re-began): start the delay clock
-                // (decremented below, so delay n fires on the n-th pass)
+                var arm = delay > 0 ? delay : every;
                 world.SetFieldOverride(obj.Id, "automation", "countdown",
-                    World.World.ToJson(delay));
-                countdown = delay;
+                    World.World.ToJson(arm));
+                countdown = arm;
             }
 
             if (countdown > 0)

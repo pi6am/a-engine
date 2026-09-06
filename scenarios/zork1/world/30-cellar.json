@@ -483,6 +483,48 @@
               }
             }
           ]
+        },
+        {
+          "id": "ew_north",
+          "name": "stairway",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "chasm_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ew_down",
+          "name": "stairway",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "chasm_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ew_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "round_room"
+              }
+            }
+          ]
         }
       ]
     }

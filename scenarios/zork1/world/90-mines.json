@@ -1,0 +1,1561 @@
+{
+  "world": [
+    {
+      "id": "slide_room",
+      "name": "Slide Room",
+      "description": "This is a small chamber, which appears to have been part of a coal mine. On the south wall of the chamber the letters \"Granite Wall\" are etched in the rock. To the east is a long passage, and there is a steep metal slide twisting downward. To the north is a small opening.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sl_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "cold_passage"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sl_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mine_entrance"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sl_down",
+          "name": "steep metal slide",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "cellar"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mine_entrance",
+      "name": "Mine Entrance",
+      "description": "You are standing at the entrance of what might have been a coal mine. The shaft enters the west wall, and there is another exit on the south end of the room.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "me_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "slide_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "me_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "squeeky_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "squeeky_room",
+      "name": "Squeaky Room",
+      "description": "You are in a small room. Strange squeaky sounds may be heard coming from the passage at the north end. You may also escape to the east.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sq_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "bat_room",
+                "onExit": [
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "Fweep! Fweep! Fweep! The bat grabs you by the scruff of your neck and lifts you away...."
+                    },
+                    "when": [
+                      {
+                        "holder": "actor",
+                        "holds": "garlic",
+                        "negate": true
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "actor",
+                      "to": [
+                        "mine_1",
+                        "mine_2",
+                        "mine_3",
+                        "mine_4",
+                        "ladder_top",
+                        "ladder_bottom",
+                        "squeeky_room",
+                        "mine_entrance"
+                      ]
+                    },
+                    "when": [
+                      {
+                        "holder": "actor",
+                        "holds": "garlic",
+                        "negate": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "sq_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "mine_entrance"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bat_room",
+      "name": "Bat Room",
+      "description": "You are in a small room which has doors only to the east and south.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "bat_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "squeeky_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "bat_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "shaft_room",
+                "onExit": [
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "Fweep! Fweep! Fweep! The bat grabs you by the scruff of your neck and lifts you away...."
+                    },
+                    "when": [
+                      {
+                        "holder": "actor",
+                        "holds": "garlic",
+                        "negate": true
+                      }
+                    ]
+                  },
+                  {
+                    "teleport": {
+                      "object": "actor",
+                      "to": [
+                        "mine_1",
+                        "mine_2",
+                        "mine_3",
+                        "mine_4",
+                        "ladder_top",
+                        "ladder_bottom",
+                        "squeeky_room",
+                        "mine_entrance"
+                      ]
+                    },
+                    "when": [
+                      {
+                        "holder": "actor",
+                        "holds": "garlic",
+                        "negate": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "jade",
+          "name": "jade figurine",
+          "description": "A small figurine of a dragon, carved from green jade.",
+          "modules": [
+            "portable",
+            "treasure",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 5,
+                "tvalue": 5
+              }
+            }
+          ]
+        },
+        {
+          "id": "bat",
+          "name": "vampire bat",
+          "description": "A black vampire bat, hanging from the ceiling and squeaking madly.",
+          "modules": [
+            "agent",
+            "immobile",
+            {
+              "module": "agent",
+              "overrides": {
+                "policy": "player",
+                "incognito": "a black, squeaking shape",
+                "goals": "Guard the jade figurine. Abduct anyone who lacks garlic.",
+                "traits": "Blind, shrill, and repelled by garlic."
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "shaft_room",
+      "name": "Shaft Room",
+      "description": "This is a large room, in the middle of which is a small shaft descending through the floor into darkness below. To the west and the north are exits from this room. Constructed over the top of the shaft is a metal framework to which a heavy iron chain is attached.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sh_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "bat_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sh_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "smelly_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "raised_basket",
+          "name": "basket",
+          "description": "A large basket, hanging on a chain over the shaft.",
+          "modules": [
+            "container",
+            "openable",
+            "raisable",
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 50
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": true
+              }
+            },
+            {
+              "module": "raisable",
+              "overrides": {
+                "onRaise": [
+                  {
+                    "toggle": {
+                      "object": "basket_up",
+                      "module": "flag",
+                      "field": "value"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "chain",
+          "name": "chain",
+          "description": "A heavy iron chain securing the basket.",
+          "modules": []
+        }
+      ]
+    },
+    {
+      "id": "smelly_room",
+      "name": "Smelly Room",
+      "description": "This is a small nondescript room. However, from the direction of a small descending staircase a foul odor can be detected. To the south is a narrow tunnel.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "sm_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "shaft_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "sm_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "gas_room"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gas_room",
+      "name": "Gas Room",
+      "description": "This is a small room which smells strongly of coal gas. There is a short climb up some stairs and a narrow tunnel leading east.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "gas_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "smelly_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "gas_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "mine_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "bracelet",
+          "name": "sapphire-encrusted bracelet",
+          "description": "A bracelet of gold, studded all about with sapphires.",
+          "modules": [
+            "portable",
+            "treasure",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 10
+              }
+            },
+            {
+              "module": "treasure",
+              "overrides": {
+                "value": 5,
+                "tvalue": 5
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mine_1",
+      "name": "Coal Mine",
+      "description": "This is a nondescript part of a coal mine.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "m1_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "gas_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m1_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "mine_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m1_northeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "northeast",
+                "to": "mine_2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mine_2",
+      "name": "Coal Mine",
+      "description": "This is a nondescript part of a coal mine.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "m2_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mine_2"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m2_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "mine_1"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m2_southeast",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southeast",
+                "to": "mine_3"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mine_3",
+      "name": "Coal Mine",
+      "description": "This is a nondescript part of a coal mine.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "m3_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "mine_3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3_southwest",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "southwest",
+                "to": "mine_4"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m3_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "mine_2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "mine_4",
+      "name": "Coal Mine",
+      "description": "This is a nondescript part of a coal mine.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "m4_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "mine_3"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m4_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "mine_4"
+              }
+            }
+          ]
+        },
+        {
+          "id": "m4_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "ladder_top"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ladder_top",
+      "name": "Ladder Top",
+      "description": "This is a very small room. In the corner is a rickety wooden ladder, leading downward. It might be safe to descend. There is also a staircase leading upward.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "lt_down",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "down",
+                "to": "ladder_bottom"
+              }
+            }
+          ]
+        },
+        {
+          "id": "lt_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "mine_4"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ladder_bottom",
+      "name": "Ladder Bottom",
+      "description": "This is a rather wide room. On one side is the bottom of a narrow wooden ladder. To the west and the south are passages leaving the room.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "lb_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "dead_end_5"
+              }
+            }
+          ]
+        },
+        {
+          "id": "lb_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "timber_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "lb_up",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "up",
+                "to": "ladder_top"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dead_end_5",
+      "name": "Dead End",
+      "description": "You have come to a dead end in the mine.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "de5_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "ladder_bottom"
+              }
+            }
+          ]
+        },
+        {
+          "id": "coal",
+          "name": "small pile of coal",
+          "description": "A heap of black coal, dusty to the touch.",
+          "modules": [
+            "portable",
+            {
+              "module": "portable",
+              "overrides": {
+                "weight": 20
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timber_room",
+      "name": "Timber Room",
+      "description": "This is a long and narrow passage, which is cluttered with broken timbers. A wide passage comes from the east and turns at the west end of the room into a very narrow passageway. From the west comes a strong draft.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "tm_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "ladder_bottom"
+              }
+            }
+          ]
+        },
+        {
+          "id": "tm_west",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "lower_shaft",
+                "loadUnder": 4,
+                "blockedText": "You cannot fit through this passage with that load."
+              }
+            }
+          ]
+        },
+        {
+          "id": "timbers",
+          "name": "broken timbers",
+          "description": "Splintered beams, wedged every which way.",
+          "modules": []
+        }
+      ]
+    },
+    {
+      "id": "lower_shaft",
+      "name": "Drafty Room",
+      "description": "This is a small drafty room in which is the bottom of a long shaft. To the south is a passageway and to the east a very narrow passage. In the shaft can be seen a heavy iron chain.",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true,
+            "value": 13
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "ls_south",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "south",
+                "to": "machine_room"
+              }
+            }
+          ]
+        },
+        {
+          "id": "ls_east",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "timber_room",
+                "loadUnder": 4,
+                "blockedText": "You cannot fit through this passage with that load."
+              }
+            }
+          ]
+        },
+        {
+          "id": "lowered_basket",
+          "name": "basket",
+          "description": "A large basket, hanging on a chain at the shaft's foot.",
+          "modules": [
+            "container",
+            "openable",
+            "raisable",
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 50
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": true
+              }
+            },
+            {
+              "module": "raisable",
+              "overrides": {
+                "onRaise": [
+                  {
+                    "toggle": {
+                      "object": "basket_up",
+                      "module": "flag",
+                      "field": "value"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "machine_room",
+      "name": "Machine Room",
+      "description": "This is a large, cold room whose sole exit is to the north. In one corner of the room is a huge machine, which appears to be a clothes dryer. On its face is a switch which is labelled \"START\".",
+      "modules": [
+        "room",
+        {
+          "module": "room",
+          "overrides": {
+            "dark": true
+          }
+        }
+      ],
+      "children": [
+        {
+          "id": "mr_north",
+          "name": "passage",
+          "modules": [
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "north",
+                "to": "lower_shaft"
+              }
+            }
+          ]
+        },
+        {
+          "id": "machine",
+          "name": "machine",
+          "description": "A huge machine, something like a clothes dryer.",
+          "modules": [
+            "container",
+            "openable",
+            {
+              "module": "container",
+              "overrides": {
+                "capacity": 50
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            }
+          ]
+        },
+        {
+          "id": "machine_switch",
+          "name": "switch",
+          "description": "A switch labelled \"START\".",
+          "modules": [
+            "switchable",
+            {
+              "module": "switchable",
+              "overrides": {
+                "onTurn": [
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "The machine comes to life (figuratively) with a dazzling display of colored light and strange noises. After a few moments, the excitement abates."
+                    },
+                    "when": [
+                      {
+                        "holder": "machine",
+                        "holds": "coal"
+                      },
+                      {
+                        "of": "machine",
+                        "module": "openable",
+                        "field": "open",
+                        "equals": false
+                      }
+                    ]
+                  },
+                  {
+                    "destroy": {
+                      "object": "coal"
+                    },
+                    "when": [
+                      {
+                        "holder": "machine",
+                        "holds": "coal"
+                      },
+                      {
+                        "of": "machine",
+                        "module": "openable",
+                        "field": "open",
+                        "equals": false
+                      }
+                    ]
+                  },
+                  {
+                    "move": {
+                      "object": "diamond",
+                      "to": "machine"
+                    },
+                    "when": [
+                      {
+                        "holder": "machine",
+                        "holds": "coal",
+                        "negate": true
+                      },
+                      {
+                        "of": "diamond",
+                        "inRoom": "machine",
+                        "negate": true
+                      }
+                    ]
+                  },
+                  {
+                    "say": {
+                      "to": "player",
+                      "text": "The machine doesn't seem to want to do anything."
+                    },
+                    "when": [
+                      {
+                        "holder": "machine",
+                        "holds": "coal",
+                        "negate": true
+                      },
+                      {
+                        "of": "diamond",
+                        "inRoom": "machine",
+                        "negate": true
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diamond",
+      "name": "huge diamond",
+      "description": "An enormous diamond, glittering with an inner fire.",
+      "modules": [
+        "portable",
+        "treasure",
+        {
+          "module": "portable",
+          "overrides": {
+            "weight": 10
+          }
+        },
+        {
+          "module": "treasure",
+          "overrides": {
+            "value": 10,
+            "tvalue": 10
+          }
+        }
+      ]
+    },
+    {
+      "id": "gas_explosion_lamp",
+      "name": "gas_explosion_lamp",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "gas_room"
+              },
+              {
+                "of": "lamp",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "holder": "player",
+                "holds": "lamp"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "Oh dear. It seems that the match you are carrying has ignited the cloud of gas you have been walking through. There is a tremendous explosion, and you are blown quite out of the mine... and, it would appear, out of the world."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gas_explosion_torch",
+      "name": "gas_explosion_torch",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "gas_room"
+              },
+              {
+                "of": "torch",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "holder": "player",
+                "holds": "torch"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The cloud of coal gas ignites with a roar. There is a tremendous explosion, and you are blown quite out of the world."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gas_explosion_candles",
+      "name": "gas_explosion_candles",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "gas_room"
+              },
+              {
+                "of": "candles",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "holder": "player",
+                "holds": "candles"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The cloud of coal gas ignites with a roar. There is a tremendous explosion, and you are blown quite out of the world."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "gas_explosion_match",
+      "name": "gas_explosion_match",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "gas_room"
+              },
+              {
+                "of": "match",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "holder": "player",
+                "holds": "match"
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The cloud of coal gas ignites with a roar. There is a tremendous explosion, and you are blown quite out of the world."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft_blows_out_match_timber",
+      "name": "draft_blows_out_match_timber",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "match",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "of": "match",
+                "inRoom": "timber_room"
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "match",
+                  "module": "lightsource",
+                  "field": "on",
+                  "value": false
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The match is blown out by the drafty conditions."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "draft_blows_out_match_shaft",
+      "name": "draft_blows_out_match_shaft",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "match",
+                "module": "lightsource",
+                "field": "on",
+                "equals": true
+              },
+              {
+                "of": "match",
+                "inRoom": "lower_shaft"
+              }
+            ],
+            "effects": [
+              {
+                "set": {
+                  "object": "match",
+                  "module": "lightsource",
+                  "field": "on",
+                  "value": false
+                }
+              },
+              {
+                "say": {
+                  "to": "player",
+                  "text": "The match is blown out by the drafty conditions."
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "basket_up",
+      "name": "the raised basket is up",
+      "modules": [
+        "flag",
+        {
+          "module": "flag",
+          "overrides": {
+            "value": true
+          }
+        }
+      ]
+    },
+    {
+      "id": "basket_goes_down",
+      "name": "basket_goes_down",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "basket_up",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "raised_basket",
+                "inRoom": "shaft_room"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "raised_basket",
+                  "to": "lower_shaft"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "basket_comes_up",
+      "name": "basket_comes_up",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "basket_up",
+                "module": "flag",
+                "field": "value",
+                "equals": true
+              },
+              {
+                "of": "raised_basket",
+                "inRoom": "lower_shaft"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "raised_basket",
+                  "to": "shaft_room"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "basket_mirror_down",
+      "name": "basket_mirror_down",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "raised_basket",
+                "inRoom": "lower_shaft"
+              },
+              {
+                "of": "lowered_basket",
+                "inRoom": "lower_shaft"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "lowered_basket",
+                  "to": "shaft_room"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "basket_mirror_up",
+      "name": "basket_mirror_up",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "when": [
+              {
+                "of": "raised_basket",
+                "inRoom": "shaft_room"
+              },
+              {
+                "of": "lowered_basket",
+                "inRoom": "shaft_room"
+              }
+            ],
+            "effects": [
+              {
+                "move": {
+                  "object": "lowered_basket",
+                  "to": "lower_shaft"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
