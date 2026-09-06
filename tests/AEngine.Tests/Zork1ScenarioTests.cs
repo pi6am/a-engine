@@ -199,6 +199,34 @@ public class Zork1ScenarioTests
     }
 
     /// <summary>
+    /// The bird's nest is a container without a lid: always open (the
+    /// egg reads "in" it and is reachable), offering no open/close, and
+    /// never annotated with an open/closed state.
+    /// </summary>
+    [Fact]
+    public void Nest_IsALidlessAlwaysOpenContainer()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var result = WalkthroughRunner.Run(engine,
+        [
+            "Go north", "Go north", "Go up", "Look around",
+            "Take the jewel-encrusted egg",
+            "Put the jewel-encrusted egg into the bird's nest",
+        ]);
+        Assert.True(result.Success, result.Error);
+        var look = result.Transcript[3];
+        Assert.Contains("bird's nest, jewel-encrusted egg (in bird's nest)", look);
+        Assert.DoesNotContain("nest (open)", look);
+
+        // no lid to work
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(world.GetObject("player")),
+            a => a.Verb is "open" or "close" && a.TargetId == "nest");
+        // and it holds what you hand it
+        Assert.Equal("nest", world.GetObject("egg").Parent);
+    }
+
+    /// <summary>
     /// Room descriptions are the original Zork text, verbatim (MIT
     /// source). This pins the opening screen exactly; the rest are
     /// audited against 1dungeon.zil/1actions.zil as they are authored.

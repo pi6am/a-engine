@@ -362,12 +362,6 @@
               "overrides": {
                 "capacity": 20
               }
-            },
-            {
-              "module": "openable",
-              "overrides": {
-                "open": true
-              }
             }
           ],
           "children": [

@@ -8,7 +8,9 @@ namespace AEngine.Core.Actions;
 /// Used by the look/open handlers and the LLM context builder so every
 /// consumer describes the world identically. Visibility rules: open/closed
 /// state of openables is observable; a container's contents are visible
-/// only while it is open; lock state is never observable.
+/// while it is open — and a container with no openable mechanism (a
+/// bird's nest, no lid to close) is always open and never annotated.
+/// Lock state is never observable.
 /// </summary>
 public static class Perception
 {
@@ -74,8 +76,11 @@ public static class Perception
     public static bool IsOpen(World.World world, ModuleRegistry modules, WorldObject target)
     {
         var state = GetOpenState(world, modules, target);
-        return state is not null &&
-               modules.ResolveBool(state.Value.StateObject, state.Value.ModuleId, "open");
+        // a container with no openable mechanism has no lid to close —
+        // a bird's nest is always open (surfaces already behave so)
+        return state is null
+            ? target.HasModule("container")
+            : modules.ResolveBool(state.Value.StateObject, state.Value.ModuleId, "open");
     }
 
     /// <summary>

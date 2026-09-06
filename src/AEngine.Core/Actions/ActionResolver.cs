@@ -633,8 +633,7 @@ public sealed class ActionResolver
     private bool HasLockState(WorldObject target) =>
         target.HasModule("lockable");
 
-    private bool IsOpenState(WorldObject target) => PortalOrSelf(target) is { } s &&
-        _modules.ResolveBool(s.StateObject, s.ModuleId, "open");
+    private bool IsOpenState(WorldObject target) => Perception.IsOpen(_world, _modules, target);
 
     private (WorldObject StateObject, string ModuleId)? PortalOrSelf(WorldObject target)
     {
