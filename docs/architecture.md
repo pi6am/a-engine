@@ -13,7 +13,18 @@ index lives in `World`. Objects exist exactly once. Cross-cutting state
 referenced **by id** from other objects (e.g. two `portal` door-sides
 share one `doorstate` object via their `stateRef` field). Attribute
 values are `JsonElement`; a string holding another object's id is a
-reference by convention (`ref`-typed module fields).
+reference by convention (`ref`-typed module fields). Objects carry a
+`name` (labels, listings — the Z-machine DESC) and a `description`
+(shown on examine — LDESC), plus an optional `firstDescription` (FDESC):
+printed and spent on the object's **first encounter** — the first room
+look that sees it (the look handler's initial-sight pass over the
+visible listing; an examine of a never-seen item spends it too). After
+that, examines show the settled description, or the classic "There's
+nothing special about the …" for items the original never described
+further. Examine does not echo the item's name, and closed containers
+reveal nothing. Room looks do not list exits by default
+(`engine.ShowExitsInLook`, the CLI's `/showexits`; planner contexts
+build their own).
 
 **Runtime mutation** — `World` exposes `CreateObject`, `DestroyObject`
 (recursive), `MoveObject` (cycle-checked), `AddModule`, `RemoveModule`,

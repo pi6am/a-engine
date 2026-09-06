@@ -140,6 +140,7 @@ public class MvpPlaythroughTests
         Assert.True(Do(engine, "lock", "door_a_side").Success);
 
         // an open door is passable even when locked
+        engine.ShowExitsInLook = true; // exits are opt-in navigation aid
         var look = engine.TurnManager.Execute(world.GetObject("player"), "look", "player");
         Assert.Contains("wooden door, open", look.Message);
 

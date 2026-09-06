@@ -86,7 +86,7 @@ public class Zork1Stage1Tests
         [
             "Go north", "Go southeast", "Open the kitchen window", "Go west", "Go west",
             "Take the brass lantern",
-            "Move the large oriental rug",
+            "Move the carpet",
         ]);
         // the rug announces what it revealed, in the original's words
         Assert.True(result.Success, result.Error);
@@ -129,7 +129,7 @@ public class Zork1Stage1Tests
         [
             "Go north", "Go southeast", "Open the kitchen window", "Go west", "Go west",
             "Take the brass lantern",
-            "Move the large oriental rug", "Open the trap door", "Go down",
+            "Move the carpet", "Open the trap door", "Go down",
             "Turn on the brass lantern",
         ]);
         Assert.True(down.Success, down.Error);
@@ -172,7 +172,7 @@ public class Zork1Stage1Tests
         [
             "Go north", "Go southeast", "Open the kitchen window", "Go west", "Go west",
             "Take the brass lantern",
-            "Move the large oriental rug", "Open the trap door", "Go down",
+            "Move the carpet", "Open the trap door", "Go down",
             "Turn on the brass lantern",
             "Go south", "Go east", "Go north", "Go up", "Go west",
             "Open the trap door", "Go down",
@@ -189,7 +189,7 @@ public class Zork1Stage1Tests
         [
             "Go north", "Go southeast", "Open the kitchen window", "Go west", "Go west",
             "Take the brass lantern",
-            "Move the large oriental rug", "Open the trap door", "Go down",
+            "Move the carpet", "Open the trap door", "Go down",
             "Turn on the brass lantern",
         ]);
         Assert.True(teleported.Success, teleported.Error);

@@ -305,7 +305,7 @@
         {
           "id": "skeleton",
           "name": "skeleton",
-          "description": "The skeleton of a luckless adventurer, still wearing the tatters of a pack.",
+          "description": "",
           "modules": [
             "shiftable",
             {
@@ -345,7 +345,7 @@
         {
           "id": "bag_of_coins",
           "name": "leather bag of coins",
-          "description": "An old leather bag, heavy with coins.",
+          "description": "An old leather bag, bulging with coins, is here.",
           "modules": [
             "portable",
             "treasure",
@@ -367,7 +367,7 @@
         {
           "id": "rusty_knife",
           "name": "rusty knife",
-          "description": "An ancient knife, its blade orange with rust.",
+          "description": "",
           "modules": [
             "portable",
             "weapon",
@@ -377,12 +377,13 @@
                 "weight": 10
               }
             }
-          ]
+          ],
+          "firstDescription": "Beside the skeleton is a rusty knife."
         },
         {
           "id": "keys",
           "name": "skeleton key",
-          "description": "A gleaming key, carved from bone.",
+          "description": "",
           "modules": [
             "portable",
             {
@@ -396,7 +397,7 @@
         {
           "id": "dead_lantern",
           "name": "burned-out lantern",
-          "description": "A lantern whose flame, and prospects, have long since gone out.",
+          "description": "",
           "modules": [
             "portable",
             "lightsource",
@@ -413,7 +414,8 @@
                 "fuel": 0
               }
             }
-          ]
+          ],
+          "firstDescription": "The deceased adventurer's useless lantern is here."
         }
       ]
     },

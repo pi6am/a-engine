@@ -355,7 +355,7 @@
         {
           "id": "nest",
           "name": "bird's nest",
-          "description": "A nest of twigs and grass, hastily built.",
+          "description": "",
           "modules": [
             {
               "module": "container",
@@ -368,7 +368,7 @@
             {
               "id": "egg",
               "name": "jewel-encrusted egg",
-              "description": "The egg is covered with fine gold inlay, and ornamented in lapis lazuli and mother-of-pearl. Unlike most eggs, this one has hinged doors and a golden catch, keeping its contents safe from harm.",
+              "description": "",
               "modules": [
                 "portable",
                 {
@@ -385,9 +385,11 @@
                     "tvalue": 5
                   }
                 }
-              ]
+              ],
+              "firstDescription": "In the bird's nest is a large egg encrusted with precious jewels, apparently scavenged by a childless songbird. The egg is covered with fine gold inlay, and ornamented in lapis lazuli and mother-of-pearl. Unlike most eggs, this one is hinged and closed with a delicate looking clasp. The egg appears extremely fragile."
             }
-          ]
+          ],
+          "firstDescription": "Beside you on the branch is a small bird's nest."
         }
       ]
     },

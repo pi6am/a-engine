@@ -100,6 +100,7 @@ public class ActionResolverLiberalizationTests
     public void Look_Exits_ShowClosed_NeverLocked()
     {
         var engine = NewEngine(); // the study door starts locked
+        engine.ShowExitsInLook = true; // exits are opt-in navigation aid
         var look = engine.TurnManager.Execute(
             engine.World.GetObject("player"), "look", "player");
         Assert.Contains("wooden door, closed", look.Message);

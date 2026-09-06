@@ -30,6 +30,7 @@ public static class ScenarioLoader
         public required string Id { get; init; }
         public string? Name { get; init; }
         public string? Description { get; init; }
+        public string? FirstDescription { get; init; }
         public Dictionary<string, JsonElement>? Attributes { get; init; }
         public List<JsonElement>? Modules { get; init; }
         public List<NodeDto>? Children { get; init; }
@@ -153,6 +154,7 @@ public static class ScenarioLoader
 
             if (node.Name is not null) obj.Name = node.Name;
             if (node.Description is not null) obj.Description = node.Description;
+            if (node.FirstDescription is not null) obj.FirstDescription = node.FirstDescription;
             foreach (var (key, value) in node.Attributes ?? new())
                 obj.Attributes[key] = value;
             foreach (var moduleElement in node.Modules ?? [])

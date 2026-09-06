@@ -28,6 +28,14 @@ public sealed class GameEngine
     public TimeMode TimeMode { get; set; } = TimeMode.TurnBased;
 
     /// <summary>
+    /// Whether room looks append the "Exits:" line — a navigational
+    /// aid, not fiction (default off, classic behavior; the CLI's
+    /// <c>/showexits</c> toggles it). Planner contexts always build
+    /// their own exit lists.
+    /// </summary>
+    public bool ShowExitsInLook { get; set; }
+
+    /// <summary>
     /// The ending text once the game has ended (a handler's epilogue, or
     /// <see cref="DefeatText"/> when the player is incapacitated); null
     /// while the game is still running. NPC turns stop once set.

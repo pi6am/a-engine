@@ -132,6 +132,7 @@ public class Zork1Stage2Tests
         Assert.Contains(moved.Transcript,
             t => t == "In disturbing the pile of leaves, a grating is revealed.");
         Assert.Contains(engine.ActionResolver.Resolve(player), a => a.TargetId == "gc_down");
+        engine.ShowExitsInLook = true; // exits are opt-in navigation aid
         var lookAfter = engine.TurnManager.Execute(player, "look", "player");
         Assert.Contains("down (steel grating, closed)", lookAfter.Message);
 
@@ -211,7 +212,7 @@ public class Zork1Stage2Tests
         Assert.True(RunScript(engine,
         [
             "Open the brown sack",
-            "Take the hot pepper sandwich",
+            "Take the lunch",
             "Take the glass bottle",
         ]).Success);
         world.MoveObject("player", "cyclops_room");

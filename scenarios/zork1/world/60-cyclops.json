@@ -40,7 +40,7 @@
         {
           "id": "cyclops",
           "name": "cyclops",
-          "description": "A menacing cyclops. Unfriendly in the extreme.",
+          "description": "",
           "modules": [
             "agent",
             "immobile",
@@ -215,7 +215,7 @@
         {
           "id": "thief",
           "name": "thief",
-          "description": "A seedy-looking individual, wearing a large bag slung over his shoulder and carrying a finely crafted stiletto.",
+          "description": "There is a suspicious-looking individual, holding a large bag, leaning against one wall. He is armed with a deadly stiletto.",
           "modules": [
             "agent",
             "immobile",
@@ -243,7 +243,7 @@
             {
               "id": "stiletto",
               "name": "stiletto",
-              "description": "A finely crafted stiletto, its blade gleaming.",
+              "description": "",
               "modules": [
                 "portable",
                 {
@@ -259,8 +259,8 @@
         },
         {
           "id": "chalice",
-          "name": "silver chalice",
-          "description": "A chalice made of silver, and marked with graven runes.",
+          "name": "chalice",
+          "description": "There is a silver chalice, intricately engraved, here.",
           "modules": [
             "portable",
             {
@@ -304,7 +304,7 @@
     {
       "id": "canary",
       "name": "golden clockwork canary",
-      "description": "A finely crafted clockwork canary, made of gold.",
+      "description": "",
       "modules": [
         "portable",
         {
@@ -397,7 +397,8 @@
             ]
           }
         }
-      ]
+      ],
+      "firstDescription": "There is a golden clockwork canary nestled in the egg. It has ruby eyes and a silver beak. Through a crystal window below its left wing you can see intricate machinery inside. It appears to have wound down."
     },
     {
       "id": "cyclops_eats_the_lunch",

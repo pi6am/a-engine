@@ -13,7 +13,7 @@ Open the kitchen window
 Go west
 Go west
 Take the brass lantern
-Take the elvish sword
+Take the sword
 Turn on the brass lantern
 Go east
 Go up
@@ -23,7 +23,7 @@ Go down
 Go west
 
 # down through the trap door
-Move the large oriental rug
+Move the carpet
 Open the trap door
 Go down
 
@@ -54,7 +54,7 @@ Give the jewel-encrusted egg to the thief
 Attack the thief x60
 Take the jewel-encrusted egg
 Take the golden clockwork canary
-Take the silver chalice
+Take the chalice
 
 # home through the cyclops hole
 Go down
@@ -64,5 +64,5 @@ Open the trophy case
 Put the leather bag of coins into the trophy case
 Put the jewel-encrusted egg into the trophy case
 Put the golden clockwork canary into the trophy case
-Put the silver chalice into the trophy case
+Put the chalice into the trophy case
 Score

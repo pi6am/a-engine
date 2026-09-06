@@ -16,14 +16,14 @@ Open the kitchen window
 Go west
 Go west
 Take the brass lantern
-Take the elvish sword
+Take the sword
 Turn on the brass lantern
 Go east
 Go up
 Take the rope
 Go down
 Go west
-Move the large oriental rug
+Move the carpet
 Open the trap door
 Go down
 Go north
@@ -44,7 +44,7 @@ Give the jewel-encrusted egg to the thief
 Attack the thief x60
 Take the jewel-encrusted egg
 Take the golden clockwork canary
-Take the silver chalice
+Take the chalice
 Go down
 Go east
 Go east
@@ -52,7 +52,7 @@ Open the trophy case
 Put the leather bag of coins into the trophy case
 Put the jewel-encrusted egg into the trophy case
 Put the golden clockwork canary into the trophy case
-Put the silver chalice into the trophy case
+Put the chalice into the trophy case
 
 # ---------- spoke 2: the gallery, the loud room, the dam, the drained reservoir
 Open the trap door
@@ -77,7 +77,7 @@ Go east
 Go north
 Take the matchbook
 Go north
-Drop the elvish sword
+Drop the sword
 Take the wrench
 Take the screwdriver
 Press the yellow button
@@ -136,9 +136,9 @@ Go east
 Go east
 Go southeast
 Go east
-Tie the rope to the railing
+Tie the rope to the wooden railing
 Go down
-Take the flaming ivory torch
+Take the torch
 Go south
 Take the brass bell
 Go south
@@ -165,7 +165,7 @@ Go west
 Go south
 Go up
 Put the crystal skull into the trophy case
-Put the flaming ivory torch into the trophy case
+Put the torch into the trophy case
 
 # ---------- spoke 4: the coal mine — jade, bracelet, diamond
 Go down
@@ -174,7 +174,7 @@ Go east
 Go east
 Go south
 Go south
-Rub the enormous mirror
+Rub the mirror
 Go north
 Go west
 Go north
@@ -325,7 +325,7 @@ Go northeast
 Dig the sand
 Dig the sand
 Dig the sand
-Take the jeweled scarab
+Take the beautiful jeweled scarab
 Drop the shovel
 Go southwest
 Go south
@@ -342,7 +342,7 @@ Go west
 Go west
 Go west
 Put the large emerald into the trophy case
-Put the jeweled scarab into the trophy case
+Put the beautiful jeweled scarab into the trophy case
 Put the pot of gold into the trophy case
 Put Ramses' sceptre into the trophy case
 Take the golden clockwork canary
@@ -351,17 +351,17 @@ Go east
 Go north
 Go north
 Wind the golden clockwork canary
-Take the brass bauble
+Take the beautiful brass bauble
 Go south
 Go southeast
 Go west
 Go west
-Put the brass bauble into the trophy case
+Put the beautiful brass bauble into the trophy case
 Put the golden clockwork canary into the trophy case
 Score
 
 # ---------- the end
-Read the ancient parchment
+Read the ancient map
 Go east
 Go east
 Go north

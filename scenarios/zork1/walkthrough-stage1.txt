@@ -20,8 +20,8 @@ Go west
 # gear up in the living room
 Go west
 Take the brass lantern
-Take the elvish sword
-Move the large oriental rug
+Take the sword
+Move the carpet
 Open the trap door
 Go down
 
@@ -44,7 +44,7 @@ Take the painting
 Go north
 
 # the chimney only fits the lamp and one more thing
-Drop the elvish sword
+Drop the sword
 Drop the jewel-encrusted egg
 Go up
 

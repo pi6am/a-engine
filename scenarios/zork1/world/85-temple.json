@@ -58,8 +58,8 @@
         },
         {
           "id": "mirror_1",
-          "name": "enormous mirror",
-          "description": "A reflection of the room \u2014 and of you.",
+          "name": "mirror",
+          "description": "",
           "modules": [
             "rubable",
             {
@@ -138,8 +138,8 @@
         },
         {
           "id": "mirror_2",
-          "name": "enormous mirror",
-          "description": "A reflection of the room \u2014 and of you.",
+          "name": "mirror",
+          "description": "",
           "modules": [
             "rubable",
             {
@@ -511,7 +511,7 @@
         {
           "id": "trident",
           "name": "crystal trident",
-          "description": "A trident of the clearest crystal, gleaming with cold light.",
+          "description": "",
           "modules": [
             "portable",
             "treasure",
@@ -528,7 +528,8 @@
                 "tvalue": 11
               }
             }
-          ]
+          ],
+          "firstDescription": "On the shore lies Poseidon's own crystal trident."
         }
       ]
     },
@@ -576,8 +577,8 @@
         },
         {
           "id": "engravings",
-          "name": "engravings",
-          "description": "The engravings cover the wall in an ancient script.",
+          "name": "wall with engravings",
+          "description": "There are old engravings on the walls here.",
           "modules": [
             "readable",
             {
@@ -636,8 +637,8 @@
         },
         {
           "id": "railing",
-          "name": "railing",
-          "description": "A sturdy railing at the edge of the dome.",
+          "name": "wooden railing",
+          "description": "",
           "modules": [
             "tiable",
             {
@@ -711,13 +712,13 @@
         {
           "id": "pedestal",
           "name": "pedestal",
-          "description": "A carved stone pedestal, cut from the floor.",
+          "description": "",
           "modules": []
         },
         {
           "id": "torch",
-          "name": "flaming ivory torch",
-          "description": "An ivory torch, burning with a steady white flame.",
+          "name": "torch",
+          "description": "",
           "modules": [
             "portable",
             "treasure",
@@ -742,7 +743,8 @@
                 "fuel": -1
               }
             }
-          ]
+          ],
+          "firstDescription": "Sitting on the pedestal is a flaming torch, made of ivory."
         }
       ]
     },
@@ -805,7 +807,7 @@
         {
           "id": "bell",
           "name": "brass bell",
-          "description": "A large brass bell, cold to the touch.",
+          "description": "",
           "modules": [
             "portable",
             "ringable",
@@ -968,7 +970,7 @@
         {
           "id": "coffin",
           "name": "gold coffin",
-          "description": "A solid gold coffin, used by the ancient kings of the land.",
+          "description": "The solid-gold coffin used for the burial of Ramses II is here.",
           "modules": [
             "container",
             "openable",
@@ -1004,7 +1006,7 @@
             {
               "id": "sceptre",
               "name": "Ramses' sceptre",
-              "description": "A sceptre of solid gold, crowned with a glittering ruby.",
+              "description": "An ornamented sceptre, tapering to a sharp point, is here.",
               "modules": [
                 "portable",
                 "treasure",
@@ -1132,7 +1134,8 @@
                     ]
                   }
                 }
-              ]
+              ],
+              "firstDescription": "A sceptre, possibly that of ancient Egypt itself, is in the coffin. The sceptre is ornamented with colored enamel, and tapers to a sharp point."
             }
           ]
         }

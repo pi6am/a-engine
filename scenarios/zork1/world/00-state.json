@@ -1,6 +1,6 @@
 {
   "name": "zork1",
-  "about": "Zork I: The Great Underground Empire — a data-driven reimplementation for a-engine. Room and object text adapted from the original Zork I source (MIT licensed, github.com/devshane/zork1). Not affiliated with Activision.",
+  "about": "Zork I: The Great Underground Empire \u2014 a data-driven reimplementation for a-engine. Room and object text adapted from the original Zork I source (MIT licensed, github.com/devshane/zork1). Not affiliated with Activision.",
   "defeatText": "You have died. Your adventure ends here... but the Great Underground Empire endures.",
   "world": [
     {
@@ -38,7 +38,13 @@
       "id": "passage_state",
       "name": "open passage",
       "modules": [
-        { "module": "doorstate", "overrides": { "open": true, "locked": false } }
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": true,
+            "locked": false
+          }
+        }
       ]
     }
   ]

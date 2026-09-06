@@ -114,6 +114,36 @@ public static class Perception
     /// top-level object (with state annotation), plus the contents of open
     /// containers as separate entries ("brass key (in desk drawer)").
     /// </summary>
+    /// <summary>
+    /// The objects visible in a room listing, in listing order: room
+    /// children plus the contents of open containers and surfaces,
+    /// recursively — the same set <see cref="DescribeRoomContents"/>
+    /// renders as name entries. Excludes agents, portals, concealed
+    /// objects, and the observer. The set a first-encounter pass spends
+    /// FDESCs on (see the look handler).
+    /// </summary>
+    public static List<WorldObject> VisibleObjects(
+        World.World world, ModuleRegistry modules, WorldObject room, string agentId)
+    {
+        var visible = new List<WorldObject>();
+        void Collect(WorldObject holder)
+        {
+            foreach (var child in world.ChildrenOf(holder.Id))
+            {
+                if (child.Id == agentId || child.HasModule("portal") ||
+                    child.HasModule("agent") || IsConcealed(modules, child))
+                    continue;
+                visible.Add(child);
+                if (child.HasModule("container") && IsOpen(world, modules, child))
+                    Collect(child);
+                else if (child.HasModule("surface"))
+                    Collect(child);
+            }
+        }
+        Collect(room);
+        return visible;
+    }
+
     public static List<string> DescribeRoomContents(
         World.World world, ModuleRegistry modules, WorldObject room, string agentId)
     {

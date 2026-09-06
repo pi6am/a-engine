@@ -101,6 +101,7 @@ public class Zork1ScenarioTests
     public void Exits_ShowStateOnlyForClosableDoors()
     {
         var engine = NewEngine();
+        engine.ShowExitsInLook = true; // exits are opt-in navigation aid
         var result = WalkthroughRunner.Run(engine, ["Go north", "Go southeast", "Look around"]);
         Assert.True(result.Success, result.Error);
         var look = result.Transcript[^1];
@@ -125,7 +126,7 @@ public class Zork1ScenarioTests
             "Go north", "Go southeast",
             "Open the kitchen window", "Close the kitchen window", "Open the kitchen window",
             "Go west", "Go west",
-            "Move the large oriental rug", "Open the trap door", "Close the trap door",
+            "Move the carpet", "Open the trap door", "Close the trap door",
         ]);
         Assert.True(result.Success, result.Error);
         Assert.Equal("With great effort, you open the window far enough to allow entry.",
@@ -341,7 +342,49 @@ public class Zork1ScenarioTests
         var say2 = engine.ActionResolver.Resolve(player).First(a => a.Verb == "say");
         engine.TurnManager.PerformAction(player, say2, "odysseus! ODYSSEUS!");
         Assert.True(engine.ModuleRegistry.ResolveBool(
-            world.GetObject("magic_state"), "flag", "value"));
+            world.GetObject("cyclops_out"), "flag", "value"));
+    }
+
+    [Fact]
+    public void FirstDescription_ShowsOnce_ThenTheSettledText()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+
+        // the sceptre: FDESC names the coffin and the sharp point, LDESC settles
+        world.MoveObject("player", "egypt_room");
+        world.MoveObject("sceptre", "egypt_room"); // out of the coffin, in view
+        world.MoveObject("lamp", "player");
+        world.SetFieldOverride("lamp", "lightsource", "on", AEngine.Core.World.World.ToJson(true));
+        var ex = engine.ActionResolver.Resolve(player)
+            .Single(a => a.Verb == "examine" && a.TargetId == "sceptre");
+        var first = engine.TurnManager.PerformAction(player, ex);
+        Assert.Contains("possibly that of ancient Egypt", first.Message);
+        Assert.Contains("tapers to a sharp point", first.Message);
+        var second = engine.TurnManager.PerformAction(player, ex);
+        Assert.Contains("An ornamented sceptre, tapering to a sharp point, is here.",
+            second.Message);
+        Assert.DoesNotContain("Egypt", second.Message);
+    }
+
+    [Fact]
+    public void FirstDescription_OnlyItems_FallBare_Afterwards()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+
+        // the sword: FDESC above the trophy case, no LDESC — later
+        // examines are just the name (the original shows nothing special)
+        world.MoveObject("player", "living_room");
+        world.MoveObject("sword", "living_room");
+        var ex = engine.ActionResolver.Resolve(player)
+            .Single(a => a.Verb == "examine" && a.TargetId == "sword");
+        Assert.Contains("Above the trophy case hangs an elvish sword",
+            engine.TurnManager.PerformAction(player, ex).Message);
+        var later = engine.TurnManager.PerformAction(player, ex).Message;
+        Assert.Equal("There's nothing special about the sword.", later);
     }
 }
 

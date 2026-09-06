@@ -391,7 +391,7 @@
         {
           "id": "platinum_bar",
           "name": "platinum bar",
-          "description": "A bar of solid platinum, gleaming dully through the din.",
+          "description": "On the ground is a large platinum bar.",
           "modules": [
             "portable",
             "treasure",
@@ -536,19 +536,19 @@
         {
           "id": "control_panel",
           "name": "control panel",
-          "description": "A mass of machinery, buttons, and gauges.",
+          "description": "",
           "modules": []
         },
         {
           "id": "bubble",
           "name": "green bubble",
-          "description": "A translucent green bubble floating in the panel.",
+          "description": "",
           "modules": []
         },
         {
           "id": "bolt",
           "name": "bolt",
-          "description": "A metal bolt, two feet across, set into the dam's sluice gates.",
+          "description": "",
           "modules": [
             "turnable",
             {
@@ -570,7 +570,7 @@
         {
           "id": "dam",
           "name": "dam",
-          "description": "Flood Control Dam #3, a triumph of engineering and tourism alike.",
+          "description": "",
           "modules": []
         }
       ]
@@ -634,7 +634,7 @@
         {
           "id": "match",
           "name": "matchbook",
-          "description": "A matchbook whose cover says \"Visit Beautiful FCD#3\".",
+          "description": "There is a matchbook whose cover says \"Visit Beautiful FCD#3\" here.",
           "modules": [
             "matchbook",
             "portable",
@@ -703,7 +703,7 @@
         {
           "id": "tour_guide",
           "name": "tour guidebook",
-          "description": "A tattered guidebook, half mildewed.",
+          "description": "",
           "modules": [
             "portable",
             "readable",
@@ -719,7 +719,8 @@
                 "text": "The guidebook is mostly ruined by water damage. A few paragraphs remain legible: \"Welcome to Flood Control Dam #3... The dam was constructed in 783 GUE... FCD#3 was presumably built to control the great seasonal fluctuations of the Frigid River...\""
               }
             }
-          ]
+          ],
+          "firstDescription": "Some guidebooks entitled \"Flood Control Dam #3\" are on the reception desk."
         }
       ]
     },
@@ -768,7 +769,7 @@
         {
           "id": "wrench",
           "name": "wrench",
-          "description": "A sturdy toolroom wrench.",
+          "description": "",
           "modules": [
             "portable",
             {
@@ -782,7 +783,7 @@
         {
           "id": "screwdriver",
           "name": "screwdriver",
-          "description": "A common screwdriver.",
+          "description": "",
           "modules": [
             "portable",
             {
@@ -796,7 +797,7 @@
         {
           "id": "blue_button",
           "name": "blue button",
-          "description": "A blue button on the wall.",
+          "description": "",
           "modules": [
             "pressable",
             {
@@ -856,7 +857,7 @@
         {
           "id": "red_button",
           "name": "red button",
-          "description": "A red button on the wall.",
+          "description": "",
           "modules": [
             "pressable",
             {
@@ -879,7 +880,7 @@
         {
           "id": "brown_button",
           "name": "brown button",
-          "description": "A brown button on the wall.",
+          "description": "",
           "modules": [
             "pressable",
             {
@@ -903,7 +904,7 @@
         {
           "id": "yellow_button",
           "name": "yellow button",
-          "description": "A yellow button on the wall.",
+          "description": "",
           "modules": [
             "pressable",
             {
@@ -927,7 +928,7 @@
         {
           "id": "tube",
           "name": "tube",
-          "description": "A small tube, its end crimped.",
+          "description": "There is an object which looks like a tube of toothpaste here.",
           "modules": [
             "container",
             "openable",
@@ -954,8 +955,8 @@
           "children": [
             {
               "id": "putty",
-              "name": "viscous material",
-              "description": "A lump of grey, sticky material.",
+              "name": "small piece of vitreous slag",
+              "description": "",
               "modules": [
                 "portable",
                 {
@@ -971,7 +972,7 @@
         {
           "id": "leak",
           "name": "leak",
-          "description": "A stream of water spraying from a pipe.",
+          "description": "",
           "modules": [
             "patchable",
             {
@@ -1160,7 +1161,7 @@
         {
           "id": "trunk",
           "name": "trunk of jewels",
-          "description": "An old sea trunk, packed to the corners with precious gems.",
+          "description": "There is an old trunk here, bulging with assorted jewels.",
           "modules": [
             "portable",
             "treasure",
@@ -1184,7 +1185,8 @@
                 "concealed": true
               }
             }
-          ]
+          ],
+          "firstDescription": "Lying half buried in the mud is an old trunk, bulging with jewels."
         }
       ]
     },
@@ -1235,7 +1237,7 @@
         {
           "id": "pump",
           "name": "hand-held air pump",
-          "description": "A small hand pump, good for inflating things.",
+          "description": "",
           "modules": [
             "portable",
             {

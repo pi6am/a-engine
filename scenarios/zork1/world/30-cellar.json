@@ -190,7 +190,7 @@
         {
           "id": "troll",
           "name": "troll",
-          "description": "A nasty-looking troll, brandishing a bloody axe, blocks the passages.",
+          "description": "A nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.",
           "modules": [
             "agent",
             "immobile",
@@ -218,7 +218,7 @@
             {
               "id": "axe",
               "name": "bloody axe",
-              "description": "A vicious axe, its blade stained dark.",
+              "description": "",
               "modules": [
                 "portable",
                 {
@@ -335,7 +335,7 @@
         {
           "id": "painting",
           "name": "painting",
-          "description": "Fortunately, there is still one painting left. It is primarily a picture of three clowns splashing around in a fall auction.",
+          "description": "A painting by a neglected genius is here.",
           "modules": [
             "portable",
             {
@@ -352,7 +352,8 @@
                 "tvalue": 6
               }
             }
-          ]
+          ],
+          "firstDescription": "Fortunately, there is still one chance for you to be a vandal, for on the far wall is a painting of unparalleled beauty."
         },
         {
           "id": "gallery_west",

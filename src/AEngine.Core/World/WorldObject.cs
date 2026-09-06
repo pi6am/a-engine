@@ -12,6 +12,15 @@ public sealed class WorldObject
     public required string Id { get; init; }
     public string Name { get; set; } = "";
     public string Description { get; set; } = "";
+
+    /// <summary>
+    /// The object's first description (Z-machine FDESC): shown the first
+    /// time it is examined, before falling back to
+    /// <see cref="Description"/> (LDESC) forever after. Scene-setting
+    /// prose that only lands once — "…is in the coffin" — lives here.
+    /// </summary>
+    public string? FirstDescription { get; set; }
+
     public string Parent { get; internal set; } = "";
     public List<string> Children { get; } = [];
     public Dictionary<string, JsonElement> Attributes { get; } = new(StringComparer.Ordinal);

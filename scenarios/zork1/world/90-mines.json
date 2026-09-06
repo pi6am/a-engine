@@ -265,7 +265,7 @@
         {
           "id": "jade",
           "name": "jade figurine",
-          "description": "A small figurine of a dragon, carved from green jade.",
+          "description": "There is an exquisite jade figurine here.",
           "modules": [
             "portable",
             "treasure",
@@ -286,8 +286,8 @@
         },
         {
           "id": "bat",
-          "name": "vampire bat",
-          "description": "A black vampire bat, hanging from the ceiling and squeaking madly.",
+          "name": "bat",
+          "description": "",
           "modules": [
             "agent",
             "immobile",
@@ -349,7 +349,7 @@
         {
           "id": "raised_basket",
           "name": "basket",
-          "description": "A large basket, hanging on a chain over the shaft.",
+          "description": "At the end of the chain is a basket.",
           "modules": [
             "container",
             "openable",
@@ -479,7 +479,7 @@
         {
           "id": "bracelet",
           "name": "sapphire-encrusted bracelet",
-          "description": "A bracelet of gold, studded all about with sapphires.",
+          "description": "",
           "modules": [
             "portable",
             "treasure",
@@ -865,7 +865,7 @@
         {
           "id": "coal",
           "name": "small pile of coal",
-          "description": "A heap of black coal, dusty to the touch.",
+          "description": "",
           "modules": [
             "portable",
             {
@@ -924,8 +924,8 @@
         },
         {
           "id": "timbers",
-          "name": "broken timbers",
-          "description": "Splintered beams, wedged every which way.",
+          "name": "broken timber",
+          "description": "",
           "modules": []
         }
       ]
@@ -978,7 +978,7 @@
         {
           "id": "lowered_basket",
           "name": "basket",
-          "description": "A large basket, hanging on a chain at the shaft's foot.",
+          "description": "From the chain is suspended a basket.",
           "modules": [
             "container",
             "openable",
@@ -1044,7 +1044,7 @@
         {
           "id": "machine",
           "name": "machine",
-          "description": "A huge machine, something like a clothes dryer.",
+          "description": "",
           "modules": [
             "container",
             "openable",
@@ -1065,7 +1065,7 @@
         {
           "id": "machine_switch",
           "name": "switch",
-          "description": "A switch labelled \"START\".",
+          "description": "",
           "modules": [
             "switchable",
             {
@@ -1153,7 +1153,7 @@
     {
       "id": "diamond",
       "name": "huge diamond",
-      "description": "An enormous diamond, glittering with an inner fire.",
+      "description": "There is an enormous diamond (perfectly cut) here.",
       "modules": [
         "portable",
         "treasure",

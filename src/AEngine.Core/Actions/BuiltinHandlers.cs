@@ -117,20 +117,40 @@ public static class BuiltinHandlers
             if (items.Count > 0)
                 sb.AppendLine("You see: " + string.Join(", ", items));
 
+            // a first encounter spends the item's FDESC: the full
+            // scene-setting line ("On the table is an elongated brown
+            // sack, smelling of hot peppers.") prints once, on the first
+            // look that sees it — the original's initial-sight listing
+            foreach (var seen in Perception.VisibleObjects(ctx.World, ctx.Modules, room, ctx.Agent.Id))
+                if (seen.FirstDescription is { Length: > 0 } first &&
+                    !(seen.Attributes.TryGetValue("firstDescriptionShown", out var spent) &&
+                      spent.ValueKind == JsonValueKind.True))
+                {
+                    sb.AppendLine(first);
+                    ctx.World.SetAttribute(seen.Id, "firstDescriptionShown",
+                        World.World.ToJson(true));
+                }
+
             // dressed agents get a line each — the listing stays compact
             foreach (var line in Perception.DressedLines(ctx.World, ctx.Modules, room, ctx.Agent.Id))
                 sb.AppendLine(line);
 
-            var exits = ctx.World.ChildrenOf(room.Id)
-                .Where(c => c.HasModule("portal") && !Perception.IsConcealed(ctx.Modules, c))
-                .ToList();
-            if (exits.Count > 0)
+            // exits are a navigational aid, not part of the fiction: off
+            // unless asked for (the CLI's /showexits; planner contexts
+            // build their own exit lists — see AgentContextBuilder)
+            if (ctx.Engine.ShowExitsInLook)
             {
-                // bare passages show no state — only doors that can be
-                // closed announce "open"/"closed"; lock state is never
-                // observable either way
-                var parts = exits.Select(p => Perception.ExitLabel(ctx.World, ctx.Modules, p));
-                sb.AppendLine("Exits: " + string.Join(", ", parts));
+                var exits = ctx.World.ChildrenOf(room.Id)
+                    .Where(c => c.HasModule("portal") && !Perception.IsConcealed(ctx.Modules, c))
+                    .ToList();
+                if (exits.Count > 0)
+                {
+                    // bare passages show no state — only doors that can be
+                    // closed announce "open"/"closed"; lock state is never
+                    // observable either way
+                    var parts = exits.Select(p => Perception.ExitLabel(ctx.World, ctx.Modules, p));
+                    sb.AppendLine("Exits: " + string.Join(", ", parts));
+                }
             }
             return ActionResult.Ok(sb.ToString().TrimEnd());
         }
@@ -750,12 +770,16 @@ public static class BuiltinHandlers
             // names are observer-relative: strangers render by their
             // incognito description until the examiner has learned them
             var name = Knowledge.NameFor(ctx.Modules, ctx.Agent, target);
-            sb.AppendLine(name);
-            // descriptions can introduce their subject by name — strangers
-            // get the incognito description, so a look teaches no names
-            var description = Knowledge.DescriptionFor(ctx.Modules, ctx.Agent, target);
+            // items examine like the original: the description text (or
+            // its first-encounter FDESC, if somehow still unspent), else
+            // the classic dismissal — no name echo, nothing more
+            var description = DescriptionForExam(ctx, target);
+            if (target.HasModule("agent"))
+                sb.AppendLine(name);
             if (description.Length > 0)
                 sb.AppendLine(description);
+            else if (!target.HasModule("agent") && !target.HasModule("bodypart"))
+                sb.AppendLine($"There's nothing special about the {target.Name}.");
 
             if (target.HasModule("agent"))
             {
@@ -792,15 +816,42 @@ public static class BuiltinHandlers
                     sb.AppendLine(HandlerState.IsOpen(ctx, target) ? "It is open." : "It is closed.");
                 if (target.HasModule("surface"))
                     sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "on it"));
-                else if (target.HasModule("container") && HandlerState.IsOpen(ctx, target))
-                    sb.AppendLine(Perception.ContentsSentence(ctx.World, target));
-                else if (ctx.World.ChildrenOf(target.Id).Any())
+                else if (target.HasModule("container"))
+                    // a closed container shows nothing: sealed is sealed
+                    // (the open-state line above already said so)
+                    if (HandlerState.IsOpen(ctx, target))
+                        sb.AppendLine(Perception.ContentsSentence(ctx.World, target));
+                else if (ctx.World.ChildrenOf(target.Id).Any() &&
+                         (HandlerState.GetOpenState(ctx, target) is null ||
+                          HandlerState.IsOpen(ctx, target)))
                     // anything else holding children still shows them —
                     // body parts and garments with deposits ("There is
-                    // semen in it."), the generic emission rendering
+                    // semen in it."), the generic emission rendering —
+                    // but anything closable stays sealed shut
                     sb.AppendLine(Perception.ContentsSentence(ctx.World, target, "in it"));
             }
             return ActionResult.Ok(sb.ToString().TrimEnd());
+        }
+
+        /// <summary>
+        /// The description to show on this examination: agents keep their
+        /// observer-relative (incognito) rendering; an object with an
+        /// unspent first description shows it once and marks it spent —
+        /// every later look is the settled LDESC.
+        /// </summary>
+        private static string DescriptionForExam(ActionContext ctx, WorldObject target)
+        {
+            if (target.HasModule("agent"))
+                return Knowledge.DescriptionFor(ctx.Modules, ctx.Agent, target);
+            var spent = target.Attributes.TryGetValue("firstDescriptionShown", out var shown) &&
+                        shown.ValueKind == JsonValueKind.True;
+            if (!spent && target.FirstDescription is { Length: > 0 } first)
+            {
+                ctx.World.SetAttribute(target.Id, "firstDescriptionShown",
+                    World.World.ToJson(true));
+                return first;
+            }
+            return target.Description;
         }
     }
 

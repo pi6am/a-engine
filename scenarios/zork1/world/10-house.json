@@ -13,7 +13,7 @@
         {
           "id": "player",
           "name": "the adventurer",
-          "description": "A brave and restless adventurer.",
+          "description": "",
           "modules": [
             {
               "module": "agent"
@@ -39,13 +39,13 @@
         {
           "id": "front_door",
           "name": "front door",
-          "description": "The door is boarded and you can't remove the boards.",
+          "description": "",
           "modules": []
         },
         {
           "id": "mailbox",
           "name": "small mailbox",
-          "description": "It is securely anchored to the house.",
+          "description": "",
           "modules": [
             {
               "module": "container",
@@ -64,7 +64,7 @@
             {
               "id": "leaflet",
               "name": "leaflet",
-              "description": "A small leaflet, folded once.",
+              "description": "A small leaflet is on the ground.",
               "modules": [
                 "portable",
                 {
@@ -451,7 +451,7 @@
         {
           "id": "kitchen_table",
           "name": "kitchen table",
-          "description": "A sturdy wooden table, scattered with crumbs.",
+          "description": "",
           "modules": [
             {
               "module": "surface",
@@ -465,7 +465,7 @@
             {
               "id": "sandwich_bag",
               "name": "brown sack",
-              "description": "A brown sack, smelling faintly of hot peppers and garlic.",
+              "description": "",
               "modules": [
                 {
                   "module": "container",
@@ -486,8 +486,8 @@
               "children": [
                 {
                   "id": "lunch",
-                  "name": "hot pepper sandwich",
-                  "description": "It smells of hot peppers.",
+                  "name": "lunch",
+                  "description": "",
                   "modules": [
                     {
                       "module": "portable"
@@ -497,19 +497,20 @@
                 {
                   "id": "garlic",
                   "name": "clove of garlic",
-                  "description": "A pungent clove of garlic.",
+                  "description": "",
                   "modules": [
                     {
                       "module": "portable"
                     }
                   ]
                 }
-              ]
+              ],
+              "firstDescription": "On the table is an elongated brown sack, smelling of hot peppers."
             },
             {
               "id": "bottle",
               "name": "glass bottle",
-              "description": "A small glass bottle, currently empty.",
+              "description": "",
               "modules": [
                 {
                   "module": "container",
@@ -531,7 +532,7 @@
                 {
                   "id": "water",
                   "name": "quantity of water",
-                  "description": "Clear, cold water.",
+                  "description": "",
                   "modules": [
                     "drinkable",
                     {
@@ -542,7 +543,8 @@
                     }
                   ]
                 }
-              ]
+              ],
+              "firstDescription": "A bottle is sitting on the table."
             }
           ]
         },
@@ -624,7 +626,7 @@
         {
           "id": "rope",
           "name": "rope",
-          "description": "A long, sturdy coil of rope.",
+          "description": "",
           "modules": [
             {
               "module": "portable",
@@ -632,12 +634,13 @@
                 "weight": 15
               }
             }
-          ]
+          ],
+          "firstDescription": "A large coil of rope is lying in the corner."
         },
         {
           "id": "knife",
           "name": "nasty knife",
-          "description": "A vicious-looking knife with an oddly dull blade.",
+          "description": "",
           "modules": [
             {
               "module": "portable",
@@ -645,7 +648,8 @@
                 "weight": 10
               }
             }
-          ]
+          ],
+          "firstDescription": "On a table is a nasty-looking knife."
         }
       ]
     },
@@ -676,7 +680,7 @@
         {
           "id": "trophy_case",
           "name": "trophy case",
-          "description": "A handsome display case, waiting to be filled with treasure.",
+          "description": "",
           "modules": [
             {
               "module": "container",
@@ -694,8 +698,8 @@
           "children": [
             {
               "id": "parchment",
-              "name": "ancient parchment",
-              "description": "A brittle parchment, rolled and sealed with wax.",
+              "name": "ancient map",
+              "description": "",
               "modules": [
                 "portable",
                 "readable",
@@ -718,14 +722,15 @@
                     "concealed": true
                   }
                 }
-              ]
+              ],
+              "firstDescription": "In the trophy case is an ancient parchment which appears to be a map."
             }
           ]
         },
         {
           "id": "lamp",
           "name": "brass lantern",
-          "description": "A battery-powered brass lantern, in good working order.",
+          "description": "There is a brass lantern (battery-powered) here.",
           "modules": [
             {
               "module": "lightsource",
@@ -742,12 +747,13 @@
             {
               "module": "portable"
             }
-          ]
+          ],
+          "firstDescription": "A battery-powered brass lantern is on the trophy case."
         },
         {
           "id": "sword",
-          "name": "elvish sword",
-          "description": "An ancient elvish sword, its blade faintly etched with runes.",
+          "name": "sword",
+          "description": "",
           "modules": [
             {
               "module": "portable",
@@ -772,12 +778,13 @@
                 ]
               }
             }
-          ]
+          ],
+          "firstDescription": "Above the trophy case hangs an elvish sword of great antiquity."
         },
         {
           "id": "rug",
-          "name": "large oriental rug",
-          "description": "A large oriental rug, edges slightly rumpled.",
+          "name": "carpet",
+          "description": "",
           "modules": [
             "shiftable",
             {

@@ -46,6 +46,7 @@ public static class GameSerializer
         public required string Parent { get; init; }
         public string Name { get; init; } = "";
         public string Description { get; init; } = "";
+        public string? FirstDescription { get; init; }
         public Dictionary<string, JsonElement>? Attributes { get; init; }
         public List<ModuleAttachmentState>? Modules { get; init; }
     }
@@ -149,6 +150,7 @@ public static class GameSerializer
             foreach (var node in save.World)
             {
                 var obj = engine.World.CreateObject(node.Id, node.Parent, node.Name, node.Description);
+                obj.FirstDescription = node.FirstDescription;
                 foreach (var (key, value) in node.Attributes ?? [])
                     obj.Attributes[key] = value;
                 foreach (var attached in node.Modules ?? [])
@@ -217,6 +219,7 @@ public static class GameSerializer
                 Parent = obj.Parent,
                 Name = obj.Name,
                 Description = obj.Description,
+                FirstDescription = obj.FirstDescription,
                 Attributes = obj.Attributes.Count > 0
                     ? new Dictionary<string, JsonElement>(obj.Attributes)
                     : null,

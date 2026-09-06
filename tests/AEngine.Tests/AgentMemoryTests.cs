@@ -163,8 +163,8 @@ public class AgentMemoryTests
             TestWorlds.Find(engine, "alice", "examine", "chest")).Success);
 
         var memory = engine.Memory.Recall("alice");
-        Assert.Single(memory, m => m.StartsWith("chest")); // the examine result block
+        Assert.Single(memory, m => m.Contains("chest")); // the examine result block
         // ...and it sits at the end, freshest
-        Assert.StartsWith("chest", memory[^1]);
+        Assert.Contains("chest", memory[^1]);
     }
 }

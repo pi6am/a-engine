@@ -45,7 +45,7 @@
         {
           "id": "pile_of_plastic",
           "name": "pile of plastic",
-          "description": "A folded heap of plastic, with a valve at one corner.",
+          "description": "There is a folded pile of plastic here which has a small valve attached.",
           "modules": [
             "container",
             "sittable",
@@ -582,7 +582,7 @@
         {
           "id": "buoy",
           "name": "red buoy",
-          "description": "A red buoy, bobbing placidly in the current. There is something odd about the way it floats.",
+          "description": "",
           "modules": [
             "portable",
             "container",
@@ -610,7 +610,7 @@
             {
               "id": "emerald",
               "name": "large emerald",
-              "description": "A large emerald, green as the river it rode in on.",
+              "description": "",
               "modules": [
                 "portable",
                 "treasure",
@@ -629,7 +629,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "firstDescription": "There is a red buoy here (probably a warning)."
         }
       ]
     },
@@ -834,7 +835,7 @@
         {
           "id": "shovel",
           "name": "shovel",
-          "description": "A sturdy shovel, its blade pitted with rust.",
+          "description": "",
           "modules": [
             "portable",
             {
@@ -878,7 +879,7 @@
         {
           "id": "sand",
           "name": "sand",
-          "description": "A floor of soft, deep sand.",
+          "description": "",
           "modules": [
             "diggable",
             {
@@ -932,8 +933,8 @@
         },
         {
           "id": "scarab",
-          "name": "jeweled scarab",
-          "description": "A scarab of lapis lazuli, winged with jewels.",
+          "name": "beautiful jeweled scarab",
+          "description": "",
           "modules": [
             "portable",
             "treasure",
@@ -1150,7 +1151,7 @@
         {
           "id": "pot_of_gold",
           "name": "pot of gold",
-          "description": "A great iron pot, filled to the brim with gold coins.",
+          "description": "",
           "modules": [
             "portable",
             "treasure",
@@ -1174,7 +1175,8 @@
                 "concealed": true
               }
             }
-          ]
+          ],
+          "firstDescription": "At the end of the rainbow is a pot of gold."
         }
       ]
     },
@@ -1341,7 +1343,7 @@
     {
       "id": "tpl_boat_label",
       "name": "tan label",
-      "description": "The label reads: Frobozz Magic Boat Factory.",
+      "description": "",
       "modules": [
         "readable",
         {
@@ -1354,8 +1356,8 @@
     },
     {
       "id": "bauble",
-      "name": "brass bauble",
-      "description": "A small sphere of hammered brass, catching the light.",
+      "name": "beautiful brass bauble",
+      "description": "",
       "modules": [
         "portable",
         "treasure",

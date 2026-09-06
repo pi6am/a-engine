@@ -156,9 +156,9 @@ public class Zork1Stage3Tests
         world.MoveObject("player", "mirror_room_1");
         LightLamp(engine);
 
-        Assert.True(RunScript(engine, ["Rub the enormous mirror"]).Success);
+        Assert.True(RunScript(engine, ["Rub the mirror"]).Success);
         Assert.Equal("mirror_room_2", world.RoomOf("player").Id);
-        Assert.True(RunScript(engine, ["Rub the enormous mirror"]).Success);
+        Assert.True(RunScript(engine, ["Rub the mirror"]).Success);
         Assert.Equal("mirror_room_1", world.RoomOf("player").Id);
     }
 
@@ -178,13 +178,13 @@ public class Zork1Stage3Tests
         Assert.Contains("fracturing many bones", leap.Message);
 
         world.MoveObject("rope", "player");
-        Assert.True(RunScript(engine, ["Tie the rope to the railing"]).Success);
+        Assert.True(RunScript(engine, ["Tie the rope to the wooden railing"]).Success);
         Assert.True(Flag(engine, "dome_tied"));
         Assert.True(engine.TurnManager.PerformAction(player, down).Success);
         Assert.Equal("torch_room", world.RoomOf("player").Id);
 
         // the torch is a treasure that never goes out
-        Assert.True(RunScript(engine, ["Take the flaming ivory torch"]).Success);
+        Assert.True(RunScript(engine, ["Take the torch"]).Success);
         Assert.True(engine.ModuleRegistry.ResolveBool(
             world.GetObject("torch"), "lightsource", "on"));
     }
@@ -423,7 +423,7 @@ public class Zork1Stage3Tests
         Assert.True(RunScript(engine,
         [
             "Dig the sand", "Dig the sand", "Dig the sand",
-            "Take the jeweled scarab",
+            "Take the beautiful jeweled scarab",
         ]).Success);
         Assert.Equal("player", world.GetObject("scarab").Parent);
     }
@@ -440,7 +440,7 @@ public class Zork1Stage3Tests
         Assert.True(RunScript(engine,
         [
             "Wind the golden clockwork canary",
-            "Take the brass bauble",
+            "Take the beautiful brass bauble",
         ]).Success);
         Assert.Equal("player", world.GetObject("bauble").Parent);
     }

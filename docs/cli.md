@@ -45,7 +45,10 @@ to their effective default when the player submits their next turn.
 Slash commands are meta actions: they never consume game time or turns.
 Registered in `SlashCommandRegistry` (extensible, with aliases and help
 text): `/actions` (numbered action list), `/showplan on|off` (log the
-extracted LLM plan, default off), `/narrate all|room|actions|off` (LLM
+extracted LLM plan, default off), `/showexits on|off` (`/exits` — list
+exits in room descriptions, default off: a navigational aid, not
+fiction; planner contexts always see their own exit lists),
+`/narrate all|room|actions|off` (LLM
 narration scope, see `docs/llm.md`), `/realtime` (`/rt`), `/turnbased`
 (`/tb`), `/timescale N` (`/ts`), `/control ID` (play as another agent,
 see below), `/scenario` (the loaded scenario's about

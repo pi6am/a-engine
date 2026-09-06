@@ -59,7 +59,7 @@
         {
           "id": "skull",
           "name": "crystal skull",
-          "description": "A skull of the clearest crystal, gleaming coldly.",
+          "description": "",
           "modules": [
             "portable",
             {
@@ -76,7 +76,8 @@
                 "tvalue": 10
               }
             }
-          ]
+          ],
+          "firstDescription": "Lying in one corner of the room is a beautifully carved crystal skull. It appears to be grinning at you rather nastily."
         },
         {
           "id": "lld_north",
@@ -105,7 +106,7 @@
         {
           "id": "altar",
           "name": "altar",
-          "description": "A great stone altar, its surface worn by centuries of prayer.",
+          "description": "",
           "modules": [
             "pray_site",
             {
@@ -192,7 +193,7 @@
         {
           "id": "candles",
           "name": "pair of candles",
-          "description": "Two candles of black wax, their wicks blackened.",
+          "description": "",
           "modules": [
             "portable",
             "lightsource",
@@ -216,12 +217,13 @@
                 "outText": "The candles are extinguished, leaving only stubs of black wax."
               }
             }
-          ]
+          ],
+          "firstDescription": "On the two ends of the altar are burning candles."
         },
         {
           "id": "black_book",
           "name": "black book",
-          "description": "A dusty black book, lying open to a page marked 569.",
+          "description": "",
           "modules": [
             "portable",
             "readable",
@@ -237,7 +239,8 @@
                 "text": "The book relates the tale of the worship of Hades, ending with a prayer for the exorcism of evil spirits: 'Begone, fiends, back to the depths from which you came!'"
               }
             }
-          ]
+          ],
+          "firstDescription": "On the altar is a large black book, open to page 569."
         }
       ]
     },
