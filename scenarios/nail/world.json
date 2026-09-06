@@ -7,51 +7,99 @@
       "id": "rules",
       "name": "Fanne'Tar rules",
       "description": "Scenario tuning: checks roll 1d20 + stat + skill vs difficulty.",
-      "modules": ["rules"]
+      "modules": [
+        "rules"
+      ]
     },
     {
       "id": "docks",
       "name": "Saltwharf Docks",
       "description": "Salt spray and crying gulls. Fishing boats knock against the pilings of Fanne'Tar's wharf, and a driftwood gate leads north to the market square.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "player",
           "name": "Nail the pink kobold",
-          "description": "Nail — Nannan in her native tongue — a three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand, Hilezmaras' dragon-mark, coils around her left arm, suppressed but not broken.",
+          "description": "Nail \u2014 Nannan in her native tongue \u2014 a three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand, Hilezmaras' dragon-mark, coils around her left arm, suppressed but not broken.",
           "modules": [
-            { "module": "agent", "overrides": {
-              "properNames": ["Nail", "Nannan"],
-              "incognito": "the pink kobold",
-              "incognitoDescription": "A three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand coils around her left arm, suppressed but not broken.", "policy": "player",
-              "memoryLength": 50,
-              "character": "Nail — Nannan in your native tongue — a three-foot kobold refugee of the Xabrakkar warren, pink-scaled and purple-eyed. Hilezmaras' cult branded you with his dragon-mark; the red dragon Rhindicar, your tribe's patron, suppresses its compulsion through the talon he gifted you.",
-              "goals": "Rid yourself of Hilezmaras' dragon-mark before it grows strong enough to overwhelm Rhindicar's suppression. Rhindicar urged you to find his former master, the sorcerer Rath Cinderstorm — your only hope. You arrived in Fanne'Tar knowing no one; find Rath and persuade him to help you.",
-              "traits": "Bold, friendly, intrepid. You love and respect Rhindicar and hate Hilezmaras. The dragon-talon blade is important to you and you will never willingly give it up. If someone takes it, get it back at any cost." } },
+            {
+              "module": "agent",
+              "overrides": {
+                "properNames": [
+                  "Nail",
+                  "Nannan"
+                ],
+                "incognito": "the pink kobold",
+                "incognitoDescription": "A three-foot kobold with pink scales, a peachy chest, and purple eyes. A swirling arcane brand coils around her left arm, suppressed but not broken.",
+                "policy": "player",
+                "memoryLength": 50,
+                "character": "Nail \u2014 Nannan in your native tongue \u2014 a three-foot kobold refugee of the Xabrakkar warren, pink-scaled and purple-eyed. Hilezmaras' cult branded you with his dragon-mark; the red dragon Rhindicar, your tribe's patron, suppresses its compulsion through the talon he gifted you.",
+                "goals": "Rid yourself of Hilezmaras' dragon-mark before it grows strong enough to overwhelm Rhindicar's suppression. Rhindicar urged you to find his former master, the sorcerer Rath Cinderstorm \u2014 your only hope. You arrived in Fanne'Tar knowing no one; find Rath and persuade him to help you.",
+                "traits": "Bold, friendly, intrepid. You love and respect Rhindicar and hate Hilezmaras. The dragon-talon blade is important to you and you will never willingly give it up. If someone takes it, get it back at any cost."
+              }
+            },
             "can_speak",
             "knowledge",
             "shoveable",
             "body",
-            { "module": "combatant", "overrides": { "attackStat": "agility", "attackSkill": "brawling" } },
+            {
+              "module": "combatant",
+              "overrides": {
+                "attackStat": "agility",
+                "attackSkill": "brawling"
+              }
+            },
             "attackable",
             "grappleable",
             "grappler",
             "chokeable",
             "huggable",
-            { "module": "stats", "overrides": { "values": { "strength": 8, "agility": 15, "charisma": 12, "perception": 11 } } },
-            { "module": "skills", "overrides": { "values": { "persuasion": 3, "lockpicking": 3, "pickpocket": 4, "blades": 5, "brawling": 1 } } }
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 8,
+                  "agility": 15,
+                  "charisma": 12,
+                  "perception": 11
+                }
+              }
+            },
+            {
+              "module": "skills",
+              "overrides": {
+                "values": {
+                  "persuasion": 3,
+                  "lockpicking": 3,
+                  "pickpocket": 4,
+                  "blades": 5,
+                  "brawling": 1
+                }
+              }
+            }
           ],
           "children": [
             {
               "id": "dragonmark",
               "name": "dragon-mark",
-              "description": "The brand coiled around your left arm: Hilezmaras' dragon-mark, seared into you when his cult purged the Xabrakkar warren. It links you to the mad tyrant, and the link grows stronger with time. Rhindicar — the red dragon your tribe worshipped — suppresses its compulsion through the talon he gifted you, but he warned his power would fail. His counsel: find his former master, the sorcerer Rath Cinderstorm.",
+              "description": "The brand coiled around your left arm: Hilezmaras' dragon-mark, seared into you when his cult purged the Xabrakkar warren. It links you to the mad tyrant, and the link grows stronger with time. Rhindicar \u2014 the red dragon your tribe worshipped \u2014 suppresses its compulsion through the talon he gifted you, but he warned his power would fail. His counsel: find his former master, the sorcerer Rath Cinderstorm.",
               "modules": [
-                { "module": "dragonmark", "overrides": { "patron": "Hilezmaras", "suppressed": true } },
+                {
+                  "module": "dragonmark",
+                  "overrides": {
+                    "patron": "Hilezmaras",
+                    "suppressed": true
+                  }
+                },
                 {
                   "module": "ambient",
                   "overrides": {
-                    "interval": { "min": 30, "max": 60 },
+                    "interval": {
+                      "min": 30,
+                      "max": 60
+                    },
                     "texts": [
                       "The dragon-mark on your shoulder burns.",
                       "The dragon-mark itches with a distant, crawling heat.",
@@ -65,11 +113,28 @@
             {
               "id": "talon_blade",
               "name": "dragon's talon blade",
-              "description": "A fragment of Rhindicar's talon bound to a hilt. It thrums with suppressed fire — proof of the old dragon's favor.",
+              "description": "A fragment of Rhindicar's talon bound to a hilt. It thrums with suppressed fire \u2014 proof of the old dragon's favor.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["held"], "worn": true } },
-                { "module": "weapon", "overrides": { "damageBonus": 3, "damageDice": 1, "damageSides": 6, "skill": "blades", "stat": "agility" } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "held"
+                    ],
+                    "worn": true
+                  }
+                },
+                {
+                  "module": "weapon",
+                  "overrides": {
+                    "damageBonus": 3,
+                    "damageDice": 1,
+                    "damageSides": 6,
+                    "skill": "blades",
+                    "stat": "agility"
+                  }
+                }
               ]
             },
             {
@@ -78,49 +143,157 @@
               "description": "A salt-stained tunic that has crossed an ocean.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["top"], "worn": true } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "top"
+                    ],
+                    "worn": true
+                  }
+                }
               ]
             },
             {
-              "id": "player_head", "name": "head", "description": "Your head.",
+              "id": "player_head",
+              "name": "head",
+              "description": "Your head.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "head", "vital": true, "aimedPenalty": 6 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "head",
+                    "vital": true,
+                    "aimedPenalty": 6
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             },
             {
-              "id": "player_torso", "name": "torso", "description": "Your torso.",
+              "id": "player_torso",
+              "name": "torso",
+              "description": "Your torso.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "vital": true, "aimedPenalty": 0 } },
-                { "module": "health", "overrides": { "maxHp": 12, "hp": 12 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "vital": true,
+                    "aimedPenalty": 0
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 12,
+                    "hp": 12
+                  }
+                }
               ]
             },
             {
-              "id": "player_left_arm", "name": "left arm", "description": "Your left arm. The dragon-mark coils around it.",
+              "id": "player_left_arm",
+              "name": "left arm",
+              "description": "Your left arm. The dragon-mark coils around it.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm_offhand"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm_offhand"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             },
             {
-              "id": "player_right_arm", "name": "right arm", "description": "Your right arm.",
+              "id": "player_right_arm",
+              "name": "right arm",
+              "description": "Your right arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             },
             {
-              "id": "player_left_leg", "name": "left leg", "description": "Your left leg.",
+              "id": "player_left_leg",
+              "name": "left leg",
+              "description": "Your left leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             },
             {
-              "id": "player_right_leg", "name": "right leg", "description": "Your right leg.",
+              "id": "player_right_leg",
+              "name": "right leg",
+              "description": "Your right leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             }
           ]
@@ -133,18 +306,37 @@
             {
               "module": "agent",
               "overrides": {
-              "properNames": ["Ferret"],
-              "incognito": "the old dockhand",
-              "incognitoDescription": "A leathery, sun-beaten dockhand who seems to know every rumor on the wharf.",
+                "properNames": [
+                  "Ferret"
+                ],
+                "incognito": "the old dockhand",
+                "incognitoDescription": "A leathery, sun-beaten dockhand who seems to know every rumor on the wharf.",
                 "policy": "auto",
                 "character": "Old Ferret, a leathery, sun-beaten dockhand who knows every rumor on the wharf.",
                 "goals": "Unload boats and gossip with newcomers. Tell anyone who asks: the sorcerer Rath Cinderstorm keeps to the tower north of the market square, and the herbalist Mira trades in rare reagents at her stall. There may be an entrance to old ruins west of the market, but it's dangerous. Only talk of the ruins if asked directly, and warn that they may be treacherous. You won't say where the ruins are but suggest asking around."
               }
             },
             "can_speak",
-            { "module": "knowledge", "overrides": { "knowsNames": ["mira", "rath"] } },
+            {
+              "module": "knowledge",
+              "overrides": {
+                "knowsNames": [
+                  "mira",
+                  "rath"
+                ]
+              }
+            },
             "huggable",
-            { "module": "stats", "overrides": { "values": { "strength": 9, "agility": 10, "perception": 11 } } }
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 9,
+                  "agility": 10,
+                  "perception": 11
+                }
+              }
+            }
           ]
         },
         {
@@ -153,14 +345,21 @@
           "description": "A weathered shipping crate stenciled with a fishmonger's mark.",
           "modules": [
             "container",
-            { "module": "openable", "overrides": { "open": true } }
+            {
+              "module": "openable",
+              "overrides": {
+                "open": true
+              }
+            }
           ],
           "children": [
             {
               "id": "fish",
               "name": "salted fish",
               "description": "A hard, salt-crusted fish.",
-              "modules": ["portable"]
+              "modules": [
+                "portable"
+              ]
             }
           ]
         },
@@ -169,7 +368,14 @@
           "name": "driftwood gate",
           "description": "A gate of silvered driftwood leading north to the market square.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "gate_state", "direction": "north", "to": "market" } },
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "gate_state",
+                "direction": "north",
+                "to": "market"
+              }
+            },
             "door"
           ]
         }
@@ -179,14 +385,23 @@
       "id": "market",
       "name": "Market Square",
       "description": "Fanne'Tar's market square, loud with hagglers. An herbalist's stall stands to the east under a canvas awning; a narrow passage slips west into Candlewick Alley; a crooked tower rises to the north behind an oak door. The driftwood gate to the docks lies south.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "gate_market_side",
           "name": "driftwood gate",
           "description": "A gate of silvered driftwood leading south to the docks.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "gate_state", "direction": "south", "to": "docks" } },
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "gate_state",
+                "direction": "south",
+                "to": "docks"
+              }
+            },
             "door"
           ]
         },
@@ -195,7 +410,14 @@
           "name": "canvas awning",
           "description": "The canvas awning of the herbalist's stall, to the east.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "awning_state", "direction": "east", "to": "stall" } }
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "awning_state",
+                "direction": "east",
+                "to": "stall"
+              }
+            }
           ]
         },
         {
@@ -203,7 +425,14 @@
           "name": "narrow passage",
           "description": "A narrow passage west into Candlewick Alley.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "west", "to": "alley" } }
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "west",
+                "to": "alley"
+              }
+            }
           ]
         },
         {
@@ -211,7 +440,14 @@
           "name": "oak tower door",
           "description": "A heavy oak door at the tower's base, leading north.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "tower_door_state", "direction": "north", "to": "tower_foyer" } },
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "tower_door_state",
+                "direction": "north",
+                "to": "tower_foyer"
+              }
+            },
             "door"
           ]
         }
@@ -220,8 +456,10 @@
     {
       "id": "stall",
       "name": "Herbalist's Stall",
-      "description": "Mira's stall, fragrant with dried herbs. Jars and poultices crowd the shelves. A chalked sign reads: 'Barter preferred — rare blooms for rare reagents.'",
-      "modules": ["room"],
+      "description": "Mira's stall, fragrant with dried herbs. Jars and poultices crowd the shelves. A chalked sign reads: 'Barter preferred \u2014 rare blooms for rare reagents.'",
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "mira",
@@ -231,19 +469,38 @@
             {
               "module": "agent",
               "overrides": {
-              "properNames": ["Mira"],
-              "incognito": "the herbalist",
-              "incognitoDescription": "A round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
+                "properNames": [
+                  "Mira"
+                ],
+                "incognito": "the herbalist",
+                "incognitoDescription": "A round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
                 "policy": "auto",
                 "character": "Mira, a round, cheerful herbalist with potion-stained fingers and an eye for rare reagents.",
-                "goals": "Sell your remedies. Stay at your stall — you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable — it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action — a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done — you have the bloom you wanted and nothing left to sell, so never barter to get it back and stop asking customers for moonpetals.",
+                "goals": "Sell your remedies. Stay at your stall \u2014 you must guard your wares and won't leave without a very good reason. Obtain a moonpetal bloom in exchange for your pouch of ember salt, a rare reagent. The ember salt is valuable \u2014 it leaves your hands only when a customer places a moonpetal bloom (or something else equally valuable) in them, and never for free. NEVER hand your wares over with the give action \u2014 a sale completes only through the barter action or after the customer has given you the bloom. Never pick a moonpetal yourself; it is only worth anything to you as a trade. Once you've sold the ember salt, the deal is done \u2014 you have the bloom you wanted and nothing left to sell, so never barter to get it back and stop asking customers for moonpetals.",
                 "traits": "You are a shrewd trader and your wares are NEVER gifts. You love to gossip: cultists smuggle relics through the smugglers' cellar below Candlewick Alley west of the market, and the sorcerer Rath Cinderstorm keeps to his tower north of the market."
               }
             },
             "can_speak",
-            { "module": "knowledge", "overrides": { "knowsNames": ["ferret", "rath"] } },
+            {
+              "module": "knowledge",
+              "overrides": {
+                "knowsNames": [
+                  "ferret",
+                  "rath"
+                ]
+              }
+            },
             "huggable",
-            { "module": "stats", "overrides": { "values": { "strength": 6, "agility": 9, "perception": 12 } } }
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 6,
+                  "agility": 9,
+                  "perception": 12
+                }
+              }
+            }
           ],
           "children": [
             {
@@ -253,7 +510,14 @@
               "modules": [
                 "notable",
                 "portable",
-                { "module": "ware", "overrides": { "wants": "moonpetal", "trader": "mira", "refusal": "Ah-ah! That salt's worth a moonpetal bloom, dear. Bring me the bloom and we'll talk." } }
+                {
+                  "module": "ware",
+                  "overrides": {
+                    "wants": "moonpetal",
+                    "trader": "mira",
+                    "refusal": "Ah-ah! That salt's worth a moonpetal bloom, dear. Bring me the bloom and we'll talk."
+                  }
+                }
               ]
             }
           ]
@@ -263,7 +527,14 @@
           "name": "canvas awning",
           "description": "The canvas awning opening west onto the market square.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "awning_state", "direction": "west", "to": "market" } }
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "awning_state",
+                "direction": "west",
+                "to": "market"
+              }
+            }
           ]
         }
       ]
@@ -272,20 +543,32 @@
       "id": "alley",
       "name": "Candlewick Alley",
       "description": "Candlewick Alley, narrow and shadowed. Weeds grow from a crack in the wall. A trapdoor in the cobbles leads down to the old smugglers' cellar; the narrow passage back to the market lies east.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "moonpetal",
           "name": "moonpetal bloom",
           "description": "A pale moonpetal bloom that opens only at dusk.",
-          "modules": ["notable", "portable"]
+          "modules": [
+            "notable",
+            "portable"
+          ]
         },
         {
           "id": "passage_alley_side",
           "name": "narrow passage",
           "description": "A narrow passage east to the market square.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "passage_state", "direction": "east", "to": "market" } }
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "passage_state",
+                "direction": "east",
+                "to": "market"
+              }
+            }
           ]
         },
         {
@@ -293,7 +576,14 @@
           "name": "trapdoor",
           "description": "A iron-banded trapdoor in the cobbles, leading down.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "hatch_state", "direction": "down", "to": "cellar" } },
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "hatch_state",
+                "direction": "down",
+                "to": "cellar"
+              }
+            },
             "door"
           ]
         }
@@ -303,7 +593,9 @@
       "id": "cellar",
       "name": "Smugglers' Cellar",
       "description": "A low smugglers' cellar of damp stone. Cult regalia hangs on the wall, and an iron reliquary sits in an alcove. The trapdoor leads back up.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "krell",
@@ -313,9 +605,11 @@
             {
               "module": "agent",
               "overrides": {
-              "properNames": ["Krell"],
-              "incognito": "the cultist sentry",
-              "incognitoDescription": "A dragonborn zealot of Hilezmaras, scales the color of old blood, fanatically loyal to the mad tyrant.",
+                "properNames": [
+                  "Krell"
+                ],
+                "incognito": "the cultist sentry",
+                "incognitoDescription": "A dragonborn zealot of Hilezmaras, scales the color of old blood, fanatically loyal to the mad tyrant.",
                 "policy": "auto",
                 "character": "Krell, a dragonborn zealot of Hilezmaras, scales the color of old blood, fanatically loyal to the mad tyrant.",
                 "goals": "Guard the iron reliquary and its focus crystal. Let no one take from it. Attack intruders who steal from you or the reliquary."
@@ -330,15 +624,33 @@
             "grappleable",
             "grappler",
             "chokeable",
-            { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 8, "perception": 10 } } },
-            { "module": "skills", "overrides": { "values": { "brawling": 3 } } }
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 14,
+                  "agility": 8,
+                  "perception": 10
+                }
+              }
+            },
+            {
+              "module": "skills",
+              "overrides": {
+                "values": {
+                  "brawling": 3
+                }
+              }
+            }
           ],
           "children": [
             {
               "id": "cellar_key",
               "name": "iron cellar key",
               "description": "A heavy iron key, stamped with the sigil of Hilezmaras' cult.",
-              "modules": ["portable"]
+              "modules": [
+                "portable"
+              ]
             },
             {
               "id": "cult_robe",
@@ -346,8 +658,21 @@
               "description": "A heavy robe in the cult's crimson, padded at the shoulders.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["top"], "worn": true } },
-                { "module": "armor", "overrides": { "protection": 1 } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "top"
+                    ],
+                    "worn": true
+                  }
+                },
+                {
+                  "module": "armor",
+                  "overrides": {
+                    "protection": 1
+                  }
+                }
               ]
             },
             {
@@ -356,50 +681,167 @@
               "description": "A brutal, flanged mace.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["held"], "worn": true } },
-                { "module": "weapon", "overrides": { "damageBonus": 1, "damageDice": 1, "damageSides": 4, "skill": "brawling", "stat": "strength" } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "held"
+                    ],
+                    "worn": true
+                  }
+                },
+                {
+                  "module": "weapon",
+                  "overrides": {
+                    "damageBonus": 1,
+                    "damageDice": 1,
+                    "damageSides": 4,
+                    "skill": "brawling",
+                    "stat": "strength"
+                  }
+                }
               ]
             },
             {
-              "id": "krell_head", "name": "head", "description": "His head.",
+              "id": "krell_head",
+              "name": "head",
+              "description": "His head.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "head", "vital": true, "aimedPenalty": 6 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "head",
+                    "vital": true,
+                    "aimedPenalty": 6
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             },
             {
-              "id": "krell_torso", "name": "torso", "description": "His torso.",
+              "id": "krell_torso",
+              "name": "torso",
+              "description": "His torso.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "vital": true, "aimedPenalty": 0 } },
-                { "module": "health", "overrides": { "maxHp": 14, "hp": 14 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "vital": true,
+                    "aimedPenalty": 0
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 14,
+                    "hp": 14
+                  }
+                }
               ]
             },
             {
-              "id": "krell_left_arm", "name": "left arm", "description": "His left arm.",
+              "id": "krell_left_arm",
+              "name": "left arm",
+              "description": "His left arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm_offhand"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 7, "hp": 7 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm_offhand"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 7,
+                    "hp": 7
+                  }
+                }
               ]
             },
             {
-              "id": "krell_right_arm", "name": "right arm", "description": "His right arm.",
+              "id": "krell_right_arm",
+              "name": "right arm",
+              "description": "His right arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 7, "hp": 7 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 7,
+                    "hp": 7
+                  }
+                }
               ]
             },
             {
-              "id": "krell_left_leg", "name": "left leg", "description": "His left leg.",
+              "id": "krell_left_leg",
+              "name": "left leg",
+              "description": "His left leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 9, "hp": 9 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 9,
+                    "hp": 9
+                  }
+                }
               ]
             },
             {
-              "id": "krell_right_leg", "name": "right leg", "description": "His right leg.",
+              "id": "krell_right_leg",
+              "name": "right leg",
+              "description": "His right leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 9, "hp": 9 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 9,
+                    "hp": 9
+                  }
+                }
               ]
             }
           ]
@@ -410,24 +852,48 @@
           "description": "An iron reliquary stamped with the sigil of Hilezmaras' cult, its lock formidable.",
           "modules": [
             "container",
-            { "module": "lockable", "overrides": { "keyRef": "cellar_key" } },
-            { "module": "openable", "overrides": { "open": false, "locked": true } }
+            {
+              "module": "lockable",
+              "overrides": {
+                "keyRef": "cellar_key"
+              }
+            },
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false,
+                "locked": true
+              }
+            }
           ],
           "children": [
             {
               "id": "focus_crystal",
               "name": "focus crystal",
               "description": "A fist-sized crystal that hums when held. A ritual focus.",
-              "modules": ["notable", "portable"]
+              "modules": [
+                "notable",
+                "portable"
+              ]
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "hatch_cellar_side",
           "name": "trapdoor",
           "description": "The trapdoor leading back up to Candlewick Alley.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "hatch_state", "direction": "up", "to": "alley" } },
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "hatch_state",
+                "direction": "up",
+                "to": "alley"
+              }
+            },
             "door"
           ]
         }
@@ -437,14 +903,23 @@
       "id": "tower_foyer",
       "name": "Tower Foyer",
       "description": "The tower's cluttered ground floor: crates of books, astrolabe parts, a cold hearth. A beaded curtain covers the stairway up. The oak door leads south to the market square.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "tower_door_foyer_side",
           "name": "oak tower door",
           "description": "The tower's heavy oak door, leading south to the market square.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "tower_door_state", "direction": "south", "to": "market" } },
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "tower_door_state",
+                "direction": "south",
+                "to": "market"
+              }
+            },
             "door"
           ]
         },
@@ -453,7 +928,14 @@
           "name": "beaded curtain",
           "description": "A curtain of bone beads covering the stairway up.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "beads_state", "direction": "up", "to": "tower_study" } }
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "beads_state",
+                "direction": "up",
+                "to": "tower_study"
+              }
+            }
           ]
         }
       ]
@@ -462,7 +944,9 @@
       "id": "tower_study",
       "name": "Tower Study",
       "description": "A circular study lined with books and humming instruments. A brazier smolders in the center. The beaded curtain leads down.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "rath",
@@ -472,31 +956,74 @@
             {
               "module": "agent",
               "overrides": {
-              "properNames": ["Rath", "Cinderstorm"],
-              "incognito": "the sorcerer",
-              "incognitoDescription": "A stooped, ash-haired sorcerer; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar.",
+                "properNames": [
+                  "Rath",
+                  "Cinderstorm"
+                ],
+                "incognito": "the sorcerer",
+                "incognitoDescription": "A stooped, ash-haired sorcerer; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar.",
                 "policy": "auto",
                 "memoryLength": 50,
                 "character": "Rath Cinderstorm, a stooped, ash-haired sorcerer in self-imposed exile; gruff, tired, and kinder than he looks. The red dragon Rhindicar was once his familiar, and he misses him.",
-                "goals": "Keep your solitude. Strangers get short shrift — turn them away. You can unbind Hilezmaras' dragon-marks, but you never offer, hint at, or perform the rite uninvited. A visitor bearing Rhindicar's talon and the rite's reagents (ember salt, a focus crystal) is NOT enough — the talon could be stolen, and you say so. Only after a visitor speaks of Rhindicar in a way that convinces you their bond is genuine (probe them: ask how they know him, what he is like) AND they actually ask for your help do you name the rite's price and perform it.",
+                "goals": "Keep your solitude. Strangers get short shrift \u2014 turn them away. You can unbind Hilezmaras' dragon-marks, but you never offer, hint at, or perform the rite uninvited. A visitor bearing Rhindicar's talon and the rite's reagents (ember salt, a focus crystal) is NOT enough \u2014 the talon could be stolen, and you say so. Only after a visitor speaks of Rhindicar in a way that convinces you their bond is genuine (probe them: ask how they know him, what he is like) AND they actually ask for your help do you name the rite's price and perform it.",
                 "traits": "Gruff, suspicious, slow to trust; kindness shows only after trust is earned. You interrogate visitors who claim a connection to Rhindicar instead of taking objects as proof. You do not discuss your past with strangers. You know that Mira sometimes has rare reagents, and the focus crystal could perhaps be found in the old ruins."
               }
             },
             "can_speak",
-            { "module": "knowledge", "overrides": { "knowsNames": ["ferret", "mira"] } },
+            {
+              "module": "knowledge",
+              "overrides": {
+                "knowsNames": [
+                  "ferret",
+                  "mira"
+                ]
+              }
+            },
             "shoveable",
             "attackable",
             "huggable",
-            { "module": "health", "overrides": { "maxHp": 20, "hp": 20 } },
-            { "module": "stats", "overrides": { "values": { "strength": 6, "agility": 8, "perception": 14, "charisma": 10 } } },
-            { "module": "skills", "overrides": { "values": { "persuasion": 5 } } },
+            {
+              "module": "health",
+              "overrides": {
+                "maxHp": 20,
+                "hp": 20
+              }
+            },
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 6,
+                  "agility": 8,
+                  "perception": 14,
+                  "charisma": 10
+                }
+              }
+            },
+            {
+              "module": "skills",
+              "overrides": {
+                "values": {
+                  "persuasion": 5
+                }
+              }
+            },
             {
               "module": "ritual",
               "overrides": {
-                "requiresItems": ["dragonmark", "talon_blade", "ember_salt", "focus_crystal"],
-                "consumesItems": ["ember_salt", "focus_crystal", "dragonmark"],
+                "requiresItems": [
+                  "dragonmark",
+                  "talon_blade",
+                  "ember_salt",
+                  "focus_crystal"
+                ],
+                "consumesItems": [
+                  "ember_salt",
+                  "focus_crystal",
+                  "dragonmark"
+                ],
                 "endsGame": true,
-                "epilogue": "Rhindicar's talon blazes in your hand as Rath Cinderstorm traces the unbinding sigils. The dragon-mark sears, shudders — and slides off your arm like ash. Somewhere across the ocean, a mad tyrant's grip on you snaps. Rath slumps into his chair, smiling faintly. 'There. Give my old friend my regards.' You are free. (Thanks for playing!)"
+                "epilogue": "Rhindicar's talon blazes in your hand as Rath Cinderstorm traces the unbinding sigils. The dragon-mark sears, shudders \u2014 and slides off your arm like ash. Somewhere across the ocean, a mad tyrant's grip on you snaps. Rath slumps into his chair, smiling faintly. 'There. Give my old friend my regards.' You are free. (Thanks for playing!)"
               }
             }
           ]
@@ -506,7 +1033,14 @@
           "name": "beaded curtain",
           "description": "A curtain of bone beads covering the stairway down.",
           "modules": [
-            { "module": "portal", "overrides": { "stateRef": "beads_state", "direction": "down", "to": "tower_foyer" } }
+            {
+              "module": "portal",
+              "overrides": {
+                "stateRef": "beads_state",
+                "direction": "down",
+                "to": "tower_foyer"
+              }
+            }
           ]
         }
       ]
@@ -515,37 +1049,85 @@
       "id": "gate_state",
       "name": "shared gate state",
       "description": "The shared state of the driftwood gate.",
-      "modules": [{ "module": "doorstate", "overrides": { "open": true, "locked": false } }]
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": true,
+            "locked": false
+          }
+        }
+      ]
     },
     {
       "id": "awning_state",
       "name": "shared awning state",
       "description": "The awning stands permanently open.",
-      "modules": [{ "module": "doorstate", "overrides": { "open": true, "locked": false } }]
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": true,
+            "locked": false
+          }
+        }
+      ]
     },
     {
       "id": "passage_state",
       "name": "shared passage state",
       "description": "The passage is always open.",
-      "modules": [{ "module": "doorstate", "overrides": { "open": true, "locked": false } }]
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": true,
+            "locked": false
+          }
+        }
+      ]
     },
     {
       "id": "tower_door_state",
       "name": "shared tower door state",
       "description": "The shared state of the oak tower door.",
-      "modules": [{ "module": "doorstate", "overrides": { "open": false, "locked": false } }]
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": false
+          }
+        }
+      ]
     },
     {
       "id": "hatch_state",
       "name": "shared trapdoor state",
       "description": "The shared state of the trapdoor.",
-      "modules": [{ "module": "doorstate", "overrides": { "open": false, "locked": false } }]
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": false
+          }
+        }
+      ]
     },
     {
       "id": "beads_state",
       "name": "shared curtain state",
       "description": "The beaded curtain is always parted.",
-      "modules": [{ "module": "doorstate", "overrides": { "open": true, "locked": false } }]
+      "modules": [
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": true,
+            "locked": false
+          }
+        }
+      ]
     }
   ]
 }

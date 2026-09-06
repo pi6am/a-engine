@@ -23,7 +23,14 @@ records `originParent`; the scene-setting line reads true exactly as
 long as the scene holds), then its LDESC once the world has moved it,
 then the generic "There is a … here." Open containers append a contents
 group ("The small mailbox contains: / A leaflet"); a surface's contents
-list directly. Examine shows the settled description or the classic
+list directly. Agents in the room list too, like the original's actors:
+their description (the troll's "A nasty-looking troll, brandishing a
+bloody axe, blocks all passages out of the room.") — or "The … is
+here." when they have none — with observable states riding along in
+parentheses ("(prone, incapacitated)"), followed by their wearing line.
+Agents flagged `scenery` never list (the ZIL NDESCBIT: the cyclops
+"blocks the staircase" in the room's own prose). Examine shows the
+settled description or the classic
 "There's nothing special about the …", never the FDESC and never the
 item's name, and closed containers reveal nothing.
 

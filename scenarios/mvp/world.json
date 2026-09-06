@@ -6,13 +6,18 @@
       "id": "room_a",
       "name": "Dusty Study",
       "description": "A dusty study. A wooden desk stands against the wall, and a door leads north.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "player",
           "name": "the guest",
           "description": "A visitor passing through.",
-          "modules": ["agent", "can_speak"]
+          "modules": [
+            "agent",
+            "can_speak"
+          ]
         },
         {
           "id": "desk",
@@ -20,16 +25,26 @@
           "description": "The drawer of an old wooden desk.",
           "modules": [
             "container",
-            { "module": "openable", "overrides": { "open": false } }
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            }
           ],
           "children": [
             {
               "id": "key",
               "name": "brass key",
               "description": "A small brass key.",
-              "modules": ["portable"]
+              "modules": [
+                "portable"
+              ]
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "door_a_side",
@@ -38,9 +53,18 @@
           "modules": [
             {
               "module": "portal",
-              "overrides": { "stateRef": "door_1_state", "direction": "north", "to": "room_b" }
+              "overrides": {
+                "stateRef": "door_1_state",
+                "direction": "north",
+                "to": "room_b"
+              }
             },
-            { "module": "lockable", "overrides": { "keyRef": "key" } }
+            {
+              "module": "lockable",
+              "overrides": {
+                "keyRef": "key"
+              }
+            }
           ]
         }
       ]
@@ -49,7 +73,9 @@
       "id": "room_b",
       "name": "Cold Hallway",
       "description": "A cold, narrow hallway. A door leads south.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "door_b_side",
@@ -58,9 +84,18 @@
           "modules": [
             {
               "module": "portal",
-              "overrides": { "stateRef": "door_1_state", "direction": "south", "to": "room_a" }
+              "overrides": {
+                "stateRef": "door_1_state",
+                "direction": "south",
+                "to": "room_a"
+              }
             },
-            { "module": "lockable", "overrides": { "keyRef": "key" } }
+            {
+              "module": "lockable",
+              "overrides": {
+                "keyRef": "key"
+              }
+            }
           ]
         }
       ]
@@ -70,7 +105,13 @@
       "name": "shared door state",
       "description": "The shared state of the door between the study and the hallway.",
       "modules": [
-        { "module": "doorstate", "overrides": { "open": false, "locked": true } }
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": true
+          }
+        }
       ]
     }
   ]

@@ -232,21 +232,7 @@ public static class Perception
             // visible status conditions append theirs ("tipsy", "drunk").
             // A busy agent leads with their activity — what someone is
             // doing outranks how they're positioned
-            var conditions = new List<string>();
-            if (child.HasModule("agent") &&
-                modules.ResolveString(child, "agent", "activity") is { Length: > 0 } busy)
-                conditions.Add(busy);
-            if (Condition.Descriptive(world, modules) && child.HasModule("agent") &&
-                !Health.IsIncapacitated(world, modules, child) &&
-                Condition.Overall(world, modules, child) is { } condition)
-                conditions.Add(condition.Label);
-            if (child.HasModule("agent"))
-                conditions.AddRange(Conditions.VisibleWords(world, modules, child));
-            if (child.HasModule("agent") &&
-                Postures.Of(world, modules, child) == Postures.Prone)
-                conditions.Add("prone");
-            if (Health.IsIncapacitated(world, modules, child))
-                conditions.Add("incapacitated");
+            var conditions = AgentStateWords(world, modules, child);
             if (conditions.Count > 0)
                 entry += $" ({string.Join(", ", conditions)})";
             items.Add(entry);
@@ -310,6 +296,31 @@ public static class Perception
     /// chef's hat." Placeholder for per-agent detail until an examine verb
     /// exists; the "You see:" listing stays compact.
     /// </summary>
+    /// <summary>
+    /// An agent's observable state words, shared by the compact listing
+    /// and the who's-here prose lines: what they're busy with, crunch
+    /// condition bands, visible status conditions, prone, incapacitated.
+    /// </summary>
+    public static List<string> AgentStateWords(
+        World.World world, ModuleRegistry modules, WorldObject agent)
+    {
+        var conditions = new List<string>();
+        if (!agent.HasModule("agent"))
+            return conditions;
+        if (modules.ResolveString(agent, "agent", "activity") is { Length: > 0 } busy)
+            conditions.Add(busy);
+        if (Condition.Descriptive(world, modules) &&
+            !Health.IsIncapacitated(world, modules, agent) &&
+            Condition.Overall(world, modules, agent) is { } condition)
+            conditions.Add(condition.Label);
+        conditions.AddRange(Conditions.VisibleWords(world, modules, agent));
+        if (Postures.Of(world, modules, agent) == Postures.Prone)
+            conditions.Add("prone");
+        if (Health.IsIncapacitated(world, modules, agent))
+            conditions.Add("incapacitated");
+        return conditions;
+    }
+
     public static List<string> DressedLines(
         World.World world, ModuleRegistry modules, WorldObject room, string observerId)
     {
@@ -328,11 +339,33 @@ public static class Perception
         {
             if (obj.Id == observerId || !obj.HasModule("agent"))
                 return;
-            var worn = Clothing.WornItems(world, modules, obj);
-            if (worn.Count == 0)
+            // scenery agents are covered by the room's own prose (the
+            // ZIL NDESCBIT: the cyclops "blocks the staircase" in the
+            // room description, and never lists on his own)
+            if (obj.Attributes.TryGetValue("scenery", out var flag) &&
+                flag.ValueKind == JsonValueKind.True)
                 return;
-            var list = string.Join(", ", worn.Select(w => WithArticle(w.Name)));
-            lines.Add($"{NameFor(modules, world.GetObject(observerId), obj)} is wearing {list}.");
+            var observer = world.GetObject(observerId);
+            var name = NameFor(modules, observer, obj);
+            // who's here reads like the item listing: the agent's
+            // description (the troll's "A nasty-looking troll, brandishing
+            // a bloody axe, blocks all passages out of the room."), or
+            // "The … is here." when it has none, with observable states
+            // riding along in parentheses
+            var description = Knowledge.DescriptionFor(modules, observer, obj);
+            var line = description.Length > 0
+                ? description
+                : $"{char.ToUpperInvariant(name[0]) + name[1..]} is here.";
+            var conditions = AgentStateWords(world, modules, obj);
+            if (conditions.Count > 0)
+                line += $" ({string.Join(", ", conditions)})";
+            lines.Add(line);
+            var worn = Clothing.WornItems(world, modules, obj);
+            if (worn.Count > 0)
+            {
+                var list = string.Join(", ", worn.Select(w => WithArticle(w.Name)));
+                lines.Add($"{name} is wearing {list}.");
+            }
         }
     }
 

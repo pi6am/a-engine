@@ -6,13 +6,19 @@
       "id": "kitchen",
       "name": "Kitchen",
       "description": "A warm kitchen smelling of fresh bread. A wooden door leads north to the dining hall.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "player",
           "name": "the guest",
           "description": "A visitor looking for a meal.",
-          "modules": ["agent", "can_speak", "body"]
+          "modules": [
+            "agent",
+            "can_speak",
+            "body"
+          ]
         },
         {
           "id": "chefs_hat",
@@ -20,7 +26,14 @@
           "description": "A tall white chef's hat.",
           "modules": [
             "portable",
-            { "module": "wearable", "overrides": { "regions": ["head"] } }
+            {
+              "module": "wearable",
+              "overrides": {
+                "regions": [
+                  "head"
+                ]
+              }
+            }
           ]
         },
         {
@@ -30,7 +43,11 @@
           "modules": [
             {
               "module": "portal",
-              "overrides": { "stateRef": "door_state", "direction": "north", "to": "dining_hall" }
+              "overrides": {
+                "stateRef": "door_state",
+                "direction": "north",
+                "to": "dining_hall"
+              }
             }
           ]
         }
@@ -40,7 +57,9 @@
       "id": "dining_hall",
       "name": "Dining Hall",
       "description": "A long dining hall with a heavy oak table. A wooden door leads south to the kitchen.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "cook",
@@ -65,7 +84,15 @@
               "description": "A flour-dusted kitchen apron.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["top"], "worn": true } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "top"
+                    ],
+                    "worn": true
+                  }
+                }
               ]
             }
           ]
@@ -77,7 +104,11 @@
           "modules": [
             {
               "module": "portal",
-              "overrides": { "stateRef": "door_state", "direction": "south", "to": "kitchen" }
+              "overrides": {
+                "stateRef": "door_state",
+                "direction": "south",
+                "to": "kitchen"
+              }
             }
           ]
         },
@@ -87,14 +118,21 @@
           "description": "A tall pantry cupboard.",
           "modules": [
             "container",
-            { "module": "openable", "overrides": { "open": false } }
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false
+              }
+            }
           ],
           "children": [
             {
               "id": "knife",
               "name": "carving knife",
               "description": "A well-honed carving knife.",
-              "modules": ["portable"]
+              "modules": [
+                "portable"
+              ]
             }
           ]
         },
@@ -102,19 +140,31 @@
           "id": "bread",
           "name": "loaf of bread",
           "description": "A crusty loaf of bread.",
-          "modules": ["portable"]
+          "modules": [
+            "portable"
+          ]
         },
         {
           "id": "chair_one",
           "name": "chair at the head of the table",
           "description": "A sturdy oak chair at the head of the table.",
-          "modules": ["sittable"]
+          "modules": [
+            "sittable"
+          ],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "chair_two",
           "name": "chair at the foot of the table",
           "description": "A sturdy oak chair at the foot of the table.",
-          "modules": ["sittable"]
+          "modules": [
+            "sittable"
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },
@@ -123,7 +173,13 @@
       "name": "shared door state",
       "description": "The shared state of the door between the kitchen and the dining hall.",
       "modules": [
-        { "module": "doorstate", "overrides": { "open": false, "locked": false } }
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": false,
+            "locked": false
+          }
+        }
       ]
     }
   ]

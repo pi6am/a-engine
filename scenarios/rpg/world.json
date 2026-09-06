@@ -6,13 +6,17 @@
       "id": "rules",
       "name": "arena rules",
       "description": "Scenario tuning: checks roll 1d20 + stat + skill vs difficulty.",
-      "modules": ["rules"]
+      "modules": [
+        "rules"
+      ]
     },
     {
       "id": "arena",
       "name": "Dueling Arena",
       "description": "A sand-covered dueling ring surrounded by stone benches. An archway leads north to the armory.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "player",
@@ -29,50 +33,168 @@
             "grappler",
             "chokeable",
             "huggable",
-            { "module": "stats", "overrides": { "values": { "strength": 10, "agility": 14 } } },
-            { "module": "skills", "overrides": { "values": { "lockpicking": 4, "brawling": 2, "pickpocket": 3, "swords": 3 } } }
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 10,
+                  "agility": 14
+                }
+              }
+            },
+            {
+              "module": "skills",
+              "overrides": {
+                "values": {
+                  "lockpicking": 4,
+                  "brawling": 2,
+                  "pickpocket": 3,
+                  "swords": 3
+                }
+              }
+            }
           ],
           "children": [
             {
-              "id": "player_head", "name": "head", "description": "Your head.",
+              "id": "player_head",
+              "name": "head",
+              "description": "Your head.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "head", "vital": true, "aimedPenalty": 6 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "head",
+                    "vital": true,
+                    "aimedPenalty": 6
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             },
             {
-              "id": "player_torso", "name": "torso", "description": "Your torso.",
+              "id": "player_torso",
+              "name": "torso",
+              "description": "Your torso.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "vital": true, "aimedPenalty": 0 } },
-                { "module": "health", "overrides": { "maxHp": 10, "hp": 10 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "vital": true,
+                    "aimedPenalty": 0
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 10,
+                    "hp": 10
+                  }
+                }
               ]
             },
             {
-              "id": "player_left_arm", "name": "left arm", "description": "Your left arm.",
+              "id": "player_left_arm",
+              "name": "left arm",
+              "description": "Your left arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm_offhand"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 5, "hp": 5 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm_offhand"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 5,
+                    "hp": 5
+                  }
+                }
               ]
             },
             {
-              "id": "player_right_arm", "name": "right arm", "description": "Your right arm.",
+              "id": "player_right_arm",
+              "name": "right arm",
+              "description": "Your right arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 5, "hp": 5 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 5,
+                    "hp": 5
+                  }
+                }
               ]
             },
             {
-              "id": "player_left_leg", "name": "left leg", "description": "Your left leg.",
+              "id": "player_left_leg",
+              "name": "left leg",
+              "description": "Your left leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             },
             {
-              "id": "player_right_leg", "name": "right leg", "description": "Your right leg.",
+              "id": "player_right_leg",
+              "name": "right leg",
+              "description": "Your right leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             }
           ]
@@ -99,8 +221,25 @@
             "grappler",
             "chokeable",
             "huggable",
-            { "module": "stats", "overrides": { "values": { "strength": 14, "agility": 12, "perception": 10 } } },
-            { "module": "skills", "overrides": { "values": { "brawling": 4, "swords": 4 } } }
+            {
+              "module": "stats",
+              "overrides": {
+                "values": {
+                  "strength": 14,
+                  "agility": 12,
+                  "perception": 10
+                }
+              }
+            },
+            {
+              "module": "skills",
+              "overrides": {
+                "values": {
+                  "brawling": 4,
+                  "swords": 4
+                }
+              }
+            }
           ],
           "children": [
             {
@@ -109,49 +248,157 @@
               "description": "A supple leather dueling glove.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["hand"], "worn": true } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "hand"
+                    ],
+                    "worn": true
+                  }
+                }
               ]
             },
             {
-              "id": "duelist_head", "name": "head", "description": "His head.",
+              "id": "duelist_head",
+              "name": "head",
+              "description": "His head.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "head", "vital": true, "aimedPenalty": 6 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "head",
+                    "vital": true,
+                    "aimedPenalty": 6
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             },
             {
-              "id": "duelist_torso", "name": "torso", "description": "His torso.",
+              "id": "duelist_torso",
+              "name": "torso",
+              "description": "His torso.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "vital": true, "aimedPenalty": 0 } },
-                { "module": "health", "overrides": { "maxHp": 12, "hp": 12 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "vital": true,
+                    "aimedPenalty": 0
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 12,
+                    "hp": 12
+                  }
+                }
               ]
             },
             {
-              "id": "duelist_left_arm", "name": "left arm", "description": "His left arm.",
+              "id": "duelist_left_arm",
+              "name": "left arm",
+              "description": "His left arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm_offhand"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm_offhand"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             },
             {
-              "id": "duelist_right_arm", "name": "right arm", "description": "His right arm.",
+              "id": "duelist_right_arm",
+              "name": "right arm",
+              "description": "His right arm.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "top", "crippleEffects": ["disarm"], "aimedPenalty": 3 } },
-                { "module": "health", "overrides": { "maxHp": 6, "hp": 6 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "top",
+                    "crippleEffects": [
+                      "disarm"
+                    ],
+                    "aimedPenalty": 3
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 6,
+                    "hp": 6
+                  }
+                }
               ]
             },
             {
-              "id": "duelist_left_leg", "name": "left leg", "description": "His left leg.",
+              "id": "duelist_left_leg",
+              "name": "left leg",
+              "description": "His left leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             },
             {
-              "id": "duelist_right_leg", "name": "right leg", "description": "His right leg.",
+              "id": "duelist_right_leg",
+              "name": "right leg",
+              "description": "His right leg.",
               "modules": [
-                { "module": "bodypart", "overrides": { "region": "bottom", "crippleEffects": ["prone", "no_stand"], "aimedPenalty": 4 } },
-                { "module": "health", "overrides": { "maxHp": 8, "hp": 8 } }
+                {
+                  "module": "bodypart",
+                  "overrides": {
+                    "region": "bottom",
+                    "crippleEffects": [
+                      "prone",
+                      "no_stand"
+                    ],
+                    "aimedPenalty": 4
+                  }
+                },
+                {
+                  "module": "health",
+                  "overrides": {
+                    "maxHp": 8,
+                    "hp": 8
+                  }
+                }
               ]
             }
           ]
@@ -162,7 +409,13 @@
           "description": "A straw-stuffed practice dummy on a wooden post. It has seen better days.",
           "modules": [
             "attackable",
-            { "module": "health", "overrides": { "maxHp": 15, "hp": 15 } }
+            {
+              "module": "health",
+              "overrides": {
+                "maxHp": 15,
+                "hp": 15
+              }
+            }
           ]
         },
         {
@@ -172,7 +425,11 @@
           "modules": [
             {
               "module": "portal",
-              "overrides": { "stateRef": "archway_state", "direction": "north", "to": "armory" }
+              "overrides": {
+                "stateRef": "archway_state",
+                "direction": "north",
+                "to": "armory"
+              }
             }
           ]
         }
@@ -182,7 +439,9 @@
       "id": "armory",
       "name": "Armory",
       "description": "Weapon racks line the walls. A heavy iron strongbox sits in the corner.",
-      "modules": ["room"],
+      "modules": [
+        "room"
+      ],
       "children": [
         {
           "id": "archway_armory_side",
@@ -191,7 +450,11 @@
           "modules": [
             {
               "module": "portal",
-              "overrides": { "stateRef": "archway_state", "direction": "south", "to": "arena" }
+              "overrides": {
+                "stateRef": "archway_state",
+                "direction": "south",
+                "to": "arena"
+              }
             }
           ]
         },
@@ -199,7 +462,10 @@
           "id": "weapon_rack",
           "name": "weapon rack",
           "description": "A rack of well-used practice weapons.",
-          "modules": []
+          "modules": [],
+          "attributes": {
+            "scenery": true
+          }
         },
         {
           "id": "dagger",
@@ -207,8 +473,23 @@
           "description": "A short, quick dagger of arena steel.",
           "modules": [
             "portable",
-            { "module": "wearable", "overrides": { "regions": ["held"] } },
-            { "module": "weapon", "overrides": { "damageDice": 1, "damageSides": 4, "skill": "swords", "stat": "agility" } }
+            {
+              "module": "wearable",
+              "overrides": {
+                "regions": [
+                  "held"
+                ]
+              }
+            },
+            {
+              "module": "weapon",
+              "overrides": {
+                "damageDice": 1,
+                "damageSides": 4,
+                "skill": "swords",
+                "stat": "agility"
+              }
+            }
           ]
         },
         {
@@ -217,8 +498,23 @@
           "description": "A plain, reliable arming sword.",
           "modules": [
             "portable",
-            { "module": "wearable", "overrides": { "regions": ["held"] } },
-            { "module": "weapon", "overrides": { "damageDice": 1, "damageSides": 8, "skill": "swords", "stat": "strength" } }
+            {
+              "module": "wearable",
+              "overrides": {
+                "regions": [
+                  "held"
+                ]
+              }
+            },
+            {
+              "module": "weapon",
+              "overrides": {
+                "damageDice": 1,
+                "damageSides": 8,
+                "skill": "swords",
+                "stat": "strength"
+              }
+            }
           ]
         },
         {
@@ -227,8 +523,20 @@
           "description": "Padded armor: a quilted gambeson, scuffed from many bouts.",
           "modules": [
             "portable",
-            { "module": "wearable", "overrides": { "regions": ["top"] } },
-            { "module": "armor", "overrides": { "protection": 2 } }
+            {
+              "module": "wearable",
+              "overrides": {
+                "regions": [
+                  "top"
+                ]
+              }
+            },
+            {
+              "module": "armor",
+              "overrides": {
+                "protection": 2
+              }
+            }
           ]
         },
         {
@@ -237,7 +545,14 @@
           "description": "A round wooden shield with an iron boss.",
           "modules": [
             "portable",
-            { "module": "wearable", "overrides": { "regions": ["held_off_hand"] } },
+            {
+              "module": "wearable",
+              "overrides": {
+                "regions": [
+                  "held_off_hand"
+                ]
+              }
+            },
             "shield"
           ]
         },
@@ -248,7 +563,13 @@
           "modules": [
             "container",
             "lockable",
-            { "module": "openable", "overrides": { "open": false, "locked": true } }
+            {
+              "module": "openable",
+              "overrides": {
+                "open": false,
+                "locked": true
+              }
+            }
           ],
           "children": [
             {
@@ -257,11 +578,30 @@
               "description": "A rare rapier with a silvered blade.",
               "modules": [
                 "portable",
-                { "module": "wearable", "overrides": { "regions": ["held"] } },
-                { "module": "weapon", "overrides": { "damageBonus": 1, "damageDice": 1, "damageSides": 8, "skill": "swords", "stat": "agility" } }
+                {
+                  "module": "wearable",
+                  "overrides": {
+                    "regions": [
+                      "held"
+                    ]
+                  }
+                },
+                {
+                  "module": "weapon",
+                  "overrides": {
+                    "damageBonus": 1,
+                    "damageDice": 1,
+                    "damageSides": 8,
+                    "skill": "swords",
+                    "stat": "agility"
+                  }
+                }
               ]
             }
-          ]
+          ],
+          "attributes": {
+            "scenery": true
+          }
         }
       ]
     },
@@ -270,7 +610,13 @@
       "name": "archway state",
       "description": "The archway stands permanently open.",
       "modules": [
-        { "module": "doorstate", "overrides": { "open": true, "locked": false } }
+        {
+          "module": "doorstate",
+          "overrides": {
+            "open": true,
+            "locked": false
+          }
+        }
       ]
     }
   ]
