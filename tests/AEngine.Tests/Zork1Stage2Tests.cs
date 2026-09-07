@@ -171,10 +171,13 @@ public class Zork1Stage2Tests
         LightLamp(engine);
         world.MoveObject("sword", "player");
 
-        // swings always miss a strength-10000 defender
+        // swings always miss a strength-10000 defender — and the clock
+        // is ticking: pester him too long (wrath 6+) and he simply eats
+        // you, as the original does. Two swings, one wrong name, then
+        // the right one — four turns, still breathing.
         var attack = engine.ActionResolver.Resolve(player)
             .First(a => a.Verb == "attack" && a.TargetId == "cyclops");
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 2; i++)
         {
             var swing = engine.TurnManager.PerformAction(player, attack);
             Assert.True(swing.Success);

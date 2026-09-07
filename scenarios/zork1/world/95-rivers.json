@@ -871,7 +871,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "southwest",
-                "to": "sandy_beach"
+                "to": "sandy_beach",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1100,7 +1103,10 @@
                 "direction": "northeast",
                 "to": "on_rainbow",
                 "requires": "rainbow_solid",
-                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+                "blockedText": "The rainbow is insubstantial, and you would fall through it.",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1116,7 +1122,10 @@
                 "direction": "east",
                 "to": "on_rainbow",
                 "requires": "rainbow_solid",
-                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+                "blockedText": "The rainbow is insubstantial, and you would fall through it.",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1132,7 +1141,10 @@
                 "direction": "up",
                 "to": "on_rainbow",
                 "requires": "rainbow_solid",
-                "blockedText": "The rainbow is insubstantial, and you would fall through it."
+                "blockedText": "The rainbow is insubstantial, and you would fall through it.",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1146,7 +1158,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "southwest",
-                "to": "canyon_bottom"
+                "to": "canyon_bottom",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]

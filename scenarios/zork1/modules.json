@@ -465,6 +465,21 @@
               "text": "{agent} gives the {item} to {target}."
             }
           ]
+        },
+        {
+          "verb": "steal",
+          "handler": "steal",
+          "npcOnly": true,
+          "duration": 2,
+          "excludes": "dead",
+          "doc": "the thief's lift: certain as the original's ROB \u2014 no save, no check; pacing comes from the thief's goals (he gloats first)",
+          "signals": [
+            {
+              "sense": "visual",
+              "priority": 10,
+              "text": "{agent} quietly lifts the {target}."
+            }
+          ]
         }
       ]
     },
@@ -1749,6 +1764,64 @@
           "doc": "entries: { keywords: [...], sense?: audible (default) | any, when?: [...], effects: [...] } - fire when a delivered signal's text contains a keyword"
         }
       ]
+    },
+    {
+      "id": "wrath",
+      "name": "Wrath (a rising temper, tracked and banded)",
+      "fields": [
+        {
+          "name": "level",
+          "type": "int",
+          "default": 0
+        }
+      ]
+    },
+    {
+      "id": "condition",
+      "name": "Condition",
+      "fields": [
+        {
+          "name": "kind",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "visible",
+          "type": "bool",
+          "default": true
+        },
+        {
+          "name": "selfText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "clearText",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "traits",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "goals",
+          "type": "string",
+          "default": ""
+        },
+        {
+          "name": "statMods",
+          "type": "map",
+          "default": {}
+        }
+      ],
+      "affordances": []
     }
   ]
 }

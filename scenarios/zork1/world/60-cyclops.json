@@ -40,17 +40,19 @@
         {
           "id": "cyclops",
           "name": "cyclops",
-          "description": "",
+          "description": "A hungry cyclops is standing at the foot of the stairs.",
           "modules": [
             "agent",
+            "can_speak",
             "immobile",
             {
               "module": "agent",
               "overrides": {
-                "policy": "player",
+                "policy": "llm",
                 "incognito": "a towering one-eyed giant",
-                "goals": "Guard the staircase. Eat anyone who lingers.",
-                "traits": "Huge, dim, perpetually hungry. Fears one name above all others."
+                "goals": "Block the staircase \u2014 nobody climbs while you stand. Menace anyone who lingers; demand food, and drink when the peppers burn. You feel your wrath rising while tricksters stay (see how you feel); when you feel furious, eat whoever has provoked you \u2014 unless, of course, they say the name you fear.",
+                "traits": "Huge, dim, perpetually hungry, easily angered by trickery. Proudest of your strength; dimmest about riddles.",
+                "character": "A cyclops, huge and dim, standing hungry at the foot of the stairs. You prefer eating to making conversation, and you are always hungry. Trickery and games irritate you; the longer someone lingers, the more your temper rises \u2014 and when it boils over, you will simply eat them. One name fills you with terror: Odysseus, your father's murderer."
               }
             },
             {
@@ -102,7 +104,8 @@
                   }
                 ]
               }
-            }
+            },
+            "wrath"
           ],
           "attributes": {
             "scenery": true
@@ -193,7 +196,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "east",
-                "to": "living_room"
+                "to": "living_room",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -221,14 +227,15 @@
           "description": "There is a suspicious-looking individual, holding a large bag, leaning against one wall. He is armed with a deadly stiletto.",
           "modules": [
             "agent",
-            "immobile",
+            "can_speak",
             {
               "module": "agent",
               "overrides": {
-                "policy": "player",
+                "policy": "llm",
                 "incognito": "a seedy-looking individual",
-                "goals": "Guard this hideaway. Collect valuables; open clever containers.",
-                "traits": "Dangerous, covetous, and deft with a blade."
+                "goals": "Work your rounds through the underground rooms. Greet anyone you meet with a cutting remark BEFORE you help yourself \u2014 then steal the valuables they carry (never while someone has only just arrived; give them one moment to flee) and pocket any treasures lying about. Haul your plunder home to your hideaway and drop it there. Never start a fight; if you are pressed or wounded, slip into the shadows (leave the room) \u2014 the bag will be taken only over your dead body.",
+                "traits": "Quiet, deft, patient. Leans against walls. Mumbles about doing unto others before they do unto you.",
+                "character": "A seedy-looking gentleman of the underground, never without your large bag and your stiletto. You are a professional: courteous in a menacing way, silent about your rounds, and absolutely covetous of anything that glitters. The dark passages are yours \u2014 you never stray toward the light, the temples, or the water."
               }
             },
             {
@@ -650,6 +657,212 @@
                   "from": "thief",
                   "sense": "visual",
                   "text": "A scream of anguish echoes from somewhere nearby: the thief has noticed your intrusion into his hideaway, and rushes to defend it!"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cond_grumpy",
+      "name": "grumpy",
+      "modules": [
+        {
+          "module": "condition",
+          "overrides": {
+            "kind": "grumpy",
+            "label": "grumpy",
+            "visible": true,
+            "selfText": "The tricks of these little people begin to grate.",
+            "traits": "Irritated, stomach rumbling louder."
+          }
+        }
+      ]
+    },
+    {
+      "id": "cond_furious",
+      "name": "furious",
+      "modules": [
+        {
+          "module": "condition",
+          "overrides": {
+            "kind": "furious",
+            "label": "furious",
+            "visible": true,
+            "selfText": "Your temper boils. One more trick and you will dine on trickster.",
+            "traits": "Furious; barely holding back from eating someone."
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_grows_wroth",
+      "name": "the cyclops' temper rises while tricksters linger",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "every": 1,
+            "when": [
+              {
+                "of": "player",
+                "inRoom": "cyclops_room"
+              },
+              {
+                "of": "cyclops_out",
+                "module": "flag",
+                "field": "value",
+                "equals": false
+              },
+              {
+                "of": "cyclops",
+                "hasCondition": "unconscious",
+                "negate": true
+              }
+            ],
+            "effects": [
+              {
+                "adjust": {
+                  "of": "cyclops",
+                  "module": "wrath",
+                  "field": "level",
+                  "by": 1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_cools",
+      "name": "the cyclops' temper cools when nobody lingers",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "every": 1,
+            "when": [
+              {
+                "of": "cyclops",
+                "module": "wrath",
+                "field": "level",
+                "min": 1
+              },
+              {
+                "of": "player",
+                "inRoom": "cyclops_room",
+                "negate": true
+              }
+            ],
+            "effects": [
+              {
+                "adjust": {
+                  "of": "cyclops",
+                  "module": "wrath",
+                  "field": "level",
+                  "by": -1
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_seethes",
+      "name": "the cyclops seethes",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "of": "cyclops",
+                "module": "wrath",
+                "field": "level",
+                "min": 2
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_grumpy",
+                  "to": "cyclops"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_rages",
+      "name": "the cyclops rages",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "of": "cyclops",
+                "module": "wrath",
+                "field": "level",
+                "min": 4
+              }
+            ],
+            "effects": [
+              {
+                "attach": {
+                  "condition": "cond_furious",
+                  "to": "cyclops"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": "cyclops_wrath_boils_over",
+      "name": "the cyclops, tired of games, dines",
+      "modules": [
+        "automation",
+        {
+          "module": "automation",
+          "overrides": {
+            "once": true,
+            "when": [
+              {
+                "of": "cyclops",
+                "module": "wrath",
+                "field": "level",
+                "min": 6
+              },
+              {
+                "of": "player",
+                "inRoom": "cyclops_room"
+              }
+            ],
+            "effects": [
+              {
+                "signal": {
+                  "from": "cyclops",
+                  "sense": "visual",
+                  "text": "The cyclops, tired of all of your games and trickery, grabs you firmly. As he licks his chops, he says \"Mmm. Just like Mom used to make 'em.\" It's nice to be appreciated."
+                }
+              },
+              {
+                "attach": {
+                  "condition": "cond_dead",
+                  "to": "player"
                 }
               }
             ]

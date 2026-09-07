@@ -325,7 +325,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "east",
-                "to": "white_cliffs_north"
+                "to": "white_cliffs_north",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -500,7 +503,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "down",
-                "to": "dam_base"
+                "to": "dam_base",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1166,7 +1172,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "up",
-                "to": "in_stream"
+                "to": "in_stream",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1180,7 +1189,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "west",
-                "to": "in_stream"
+                "to": "in_stream",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]

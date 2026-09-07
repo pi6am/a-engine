@@ -137,7 +137,10 @@
                 "direction": "up",
                 "to": "living_room",
                 "barred": true,
-                "barredText": "The door is locked from above."
+                "barredText": "The door is locked from above.",
+                "denies": [
+                  "thief"
+                ]
               }
             },
             "door"
@@ -193,14 +196,16 @@
           "description": "A nasty-looking troll, brandishing a bloody axe, blocks all passages out of the room.",
           "modules": [
             "agent",
+            "can_speak",
             "immobile",
             {
               "module": "agent",
               "overrides": {
-                "policy": "player",
+                "policy": "llm",
                 "incognito": "a hulking, nasty-looking troll",
-                "goals": "Guard this room. Fend off anyone who tries to pass east or west.",
-                "traits": "Dumb, brutal, territorial. Blocks passages with menacing gestures."
+                "goals": "Guard this room: no one passes east or west while you stand. Keep hold of your bloody axe \u2014 the moment you see it on the floor, snatch it up and resume your stance. If you are disarmed and a armed adventurer presses you, cower and plead for your life in the guttural tongue of the trolls until the axe is back in your hand. Attack anyone who attacks you.",
+                "traits": "Nameless, refers to self as 'Me'. Dumb, brutal, territorial. Blocks passages with menacing gestures; laughs at puny gestures.",
+                "character": "A nasty-looking troll who guards the passage under the cellar. You are dim, brutal, and proud of your post; the axe is your argument and your prize. You are not much of a conversationalist, and you never steal items \u2014 taking a thing that isn't swinging at you is beneath a troll."
               }
             },
             {
@@ -438,6 +443,9 @@
                       "value": true
                     }
                   }
+                ],
+                "denies": [
+                  "thief"
                 ]
               }
             }

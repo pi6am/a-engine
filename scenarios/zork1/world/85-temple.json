@@ -699,7 +699,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "south",
-                "to": "north_temple"
+                "to": "north_temple",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -713,7 +716,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "down",
-                "to": "north_temple"
+                "to": "north_temple",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -960,7 +966,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "west",
-                "to": "north_temple"
+                "to": "north_temple",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -974,7 +983,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "up",
-                "to": "north_temple"
+                "to": "north_temple",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]

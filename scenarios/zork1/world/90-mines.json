@@ -162,6 +162,9 @@
                       }
                     ]
                   }
+                ],
+                "denies": [
+                  "thief"
                 ]
               }
             }
@@ -294,7 +297,7 @@
             {
               "module": "agent",
               "overrides": {
-                "policy": "player",
+                "policy": "none",
                 "incognito": "a black, squeaking shape",
                 "goals": "Guard the jade figurine. Abduct anyone who lacks garlic.",
                 "traits": "Blind, shrill, and repelled by garlic."
@@ -327,7 +330,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "west",
-                "to": "bat_room"
+                "to": "bat_room",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -427,7 +433,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "down",
-                "to": "gas_room"
+                "to": "gas_room",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -523,7 +532,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "north",
-                "to": "gas_room"
+                "to": "gas_room",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -813,7 +825,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "west",
-                "to": "timber_room"
+                "to": "timber_room",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]
@@ -1036,7 +1051,10 @@
               "overrides": {
                 "stateRef": "passage_state",
                 "direction": "north",
-                "to": "lower_shaft"
+                "to": "lower_shaft",
+                "denies": [
+                  "thief"
+                ]
               }
             }
           ]

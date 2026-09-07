@@ -154,7 +154,9 @@ public sealed class BarredGate : IActionGate
 /// nothing outside this list (the lamp-only chimney), softened by
 /// <c>allowPlus</c> extra items (the lamp and one more thing);
 /// <c>loadUnder</c>
-/// — a maximum carried weight (the empty-handed crawl); and
+/// — a maximum carried weight (the empty-handed crawl); <c>denies</c> —
+/// agent ids barred from the passage entirely (a territory fence: the
+/// exit never even lists for them); and
 /// <c>blockedText</c> — the failure message, read through
 /// <see cref="Message"/> so each blocked passage speaks for itself
 /// (default: "You can't go that way.").
@@ -169,6 +171,12 @@ public sealed class ExitGate : IActionGate
         if (portal is null || !portal.HasModule("portal"))
             return false;
         var modules = ctx.Modules;
+
+        // territory fence: the named agents may not pass (the thief never
+        // strays toward the light). Everyone else walks through freely.
+        if (modules.ResolveStringList(portal, "portal", "denies") is { Count: > 0 } denies &&
+            denies.Contains(ctx.Agent.Id))
+            return true;
 
         var requires = modules.ResolveString(portal, "portal", "requires");
         if (requires is { Length: > 0 } && ctx.World.HasObject(requires))

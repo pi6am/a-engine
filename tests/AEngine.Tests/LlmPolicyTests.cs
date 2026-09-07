@@ -246,6 +246,32 @@ public class LlmPolicyTests
     }
 
     [Fact]
+    public async Task SpeechlessAgents_NeverGetSpeechHints()
+    {
+        // with a voice: the request suggests responding with Say
+        var llm = new FakeLlmClient().Enqueue("Wait");
+        var engine = NewEngine(llm);
+        var cook = engine.World.GetObject("cook");
+        var policy = engine.PolicyRegistry.Get("llm");
+        await policy.ChooseActionAsync(engine, cook,
+            engine.ActionResolver.Resolve(cook), CancellationToken.None);
+        var request = llm.LastMessages!.Last(m => m.Role == "user").Content;
+        Assert.Contains("responding with Say", request);
+
+        // without one: no Say hint (it invited hallucinated speech — the
+        // troll's "Grog guard."), and the request says so plainly
+        var llm2 = new FakeLlmClient().Enqueue("Wait");
+        var engine2 = NewEngine(llm2);
+        engine2.World.RemoveModule("cook", "can_speak");
+        var cook2 = engine2.World.GetObject("cook");
+        await engine2.PolicyRegistry.Get("llm").ChooseActionAsync(engine2, cook2,
+            engine2.ActionResolver.Resolve(cook2), CancellationToken.None);
+        var request2 = llm2.LastMessages!.Last(m => m.Role == "user").Content;
+        Assert.DoesNotContain("responding with Say", request2);
+        Assert.Contains("You cannot speak", request2);
+    }
+
+    [Fact]
     public async Task CannotDoThat_SurvivesPlanParsing_AsTheSoleLine()
     {
         var llm = new FakeLlmClient().Enqueue("You Cannot Do That");

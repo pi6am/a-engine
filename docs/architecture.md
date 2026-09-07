@@ -915,12 +915,28 @@ generic throughout.
   `requires` (a flag object that must be true — the troll's
   passages), `requiresCarrying`, `notCarrying` (the coffin),
   `allowOnly` + `allowPlus` (the chimney: the lamp and one more
-  thing), `loadUnder` (an empty-handed crawl), and `blockedText`
+  thing), `loadUnder` (an empty-handed crawl), `denies` (agent ids
+  barred entirely — a territory fence: the exit never lists for them),
+  and `blockedText`
   (each blocked way speaks its own failure through the gate's
   Message hook). Traversal itself can carry effects: a portal side's
   `onExit` list (same effect vocabulary, each effect optionally
   guarded by a `when` condition array) applies with the move complete
   — the chimney climb re-arming the cellar's slam.
+- **LLM-driven enemies** — Zork's troll, thief, and cyclops carry
+  policy `llm` with authored `character`/`goals`/`traits`: inert with
+  no endpoint (unregistered policies get no turns — the walkthrough
+  stays deterministic), alive when one is attached. Their hard rules
+  stay data: the thief's territory is fenced with portal `denies`
+  (the original's non-sacred underground; boundary portals only), his
+  lift is the `steal` affordance (npcOnly, checkless — the original's
+  ROB was certain; his goals pace it: gloat before you help yourself),
+  and the cyclops's temper is a `wrath` field driven by automations —
+  rising while tricksters linger, banding grumpy/furious conditions
+  (they ride his LLM self-block and render to the player), and at the
+  boil he eats you outright. An `unconscious` condition incapacitates
+  (no turns, no reactions): the drugged cyclops's slumber silences
+  him even with an endpoint attached.
 - **One-sided doors** (the `barred` gate, on the door module's open
   affordance) — a portal side with `barred: true` never opens from
   its own side ("The door is locked from above."); its mirror side

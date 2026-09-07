@@ -20,6 +20,11 @@ public static class Health
     /// <summary>True if the object is incapacitated (parts-aware; see class doc).</summary>
     public static bool IsIncapacitated(World.World world, ModuleRegistry modules, WorldObject obj)
     {
+        // an unconscious condition (a knockout, the drugged cyclops's
+        // slumber) incapacitates whatever the source: asleep means no
+        // turns, no reactions, no speech
+        if (Conditions.Has(world, modules, obj, "unconscious"))
+            return true;
         var parts = BodyParts.Of(world, obj);
         if (parts.Count > 0)
         {

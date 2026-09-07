@@ -36,9 +36,14 @@ public sealed class LlmPolicy : IAgentPolicy
     {
         // a companion-slot offer (speech-only or body-only, from the
         // turn-based say-alongside-act rule): only matching plan lines
-        // dequeue — the rest wait for their own slot or round
-        var speechSlot = actions.Count > 0 && actions.All(a => IsSpeech(engine, a));
-        var bodySlot = actions.Count > 0 && actions.All(a => !IsSpeech(engine, a));
+        // dequeue — the rest wait for their own slot or round. Slot
+        // offers only exist for agents who CAN speak (a speechless
+        // agent's speech-slot choices are empty, so it never gets one)
+        // — for everyone else the all-non-speech menu is the primary
+        // selection, not a slot
+        var canSpeak = CanSpeak(engine, agent);
+        var speechSlot = canSpeak && actions.Count > 0 && actions.All(a => IsSpeech(engine, a));
+        var bodySlot = canSpeak && actions.Count > 0 && actions.All(a => !IsSpeech(engine, a));
 
         // mid-utterance: no re-planning (pending signals keep) and no new
         // speech, but cached non-speech steps still execute
@@ -97,12 +102,18 @@ public sealed class LlmPolicy : IAgentPolicy
         if (speechSlot || bodySlot)
             return null;
 
-        var plan = await _planner.CreatePlanAsync(
-            agent,
-            "Choose your next actions. If someone spoke to you recently, consider responding " +
-            "with Say. When you have nothing to do, prefer Wait over Look around. Don't " +
-            "repeat an Examine you already remember unless something has changed.",
-            npc: true, ct).ConfigureAwait(false);
+        // the request never suggests speech to an agent that can't speak
+        // — the menu has no Say line, and hinting at one invites the
+        // model to hallucinate a voice (the troll's "Grog guard.")
+        var request = canSpeak
+            ? "Choose your next actions. If someone spoke to you recently, consider responding " +
+              "with Say. When you have nothing to do, prefer Wait over Look around. Don't " +
+              "repeat an Examine you already remember unless something has changed."
+            : "Choose your next actions. You cannot speak. When you have nothing to do, " +
+              "prefer Wait over Look around. Don't repeat an Examine you already remember " +
+              "unless something has changed.";
+        var plan = await _planner.CreatePlanAsync(agent, request, npc: true, ct)
+            .ConfigureAwait(false);
         if (plan.Count == 0)
             return null;
         if (plan.Count > 1)
@@ -112,6 +123,11 @@ public sealed class LlmPolicy : IAgentPolicy
 
     private static bool IsSpeech(GameEngine engine, AvailableAction action) =>
         engine.ActionResolver.AffordanceOf(action)?.Speech == true;
+
+    /// <summary>Whether any module the agent carries offers a speech affordance.</summary>
+    private static bool CanSpeak(GameEngine engine, WorldObject agent) =>
+        engine.ModuleRegistry.Modules.Values
+            .Any(m => agent.HasModule(m.Id) && m.Affordances.Any(a => a.Speech));
 
     /// <summary>Ask the LLM for an in-character reaction to a telegraphed action.</summary>
     public Task<string?> ChooseReactionAsync(

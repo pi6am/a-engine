@@ -447,6 +447,12 @@ public sealed class ActionResolver
                            _world.GetObject(target.Parent).HasModule("agent");
         if (heldByOther && affordance.Verb is not ("steal" or "remove" or "trade"))
             return false;
+        // a portal that denies this agent never offers its exits — the
+        // territory fence (the thief's menu shows no way toward the light)
+        if (target.HasModule("portal") &&
+            _modules.ResolveStringList(target, "portal", "denies") is { Count: > 0 } denies &&
+            denies.Contains(agent.Id))
+            return false;
         // policy gating: some affordances belong to one audience — the
         // game-ending "Go home" is the player's alone (an NPC picking it
         // would end the player's game), and NPCs get their own quieter

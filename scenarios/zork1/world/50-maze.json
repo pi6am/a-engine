@@ -1314,7 +1314,10 @@
               "overrides": {
                 "stateRef": "grate_state",
                 "direction": "up",
-                "to": "grating_clearing"
+                "to": "grating_clearing",
+                "denies": [
+                  "thief"
+                ]
               }
             },
             "door",
