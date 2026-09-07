@@ -137,7 +137,8 @@
               "priority": 1,
               "text": "{agent}'s lips move."
             }
-          ]
+          ],
+          "excludes": "dead"
         }
       ]
     },

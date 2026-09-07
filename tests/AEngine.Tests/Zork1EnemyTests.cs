@@ -264,6 +264,40 @@ public class Zork1EnemyTests
             m => m.Contains("swing") || m.Contains("staggers") || m.Contains("wound"));
     }
 
+    [Fact]
+    public async System.Threading.Tasks.Task DeadTroll_NeitherSpeaksNorActs()
+    {
+        // regression: the slain troll kept his policy turns — "Me axe!
+        // Me take!" from beyond the grave
+        var llm = new FakeLlm("troll");
+        var engine = NewEngine();
+        engine.PolicyRegistry.Register(new AEngine.Llm.LlmPolicy(
+            new AEngine.Llm.LlmPlanner(llm, engine)));
+        var world = engine.World;
+        var player = world.GetObject("player");
+        var troll = world.GetObject("troll");
+        world.MoveObject("player", "troll_room");
+        LightTheRoom(world);
+
+        // slain: the death blow's condition, the corpse still in the room
+        Conditions.Attach(world, engine.ModuleRegistry, troll, "cond_dead");
+
+        // speech no longer resolves for the dead — the menu has no Say
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(troll),
+            a => a.Verb == "say");
+
+        // and no policy turn happens, however the plan reads
+        llm.Enqueue("Say: \"Me no dead!\"\nWait");
+        var turn = engine.TurnManager.Turn;
+        for (var i = 0; i < 6; i++)
+        {
+            engine.TurnManager.RunNpcTurns();
+            await System.Threading.Tasks.Task.Delay(50);
+        }
+        Assert.Equal(turn, engine.TurnManager.Turn);
+        Assert.Empty(engine.SignalBus.Drain(player.Id));
+    }
+
     /// <summary>The cyclops room is dark; carry a lit lamp like the walkthrough does.</summary>
     private static void LightTheRoom(AEngine.Core.World.World world)
     {

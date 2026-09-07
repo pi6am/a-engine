@@ -584,8 +584,11 @@ public sealed class TurnManager
                     continue;
                 }
                 var agent = _engine.World.GetObject(agentId);
-                if (Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, agent))
-                    continue; // unconscious agents get no turn
+                if (Actions.Health.IsIncapacitated(_engine.World, _engine.ModuleRegistry, agent) ||
+                    Actions.Conditions.Has(_engine.World, _engine.ModuleRegistry, agent, "dead"))
+                    continue; // unconscious agents get no turn; the dead
+                // neither act nor speak (the player's ghost walks because
+                // policy "player" is never driven here)
                 // "about to say something" only lasts while the speech
                 // track is actually occupied
                 if (Turn >= _speechBusyUntil.GetValueOrDefault(agentId))
