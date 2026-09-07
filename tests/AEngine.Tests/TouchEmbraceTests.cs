@@ -1204,8 +1204,8 @@ public class TouchEmbraceTests
         var player = engine.World.GetObject("player");
 
         // dressed: own intimate parts stay hidden like anyone else's
-        Assert.Empty(engine.ActionResolver.Resolve(player)
-            .Where(a => a.Verb == "masturbate"));
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(player),
+            a => a.Verb == "masturbate");
 
         // undressed: the verb offers the actor's OWN parts only — no
         // "Masturbate Sam's sex", which would be a different action
@@ -1439,8 +1439,8 @@ public class TouchEmbraceTests
         // filled: it now covers the hips — the player's own sex (region
         // hips) is covered, so the private listing hides it
         Strip(engine, new[] { "g_trousers", "g_shorts" });
-        Assert.Empty(engine.ActionResolver.Resolve(player)
-            .Where(a => a.Verb == "masturbate"));
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(player),
+            a => a.Verb == "masturbate");
 
         // and once taken off, it can't go back on (the wear gate is
         // execution-time, so the attempt must go through PerformAction)
@@ -1516,8 +1516,8 @@ public class TouchEmbraceTests
         var sam = engine.World.GetObject("sam");
 
         // clean lists nothing when everything is clean
-        Assert.Empty(engine.ActionResolver.Resolve(player)
-            .Where(a => a.Verb is "wipe" or "swallow"));
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(player),
+            a => a.Verb is "wipe" or "swallow");
 
         // a deposit in sam's lips: "Wipe Sam's lips" for the player,
         // "Swallow" for sam alone (selfOnly + the mouth gate)
@@ -1529,8 +1529,8 @@ public class TouchEmbraceTests
             .Where(a => a.Verb == "swallow").Select(a => a.Label).ToList();
         Assert.Equal(["Swallow the semen"], samSwallow);
         // the player can't swallow (the deposit isn't on their mouth)
-        Assert.Empty(engine.ActionResolver.Resolve(player)
-            .Where(a => a.Verb == "swallow"));
+        Assert.DoesNotContain(engine.ActionResolver.Resolve(player),
+            a => a.Verb == "swallow");
 
         // and swallowing removes it
         var action = engine.ActionResolver.Resolve(sam)
