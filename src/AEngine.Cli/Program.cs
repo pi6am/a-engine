@@ -167,6 +167,10 @@ if (!string.IsNullOrWhiteSpace(llmEndpoint))
     engine.PolicyRegistry.Register(new LlmPolicy(planner));
     Console.WriteLine($"LLM planning enabled ({llmOptions.BaseUrl}, model '{llmOptions.Model}').");
 }
+else
+{
+    Console.WriteLine($"WARNING: LLM planning not enabled. Use --llm-endpoint for a better experience.");
+}
 
 // Slash commands are meta actions: they never consume a turn.
 var console = new ConsolePrompt();
