@@ -447,6 +447,11 @@ public sealed class ActionResolver
                            _world.GetObject(target.Parent).HasModule("agent");
         if (heldByOther && affordance.Verb is not ("steal" or "remove" or "trade"))
             return false;
+        // a self action (carrier-only) never offers against anyone else,
+        // whatever the actor's policy — the troll has no business scoring
+        // the adventurer
+        if (affordance.CarrierOnly && target.Id != agent.Id)
+            return false;
         // a portal that denies this agent never offers its exits — the
         // territory fence (the thief's menu shows no way toward the light)
         if (target.HasModule("portal") &&

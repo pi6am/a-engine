@@ -173,6 +173,13 @@ public sealed class AffordanceDefinition
     /// </summary>
     public bool SelfParts { get; init; }
     /// <summary>
+    /// Offered only to the agent carrying the module: the target must be
+    /// the actor (a self action — scoring, self-diagnosis). Others in the
+    /// room never see it, whatever their policy.
+    /// </summary>
+    public bool CarrierOnly { get; init; }
+
+    /// <summary>
     /// With TargetParts: list ONLY the actor's own parts — the private
     /// family (masturbation), where offering the same verb on
     /// other agents' parts would be wrong. Implies the self listing.

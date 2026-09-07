@@ -80,14 +80,14 @@ public sealed class BlowHandler : IActionHandler
             case 2 or 4:
                 Wound(ctx, target, 1);
                 return ActionResult.Ok(
-                    $"The {target.Name} staggers under a light wound from the {weapon.Name}.");
+                    $"{Perception.WithDefiniteArticle(target.Name)} staggers under a light wound from the {weapon.Name}.");
             case 3 or 6:
                 return ActionResult.Ok(
-                    $"The {target.Name} staggers from the force of your blow.");
+                    $"{Perception.WithDefiniteArticle(target.Name)} staggers from the force of your blow.");
             case 5:
                 Wound(ctx, target, 2);
                 return ActionResult.Ok(
-                    $"The {target.Name} takes a serious wound from the {weapon.Name}!");
+                    $"{Perception.WithDefiniteArticle(target.Name)} takes a serious wound from the {weapon.Name}!");
             case 7:
             {
                 if (Data("unconsciousCondition") is { Length: > 0 } template &&

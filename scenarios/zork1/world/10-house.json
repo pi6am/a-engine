@@ -33,7 +33,8 @@
                 "strength": 2
               }
             },
-            "grue"
+            "grue",
+            "attackable"
           ]
         },
         {

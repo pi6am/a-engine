@@ -714,7 +714,8 @@
         {
           "verb": "score",
           "handler": "score",
-          "repeatBackoff": true
+          "repeatBackoff": true,
+          "carrierOnly": true
         }
       ]
     },
@@ -858,7 +859,8 @@
           "data": {
             "unconsciousCondition": "cond_unconscious",
             "deadCondition": "cond_dead"
-          }
+          },
+          "othersOnly": true
         }
       ]
     },

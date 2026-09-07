@@ -215,6 +215,55 @@ public class Zork1EnemyTests
         engine.TurnManager.RunNpcTurns(); // nothing happens, nothing throws
     }
 
+    [Fact]
+    public void Troll_CanAttackTheAdventurer_AndCannotScoreHim()
+    {
+        var engine = NewEngine();
+        var world = engine.World;
+        var player = world.GetObject("player");
+        var troll = world.GetObject("troll");
+        world.MoveObject("player", "troll_room");
+        LightTheRoom(world);
+
+        // facing each other: the troll gets his swing...
+        var trollMenu = engine.ActionResolver.Resolve(troll);
+        Assert.Contains(trollMenu, a => a.Verb == "attack" && a.TargetId == "player");
+        // ...but scoring is the adventurer's own self action, not his
+        Assert.DoesNotContain(trollMenu, a => a.Verb == "score");
+
+        // and the adventurer keeps score for himself without swinging at
+        // thin air (attack is others-only)
+        var playerMenu = engine.ActionResolver.Resolve(player);
+        Assert.Contains(playerMenu, a => a.Verb == "score" && a.TargetId == "player");
+        Assert.DoesNotContain(playerMenu, a => a.Verb == "attack" && a.TargetId == "player");
+        Assert.Contains(playerMenu, a => a.Verb == "attack" && a.TargetId == "troll");
+    }
+
+    [Fact]
+    public async System.Threading.Tasks.Task Troll_UnderLlmPolicy_StrikesWhenPlanned()
+    {
+        // regression: the troll never attacked autonomously — the
+        // adventurer wasn't attackable, so no swing was ever in his menu
+        var llm = new FakeLlm("troll");
+        var engine = NewEngine();
+        engine.PolicyRegistry.Register(new AEngine.Llm.LlmPolicy(
+            new AEngine.Llm.LlmPlanner(llm, engine)));
+        var world = engine.World;
+        world.MoveObject("player", "troll_room");
+        LightTheRoom(world);
+
+        llm.Enqueue("Attack the adventurer");
+        for (var i = 0; i < 6; i++)
+        {
+            engine.TurnManager.RunNpcTurns();
+            await System.Threading.Tasks.Task.Delay(50);
+        }
+        // the swing happened: the troll's own memory holds the outcome
+        // (a miss or a wound — the dice decide, but the axe was swung)
+        Assert.Contains(engine.Memory.Recall("troll"),
+            m => m.Contains("swing") || m.Contains("staggers") || m.Contains("wound"));
+    }
+
     /// <summary>The cyclops room is dark; carry a lit lamp like the walkthrough does.</summary>
     private static void LightTheRoom(AEngine.Core.World.World world)
     {
