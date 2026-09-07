@@ -63,11 +63,18 @@ public class PortableAgentTests
         llm.CompleteNext("Look around");
         TickUntil(engine, () => engine.TurnManager.Turn > turnAfterDrop);
 
-        // Bob must keep acting: a fresh selection starts and executes
-        TickUntil(engine, () => llm.Started == 2);
-        llm.CompleteNext("Wait");
+        // Bob must keep acting. Pump the rounds, answering EVERY request
+        // with "Wait": the fresh action selection executes it; the look's
+        // companion speech slot (turn-based rounds pair an action with a
+        // line) treats it as the line to say. Either way a turn is
+        // consumed — no dependence on which request lands first.
         var turn = engine.TurnManager.Turn;
-        TickUntil(engine, () => engine.TurnManager.Turn > turn);
+        TickUntil(engine, () =>
+        {
+            while (llm.Pending > 0)
+                llm.CompleteNext("Wait");
+            return engine.TurnManager.Turn > turn;
+        });
     }
 
     // async policy continuations complete on the threadpool; pump NPC
@@ -191,32 +198,61 @@ public class PortableAgentTests
         Assert.True(engine.TurnManager.PerformAction(alice, dropBob).Success);
 
         // the in-flight plan is a bogus self-take: no match, no crash,
-        // no execution — the agent just re-plans next turn
+        // no execution — the agent just re-plans next turn. Pump the
+        // rounds answering every request with "Wait" (the fresh action
+        // selection executes it; a companion speech slot treats it as
+        // the line to say) until Bob acts again.
         llm.CompleteNext("Take Bob");
-        TickUntil(engine, () => llm.Started == 2);
-
-        llm.CompleteNext("Wait");
         var turn = engine.TurnManager.Turn;
-        TickUntil(engine, () => engine.TurnManager.Turn > turn);
+        TickUntil(engine, () =>
+        {
+            while (llm.Pending > 0)
+                llm.CompleteNext("Wait");
+            return engine.TurnManager.Turn > turn;
+        });
     }
 
-    /// <summary>An LLM client whose responses are supplied manually, one at a time.</summary>
+    /// <summary>
+    /// An LLM client whose responses are supplied manually, one at a time.
+    /// <see cref="Started"/> counts requests begun; <see cref="Pending"/>
+    /// counts requests actually queued (Started increments before the
+    /// enqueue, so waiting on Pending is the race-free way to know a
+    /// response can be supplied).
+    /// </summary>
     private sealed class SlowLlmClient : ILlmClient
     {
+        private readonly object _gate = new();
         private readonly Queue<TaskCompletionSource<string>> _pending = new();
 
         public int Started { get; private set; }
 
+        public int Pending
+        {
+            get
+            {
+                lock (_gate)
+                    return _pending.Count;
+            }
+        }
+
         public Task<string> CompleteAsync(IReadOnlyList<LlmMessage> messages, CancellationToken ct)
         {
-            Started++;
             var tcs = new TaskCompletionSource<string>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
-            _pending.Enqueue(tcs);
+            lock (_gate)
+            {
+                Started++;
+                _pending.Enqueue(tcs);
+            }
             return tcs.Task;
         }
 
-        public void CompleteNext(string response) =>
-            _pending.Dequeue().SetResult(response);
+        public void CompleteNext(string response)
+        {
+            lock (_gate)
+            {
+                _pending.Dequeue().SetResult(response);
+            }
+        }
     }
 }
